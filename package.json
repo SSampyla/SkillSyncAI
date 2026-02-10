@@ -1,0 +1,17 @@
+{
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch"
+  },
+  "dependencies": {
+    "@azure/identity": "latest",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "openai": "^6.17.0"
+  },
+  "devDependencies": {
+    "jest": "^30.2.0"
+  }
+}
+
