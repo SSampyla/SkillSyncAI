@@ -4,9 +4,10 @@
 import { jest } from "@jest/globals";
 import { analyzeGithubPortfolio } from "./portfolioAnalysis.js";
 import { generateCoverLetter } from "./jobCoverLetter.js";
+import { generateLearningRecommendations } from "./portfolioRecommendations.js";
 import { extractJobSkills, extractCandidateSkills } from "./jobExtractSkills.js";
 import { summarizeJob } from "./jobSummary.js";
-import { githubDataText, jobText, applicantText } from "./promptTestData.js";
+import { githubDataText, jobText, applicantText, learningJobSkills, learningCandidateSkills } from "../../data/promptTestData.js";
 
 
 const runAiTests = process.env.RUN_AI_TESTS === "true" && !!process.env.AZURE_OPENAI_KEY;
@@ -117,5 +118,65 @@ jest.setTimeout(30000);
         expect(info).toHaveProperty("remote");
         expect(info).toHaveProperty("employmentType");
       });
+});
+
+// ======================================
+// learning recommendations API tests
+// ======================================
+
+(runAiTests ? describe : describe.skip)(
+  "generateLearningRecommendations – regression tests",
+  () => {
+
+    test("returns valid recommendation structure", async () => {
+
+      const result = await generateLearningRecommendations(
+        learningJobSkills,
+        learningCandidateSkills,
+        "Finnish"
+      );
+
+      expect(result).toHaveProperty("prioritySkills");
+      expect(result).toHaveProperty("supportingSkills");
+      expect(result).toHaveProperty("alreadyStrong");
+      expect(result).toHaveProperty("summary");
+
+      expect(Array.isArray(result.prioritySkills)).toBe(true);
+      expect(Array.isArray(result.supportingSkills)).toBe(true);
+      expect(Array.isArray(result.alreadyStrong)).toBe(true);
+      expect(typeof result.summary).toBe("string");
+
+      result.prioritySkills.forEach(skill => {
+        expect(skill).toHaveProperty("skill");
+        expect(skill).toHaveProperty("demandFrequency");
+        expect(skill).toHaveProperty("candidateLevel");
+        expect(skill).toHaveProperty("priorityScore");
+        expect(skill).toHaveProperty("reason");
+
+        expect(typeof skill.skill).toBe("string");
+        expect(typeof skill.reason).toBe("string");
+
+        expect(skill.priorityScore).toBeGreaterThanOrEqual(0);
+        expect(skill.priorityScore).toBeLessThanOrEqual(1);
+
+        expect(["none", "basics", "proficient"])
+          .toContain(skill.candidateLevel);
+      });
+    });
+
+
+    test("handles empty job market data safely", async () => {
+
+      const result = await generateLearningRecommendations(
+        [],
+        learningCandidateSkills,
+        "Finnish"
+      );
+
+      expect(result.prioritySkills).toEqual([]);
+      expect(result.supportingSkills).toEqual([]);
+      expect(result.alreadyStrong).toEqual([]);
+      expect(typeof result.summary).toBe("string");
+    });
 
 });
