@@ -1,0 +1,29 @@
+.portfolio-grid {
+  display: flex;
+  justify-content: space-between;
+  padding: 80px 120px;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 80px;
+}
+
+.font-sample h2 {
+  font-size: 40px;
+  font-weight: 400;
+  margin-bottom: 10px;
+}
+
+.size-24 {
+  font-size: 24px;
+}
+
+.size-16 {
+  font-size: 16px;
+}
+
+.font-sample p {
+  margin: 4px 0;
+}
