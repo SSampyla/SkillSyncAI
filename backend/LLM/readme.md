@@ -58,12 +58,29 @@ $portfolioBody = @{ portfolioText = $portfolioText } | ConvertTo-Json
 $resPortfolio = Invoke-RestMethod -Uri "http://localhost:3000/api/portfolio/analysis" -Method POST -Body $portfolioBody -ContentType "application/json; charset=utf-8"
 $resPortfolio.summary | Format-List
 
+# 7. TESTAA /API/CV/EDIT (CV muokkaus työpaikkaan)
+
+$cvEditBody = @{
+    jobText = $jobText
+    cvText = $applicantText
+    language = "Finnish"
+} | ConvertTo-Json
+
+$resCvEdit = Invoke-RestMethod `
+    -Uri "http://localhost:3000/api/cv/edit" `
+    -Method POST `
+    -Body $cvEditBody `
+    -ContentType "application/json; charset=utf-8"
+
+$resCvEdit.editedCV
+
 ## Jos vastaukset ei aukea, Tarkista vastauksen kaikki kentät Get-Member komennolla. 
 $resSummary | Get-Member 
 $resSkillsJob | Get-Member
 $resLetter | Get-Member
 $resSkillsApplicant | Get-Member
 $resPortfolio | Get-Member
+$resCvEdit | Get-Member
 
 ----------------------------------------------------------------------------
 # Esimerkkivastaus POST /api/jobs/summary

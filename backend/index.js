@@ -18,6 +18,7 @@ import express from "express";
 import dotenv from "dotenv";
 import jobsRoutes from "./routes/jobs.js";
 import portfolioRoutes from "./routes/portfolioLLM.js";
+import cvRoutes from "./routes/cvLLM.js";
 
 
 dotenv.config();
@@ -28,6 +29,7 @@ app.use(express.json()); //JSON parseri
 // Routejen määrittelyt
 app.use("/api/jobs", jobsRoutes);
 app.use("/api/portfolio", portfolioRoutes);
+app.use("/api/cv", cvRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
