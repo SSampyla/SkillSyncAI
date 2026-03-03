@@ -1,11 +1,13 @@
 import Navbar from "../components/Navbar";
+import ProjectGallery from "../components/ProjectGallery";
 import { useState } from "react";
 import "../styles/portfolio.css";
 
 export default function Portfolio() {
   const [activeSection, setActiveSection] = useState("profile");
+  const [isEditing, setIsEditing] = useState(false);
 
-  const profile = {
+  const [profile, setProfile] = useState({
     name: "Ohjelmistokehittäjä",
     title: "Full Stack Developer",
     email: "developer@example.com",
@@ -13,16 +15,40 @@ export default function Portfolio() {
     location: "Helsinki, Finland",
     summary:
       "Motivoitunut ja oppimisorientoitunut full-stack web-sovelluskehittäjä, jolla on vahva perusta React- ja Node.js-teknologioissa. Kiinnostunut luomaan käyttäjäystävällisiä ja tehokkaita sovelluksia. Aktiivisesti hakee uusia haasteita ja oppimismahdollisuuksia.",
+  });
+
+  const availableSkills = {
+    frontend: [
+      "React.js", "Vue.js", "Angular", "JavaScript (ES6+)", "TypeScript", "HTML5", "CSS3", "SASS/SCSS",
+      "Tailwind CSS", "Bootstrap", "Material-UI", "Vite", "Webpack", "Babel", "ESLint", "Prettier",
+      "Responsive Design", "PWA", "Next.js", "Gatsby"
+    ],
+    backend: [
+      "Node.js", "Express.js", "NestJS", "Python", "Django", "Flask", "Java", "Spring Boot",
+      "C#", ".NET", "PHP", "Laravel", "Ruby", "Rails", "Go", "REST APIs", "GraphQL",
+      "API Design", "Microservices", "Docker", "Kubernetes", "MongoDB", "PostgreSQL", "MySQL"
+    ],
+    tools: [
+      "Git", "GitHub", "GitLab", "Bitbucket", "VS Code", "IntelliJ IDEA", "npm", "Yarn", "pnpm",
+      "JSON", "XML", "Postman", "Insomnia", "Swagger", "Figma", "Adobe XD", "Jira", "Trello",
+      "Slack", "Discord", "Jenkins", "GitHub Actions", "CircleCI"
+    ],
+    other: [
+      "Problem Solving", "Team Collaboration", "Self-learning", "Agile Methodology", "Scrum",
+      "Kanban", "Test-Driven Development", "Unit Testing", "Integration Testing", "CI/CD",
+      "Code Review", "Mentoring", "Project Management", "Time Management", "Communication",
+      "Leadership", "Creativity", "Adaptability"
+    ],
   };
 
-  const skills = {
+  const [selectedSkills, setSelectedSkills] = useState({
     frontend: ["React.js", "JavaScript (ES6+)", "HTML5", "CSS3", "Vite", "ESLint", "Responsive Design"],
     backend: ["Node.js", "Express.js", "REST APIs", "API Design", "JavaScript"],
     tools: ["Git", "GitHub", "VS Code", "npm", "JSON", "Postman"],
     other: ["Problem Solving", "Team Collaboration", "Self-learning", "Agile Methodology"],
-  };
+  });
 
-  const experience = [
+  const [experience, setExperience] = useState([
     {
       title: "Full Stack Development Project",
       company: "Job Matching Application",
@@ -48,54 +74,187 @@ export default function Portfolio() {
         "Käyttäjäystävällisen käyttöliittymän suunnittelu",
       ],
     },
-  ];
+  ]);
 
-  const education = [
+  const [education, setEducation] = useState([
     {
       degree: "Ohjelmistotuotanto",
       institution: "Savonia-ammattikorkeakoulu",
       year: "2024-2026",
       relevant: ["Web-sovelluskehitys", "Full Stack -perusteet", "Ohjelmistoarkkitehtuuri", "Tiimityöskentely"],
     },
-  ];
+  ]);
 
-  const certifications = ["JavaScript", "React Basics", "Agile Development"];
+  const [certifications, setCertifications] = useState(["JavaScript", "React Basics", "Agile Development"]);
 
   return (
     <>
       <Navbar />
       <hr className="divider" />
 
-      <div style={{ padding: "40px", maxWidth: "1200px", margin: "0 auto" }}>
+      <div className="portfolio-page">
+      <div className="portfolio-container">
         {/* Header Section */}
-        <section style={{ marginBottom: "50px", backgroundColor: "#1e3a5f", padding: "30px", borderRadius: "8px", color: "#ffffff" }}>
-          <h1 style={{ margin: "0 0 10px 0", fontSize: "32px", color: "#ffffff" }}>{profile.name}</h1>
-          <h2 style={{ margin: "0 0 20px 0", fontSize: "24px", color: "#64b5f6" }}>{profile.title}</h2>
-          <p style={{ margin: "0 0 15px 0", fontSize: "16px", lineHeight: "1.6", maxWidth: "900px", color: "#e0e0e0" }}>{profile.summary}</p>
-          
-          {/* Contact Info */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", marginTop: "20px", fontSize: "14px", color: "#f0f0f0" }}>
-            <div>
-              <strong>📧 Email:</strong> {profile.email}
-            </div>
-            <div>
-              <strong>📱 Puhelin:</strong> {profile.phone}
-            </div>
-            <div>
-              <strong>📍 Sijainti:</strong> {profile.location}
-            </div>
-            <div>
-              <strong>🔗 LinkedIn:</strong> linkedin.com/in/developer
-            </div>
-            <div style={{ gridColumn: "1 / -1" }}>
-              <strong>GitHub:</strong> github.com/developer
-            </div>
-          </div>
+        <section style={{ marginBottom: "50px", backgroundColor: "rgba(30, 41, 59, 0.6)", padding: "30px", borderRadius: "16px", color: "#ffffff", border: "1px solid rgba(148, 163, 184, 0.2)" }}>
+          {isEditing ? (
+            <>
+              <input
+                type="text"
+                value={profile.name}
+                onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                style={{
+                  fontSize: "32px",
+                  fontWeight: "bold",
+                  backgroundColor: "transparent",
+                  border: "1px solid #64b5f6",
+                  borderRadius: "4px",
+                  color: "#ffffff",
+                  padding: "5px",
+                  marginBottom: "10px",
+                  width: "100%",
+                }}
+              />
+              <input
+                type="text"
+                value={profile.title}
+                onChange={(e) => setProfile({ ...profile, title: e.target.value })}
+                style={{
+                  fontSize: "24px",
+                  backgroundColor: "transparent",
+                  border: "1px solid #64b5f6",
+                  borderRadius: "4px",
+                  color: "#64b5f6",
+                  padding: "5px",
+                  marginBottom: "20px",
+                  width: "100%",
+                }}
+              />
+              <textarea
+                value={profile.summary}
+                onChange={(e) => setProfile({ ...profile, summary: e.target.value })}
+                style={{
+                  fontSize: "16px",
+                  lineHeight: "1.6",
+                  maxWidth: "900px",
+                  backgroundColor: "transparent",
+                  border: "1px solid #e0e0e0",
+                  borderRadius: "4px",
+                  color: "#e0e0e0",
+                  padding: "10px",
+                  marginBottom: "20px",
+                  width: "100%",
+                  minHeight: "100px",
+                }}
+              />
+              
+              {/* Contact Info */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", marginTop: "20px", fontSize: "14px", color: "#f0f0f0" }}>
+                <div>
+                  <strong>📧 Email:</strong>{" "}
+                  <input
+                    type="email"
+                    value={profile.email}
+                    onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                    style={{
+                      backgroundColor: "transparent",
+                      border: "1px solid #f0f0f0",
+                      borderRadius: "4px",
+                      color: "#f0f0f0",
+                      padding: "2px 5px",
+                      width: "150px",
+                    }}
+                  />
+                </div>
+                <div>
+                  <strong>📱 Puhelin:</strong>{" "}
+                  <input
+                    type="tel"
+                    value={profile.phone}
+                    onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                    style={{
+                      backgroundColor: "transparent",
+                      border: "1px solid #f0f0f0",
+                      borderRadius: "4px",
+                      color: "#f0f0f0",
+                      padding: "2px 5px",
+                      width: "150px",
+                    }}
+                  />
+                </div>
+                <div>
+                  <strong>📍 Sijainti:</strong>{" "}
+                  <input
+                    type="text"
+                    value={profile.location}
+                    onChange={(e) => setProfile({ ...profile, location: e.target.value })}
+                    style={{
+                      backgroundColor: "transparent",
+                      border: "1px solid #f0f0f0",
+                      borderRadius: "4px",
+                      color: "#f0f0f0",
+                      padding: "2px 5px",
+                      width: "150px",
+                    }}
+                  />
+                </div>
+                <div>
+                  <strong>🔗 LinkedIn:</strong> linkedin.com/in/developer
+                </div>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <strong>GitHub:</strong> github.com/developer
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <h1 style={{ margin: "0 0 10px 0", fontSize: "32px", color: "#ffffff" }}>{profile.name}</h1>
+              <h2 style={{ margin: "0 0 20px 0", fontSize: "24px", color: "#64b5f6" }}>{profile.title}</h2>
+              <p style={{ margin: "0 0 15px 0", fontSize: "16px", lineHeight: "1.6", maxWidth: "900px", color: "#e0e0e0" }}>{profile.summary}</p>
+              
+              {/* Contact Info */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", marginTop: "20px", fontSize: "14px", color: "#f0f0f0" }}>
+                <div>
+                  <strong>📧 Email:</strong> {profile.email}
+                </div>
+                <div>
+                  <strong>📱 Puhelin:</strong> {profile.phone}
+                </div>
+                <div>
+                  <strong>📍 Sijainti:</strong> {profile.location}
+                </div>
+                <div>
+                  <strong>🔗 LinkedIn:</strong> linkedin.com/in/developer
+                </div>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <strong>GitHub:</strong> github.com/developer
+                </div>
+              </div>
+            </>
+          )}
         </section>
+
+        {/* Edit Button */}
+        <div style={{ textAlign: "right", marginBottom: "20px" }}>
+          <button
+            onClick={() => setIsEditing(!isEditing)}
+            style={{
+              padding: "10px 20px",
+              backgroundColor: isEditing ? "#dc3545" : "#28a745",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontSize: "16px",
+              fontWeight: "bold",
+            }}
+          >
+            {isEditing ? "Lopeta Muokkaus" : "Muokkaa Portfoliota"}
+          </button>
+        </div>
 
         {/* Navigation Tabs */}
         <div style={{ display: "flex", gap: "10px", marginBottom: "30px", flexWrap: "wrap" }}>
-          {["profile", "skills", "experience", "education"].map((section) => (
+          {["profile", "skills", "experience", "education", "projects"].map((section) => (
             <button
               key={section}
               onClick={() => setActiveSection(section)}
@@ -117,7 +276,9 @@ export default function Portfolio() {
                 ? "Taidot"
                 : section === "experience"
                 ? "Kokemus"
-                : "Koulutus"}
+                : section === "education"
+                ? "Koulutus"
+                : "Projektit"}
             </button>
           ))}
         </div>
@@ -126,88 +287,120 @@ export default function Portfolio() {
         {activeSection === "skills" && (
           <section style={{ marginBottom: "50px" }}>
             <h2>Tekniset Taidot</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "30px" }}>
-              <div>
-                <h3>Frontend</h3>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                  {skills.frontend.map((skill) => (
-                    <span
-                      key={skill}
-                      style={{
-                        padding: "8px 16px",
-                        backgroundColor: "#1976d2",
-                        color: "#ffffff",
-                        borderRadius: "20px",
-                        fontSize: "14px",
-                        fontWeight: "500",
-                      }}
-                    >
-                      {skill}
-                    </span>
-                  ))}
+            {isEditing ? (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "30px" }}>
+                {Object.entries(availableSkills).map(([category, skillsList]) => (
+                  <div key={category}>
+                    <h3 style={{ textTransform: "capitalize" }}>{category === "frontend" ? "Frontend" : category === "backend" ? "Backend" : category === "tools" ? "Työkalut" : "Muut Taidot"}</h3>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "10px" }}>
+                      {skillsList.map((skill) => (
+                        <label key={skill} style={{ display: "flex", alignItems: "center", fontSize: "14px" }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedSkills[category]?.includes(skill) || false}
+                            onChange={(e) => {
+                              const updatedSkills = { ...selectedSkills };
+                              if (e.target.checked) {
+                                if (!updatedSkills[category]) updatedSkills[category] = [];
+                                updatedSkills[category] = [...updatedSkills[category], skill];
+                              } else {
+                                updatedSkills[category] = updatedSkills[category].filter(s => s !== skill);
+                              }
+                              setSelectedSkills(updatedSkills);
+                            }}
+                            style={{ marginRight: "8px" }}
+                          />
+                          {skill}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "30px" }}>
+                <div>
+                  <h3>Frontend</h3>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                    {selectedSkills.frontend.map((skill) => (
+                      <span
+                        key={skill}
+                        style={{
+                          padding: "8px 16px",
+                          backgroundColor: "#1976d2",
+                          color: "#ffffff",
+                          borderRadius: "20px",
+                          fontSize: "14px",
+                          fontWeight: "500",
+                        }}
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <h3>Backend</h3>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                    {selectedSkills.backend.map((skill) => (
+                      <span
+                        key={skill}
+                        style={{
+                          padding: "8px 16px",
+                          backgroundColor: "#7b1fa2",
+                          color: "#ffffff",
+                          borderRadius: "20px",
+                          fontSize: "14px",
+                          fontWeight: "500",
+                        }}
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <h3>Työkalut</h3>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                    {selectedSkills.tools.map((skill) => (
+                      <span
+                        key={skill}
+                        style={{
+                          padding: "8px 16px",
+                          backgroundColor: "#388e3c",
+                          color: "#ffffff",
+                          borderRadius: "20px",
+                          fontSize: "14px",
+                          fontWeight: "500",
+                        }}
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <h3>Muut Taidot</h3>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                    {selectedSkills.other.map((skill) => (
+                      <span
+                        key={skill}
+                        style={{
+                          padding: "8px 16px",
+                          backgroundColor: "#f57c04",
+                          color: "#ffffff",
+                          borderRadius: "20px",
+                          fontSize: "14px",
+                          fontWeight: "500",
+                        }}
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
-              <div>
-                <h3>Backend</h3>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                  {skills.backend.map((skill) => (
-                    <span
-                      key={skill}
-                      style={{
-                        padding: "8px 16px",
-                        backgroundColor: "#7b1fa2",
-                        color: "#ffffff",
-                        borderRadius: "20px",
-                        fontSize: "14px",
-                        fontWeight: "500",
-                      }}
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h3>Työkalut</h3>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                  {skills.tools.map((skill) => (
-                    <span
-                      key={skill}
-                      style={{
-                        padding: "8px 16px",
-                        backgroundColor: "#388e3c",
-                        color: "#ffffff",
-                        borderRadius: "20px",
-                        fontSize: "14px",
-                        fontWeight: "500",
-                      }}
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h3>Muut Taidot</h3>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                  {skills.other.map((skill) => (
-                    <span
-                      key={skill}
-                      style={{
-                        padding: "8px 16px",
-                        backgroundColor: "#f57c04",
-                        color: "#ffffff",
-                        borderRadius: "20px",
-                        fontSize: "14px",
-                        fontWeight: "500",
-                      }}
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
+            )}
           </section>
         )}
 
@@ -227,24 +420,187 @@ export default function Portfolio() {
                   backgroundColor: "#ffffff",
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "10px" }}>
-                  <div>
-                    <h3 style={{ margin: "0 0 5px 0" }}>{exp.title}</h3>
-                    <p style={{ margin: 0, color: "#0066cc", fontWeight: "bold" }}>{exp.company}</p>
-                  </div>
-                  <span style={{ color: "#666", fontSize: "14px" }}>{exp.period}</span>
-                </div>
-                <p style={{ color: "#666", marginBottom: "15px" }}>{exp.description}</p>
-                <h4 style={{ marginTop: 0, marginBottom: "10px" }}>Saavutukset:</h4>
-                <ul style={{ margin: 0, paddingLeft: "20px" }}>
-                  {exp.achievements.map((achievement, idx) => (
-                    <li key={idx} style={{ marginBottom: "8px", color: "#555" }}>
-                      {achievement}
-                    </li>
-                  ))}
-                </ul>
+                {isEditing ? (
+                  <>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "10px" }}>
+                      <div style={{ flex: 1, marginRight: "20px" }}>
+                        <input
+                          type="text"
+                          value={exp.title}
+                          onChange={(e) => {
+                            const updatedExp = [...experience];
+                            updatedExp[index].title = e.target.value;
+                            setExperience(updatedExp);
+                          }}
+                          style={{
+                            fontSize: "18px",
+                            fontWeight: "bold",
+                            border: "1px solid #ddd",
+                            borderRadius: "4px",
+                            padding: "5px",
+                            width: "100%",
+                            marginBottom: "5px",
+                          }}
+                        />
+                        <input
+                          type="text"
+                          value={exp.company}
+                          onChange={(e) => {
+                            const updatedExp = [...experience];
+                            updatedExp[index].company = e.target.value;
+                            setExperience(updatedExp);
+                          }}
+                          style={{
+                            fontSize: "16px",
+                            color: "#0066cc",
+                            fontWeight: "bold",
+                            border: "1px solid #ddd",
+                            borderRadius: "4px",
+                            padding: "5px",
+                            width: "100%",
+                          }}
+                        />
+                      </div>
+                      <input
+                        type="text"
+                        value={exp.period}
+                        onChange={(e) => {
+                          const updatedExp = [...experience];
+                          updatedExp[index].period = e.target.value;
+                          setExperience(updatedExp);
+                        }}
+                        style={{
+                          color: "#666",
+                          fontSize: "14px",
+                          border: "1px solid #ddd",
+                          borderRadius: "4px",
+                          padding: "5px",
+                          width: "120px",
+                        }}
+                      />
+                    </div>
+                    <textarea
+                      value={exp.description}
+                      onChange={(e) => {
+                        const updatedExp = [...experience];
+                        updatedExp[index].description = e.target.value;
+                        setExperience(updatedExp);
+                      }}
+                      style={{
+                        color: "#666",
+                        marginBottom: "15px",
+                        border: "1px solid #ddd",
+                        borderRadius: "4px",
+                        padding: "10px",
+                        width: "100%",
+                        minHeight: "60px",
+                      }}
+                    />
+                    <h4 style={{ marginTop: 0, marginBottom: "10px" }}>Saavutukset:</h4>
+                    {exp.achievements.map((achievement, idx) => (
+                      <div key={idx} style={{ display: "flex", alignItems: "center", marginBottom: "8px" }}>
+                        <textarea
+                          value={achievement}
+                          onChange={(e) => {
+                            const updatedExp = [...experience];
+                            updatedExp[index].achievements[idx] = e.target.value;
+                            setExperience(updatedExp);
+                          }}
+                          style={{
+                            flex: 1,
+                            marginBottom: "8px",
+                            color: "#555",
+                            border: "1px solid #ddd",
+                            borderRadius: "4px",
+                            padding: "5px",
+                            minHeight: "30px",
+                          }}
+                        />
+                        <button
+                          onClick={() => {
+                            const updatedExp = [...experience];
+                            updatedExp[index].achievements.splice(idx, 1);
+                            setExperience(updatedExp);
+                          }}
+                          style={{
+                            marginLeft: "10px",
+                            backgroundColor: "#dc3545",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "4px",
+                            padding: "5px 10px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Poista
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => {
+                        const updatedExp = [...experience];
+                        updatedExp[index].achievements.push("");
+                        setExperience(updatedExp);
+                      }}
+                      style={{
+                        backgroundColor: "#28a745",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        padding: "8px 16px",
+                        cursor: "pointer",
+                        marginTop: "10px",
+                      }}
+                    >
+                      Lisää Saavutus
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "10px" }}>
+                      <div>
+                        <h3 style={{ margin: "0 0 5px 0" }}>{exp.title}</h3>
+                        <p style={{ margin: 0, color: "#0066cc", fontWeight: "bold" }}>{exp.company}</p>
+                      </div>
+                      <span style={{ color: "#666", fontSize: "14px" }}>{exp.period}</span>
+                    </div>
+                    <p style={{ color: "#666", marginBottom: "15px" }}>{exp.description}</p>
+                    <h4 style={{ marginTop: 0, marginBottom: "10px" }}>Saavutukset:</h4>
+                    <ul style={{ margin: 0, paddingLeft: "20px" }}>
+                      {exp.achievements.map((achievement, idx) => (
+                        <li key={idx} style={{ marginBottom: "8px", color: "#555" }}>
+                          {achievement}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
               </div>
             ))}
+            {isEditing && (
+              <button
+                onClick={() => {
+                  setExperience([...experience, {
+                    title: "",
+                    company: "",
+                    period: "",
+                    description: "",
+                    achievements: [""],
+                  }]);
+                }}
+                style={{
+                  backgroundColor: "#007bff",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  padding: "10px 20px",
+                  cursor: "pointer",
+                  fontSize: "16px",
+                }}
+              >
+                Lisää Kokemus
+              </button>
+            )}
           </section>
         )}
 
@@ -264,50 +620,266 @@ export default function Portfolio() {
                   backgroundColor: "#ffffff",
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "15px" }}>
-                  <div>
-                    <h3 style={{ margin: "0 0 5px 0" }}>{edu.degree}</h3>
-                    <p style={{ margin: 0, color: "#666" }}>{edu.institution}</p>
-                  </div>
-                  <span style={{ color: "#666", fontSize: "14px", fontWeight: "bold" }}>{edu.year}</span>
-                </div>
-                <h4 style={{ marginTop: 0, marginBottom: "10px" }}>Relevantit Kurssit:</h4>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                  {edu.relevant.map((course, idx) => (
-                    <span
-                      key={idx}
+                {isEditing ? (
+                  <>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "15px" }}>
+                      <div style={{ flex: 1, marginRight: "20px" }}>
+                        <input
+                          type="text"
+                          value={edu.degree}
+                          onChange={(e) => {
+                            const updatedEdu = [...education];
+                            updatedEdu[index].degree = e.target.value;
+                            setEducation(updatedEdu);
+                          }}
+                          style={{
+                            fontSize: "18px",
+                            fontWeight: "bold",
+                            border: "1px solid #ddd",
+                            borderRadius: "4px",
+                            padding: "5px",
+                            width: "100%",
+                            marginBottom: "5px",
+                          }}
+                        />
+                        <input
+                          type="text"
+                          value={edu.institution}
+                          onChange={(e) => {
+                            const updatedEdu = [...education];
+                            updatedEdu[index].institution = e.target.value;
+                            setEducation(updatedEdu);
+                          }}
+                          style={{
+                            fontSize: "16px",
+                            color: "#666",
+                            border: "1px solid #ddd",
+                            borderRadius: "4px",
+                            padding: "5px",
+                            width: "100%",
+                          }}
+                        />
+                      </div>
+                      <input
+                        type="text"
+                        value={edu.year}
+                        onChange={(e) => {
+                          const updatedEdu = [...education];
+                          updatedEdu[index].year = e.target.value;
+                          setEducation(updatedEdu);
+                        }}
+                        style={{
+                          color: "#666",
+                          fontSize: "14px",
+                          fontWeight: "bold",
+                          border: "1px solid #ddd",
+                          borderRadius: "4px",
+                          padding: "5px",
+                          width: "120px",
+                        }}
+                      />
+                    </div>
+                    <h4 style={{ marginTop: 0, marginBottom: "10px" }}>Relevantit Kurssit:</h4>
+                    {edu.relevant.map((course, idx) => (
+                      <div key={idx} style={{ display: "flex", alignItems: "center", marginBottom: "8px" }}>
+                        <input
+                          type="text"
+                          value={course}
+                          onChange={(e) => {
+                            const updatedEdu = [...education];
+                            updatedEdu[index].relevant[idx] = e.target.value;
+                            setEducation(updatedEdu);
+                          }}
+                          style={{
+                            flex: 1,
+                            padding: "6px 12px",
+                            backgroundColor: "#388e3c",
+                            color: "#ffffff",
+                            borderRadius: "16px",
+                            fontSize: "13px",
+                            border: "1px solid #ddd",
+                            marginRight: "10px",
+                          }}
+                        />
+                        <button
+                          onClick={() => {
+                            const updatedEdu = [...education];
+                            updatedEdu[index].relevant.splice(idx, 1);
+                            setEducation(updatedEdu);
+                          }}
+                          style={{
+                            backgroundColor: "#dc3545",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "4px",
+                            padding: "5px 10px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Poista
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => {
+                        const updatedEdu = [...education];
+                        updatedEdu[index].relevant.push("");
+                        setEducation(updatedEdu);
+                      }}
                       style={{
-                        padding: "6px 12px",
-                        backgroundColor: "#388e3c",
-                        color: "#ffffff",
-                        borderRadius: "16px",
-                        fontSize: "13px",
+                        backgroundColor: "#28a745",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        padding: "8px 16px",
+                        cursor: "pointer",
+                        marginTop: "10px",
                       }}
                     >
-                      {course}
-                    </span>
-                  ))}
-                </div>
+                      Lisää Kurssi
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "15px" }}>
+                      <div>
+                        <h3 style={{ margin: "0 0 5px 0" }}>{edu.degree}</h3>
+                        <p style={{ margin: 0, color: "#666" }}>{edu.institution}</p>
+                      </div>
+                      <span style={{ color: "#666", fontSize: "14px", fontWeight: "bold" }}>{edu.year}</span>
+                    </div>
+                    <h4 style={{ marginTop: 0, marginBottom: "10px" }}>Relevantit Kurssit:</h4>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                      {edu.relevant.map((course, idx) => (
+                        <span
+                          key={idx}
+                          style={{
+                            padding: "6px 12px",
+                            backgroundColor: "#388e3c",
+                            color: "#ffffff",
+                            borderRadius: "16px",
+                            fontSize: "13px",
+                          }}
+                        >
+                          {course}
+                        </span>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             ))}
+            {isEditing && (
+              <button
+                onClick={() => {
+                  setEducation([...education, {
+                    degree: "",
+                    institution: "",
+                    year: "",
+                    relevant: [""],
+                  }]);
+                }}
+                style={{
+                  backgroundColor: "#007bff",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  padding: "10px 20px",
+                  cursor: "pointer",
+                  fontSize: "16px",
+                }}
+              >
+                Lisää Koulutus
+              </button>
+            )}
 
             <h2>Sertifikaatit & Koulutukset</h2>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "15px" }}>
-              {certifications.map((cert, index) => (
-                <div
-                  key={index}
+            {isEditing ? (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "15px" }}>
+                {certifications.map((cert, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      padding: "15px 20px",
+                      backgroundColor: "#f57c04",
+                      border: "1px solid #f57c04",
+                      borderRadius: "6px",
+                      textAlign: "center",
+                    }}
+                  >
+                    <input
+                      type="text"
+                      value={cert}
+                      onChange={(e) => {
+                        const updatedCerts = [...certifications];
+                        updatedCerts[index] = e.target.value;
+                        setCertifications(updatedCerts);
+                      }}
+                      style={{
+                        backgroundColor: "transparent",
+                        border: "none",
+                        textAlign: "center",
+                        fontWeight: "bold",
+                        color: "#ffffff",
+                        fontSize: "14px",
+                        width: "100%",
+                      }}
+                    />
+                    <button
+                      onClick={() => {
+                        const updatedCerts = [...certifications];
+                        updatedCerts.splice(index, 1);
+                        setCertifications(updatedCerts);
+                      }}
+                      style={{
+                        marginTop: "10px",
+                        backgroundColor: "#dc3545",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        padding: "5px 10px",
+                        cursor: "pointer",
+                        fontSize: "12px",
+                      }}
+                    >
+                      Poista
+                    </button>
+                  </div>
+                ))}
+                <button
+                  onClick={() => setCertifications([...certifications, ""])}
                   style={{
                     padding: "15px 20px",
-                    backgroundColor: "#f57c04",
-                    border: "1px solid #f57c04",
+                    backgroundColor: "#28a745",
+                    color: "white",
+                    border: "none",
                     borderRadius: "6px",
-                    textAlign: "center",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    fontWeight: "bold",
                   }}
                 >
-                  <p style={{ margin: 0, fontWeight: "bold", color: "#ffffff" }}>✓ {cert}</p>
-                </div>
-              ))}
-            </div>
+                  + Lisää Sertifikaatti
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "15px" }}>
+                {certifications.map((cert, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      padding: "15px 20px",
+                      backgroundColor: "#f57c04",
+                      border: "1px solid #f57c04",
+                      borderRadius: "6px",
+                      textAlign: "center",
+                    }}
+                  >
+                    <p style={{ margin: 0, fontWeight: "bold", color: "#ffffff" }}>✓ {cert}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
         )}
 
@@ -315,28 +887,101 @@ export default function Portfolio() {
         {activeSection === "profile" && (
           <section style={{ marginBottom: "50px" }}>
             <h2>Profiilin Yhteenveto</h2>
-            <div style={{ backgroundColor: "#e3f2fd", padding: "25px", borderRadius: "8px", marginBottom: "30px" }}>
-              <h3 style={{ color: "#1565c0" }}>Miksi minut?</h3>
-              <ul style={{ paddingLeft: "20px", lineHeight: "1.8", color: "#1a237e" }}>
-                <li>✓ Vahva perusta kaikkiin web-kehityksen aspekteihin</li>
-                <li>✓ Kokemus täyden pinon (full-stack) sovelluskehityksestä</li>
-                <li>✓ Innokas oppija ja uudistaa omaa osaamistaan jatkuvasti</li>
-                <li>✓ Kyky ratkaista hankalia ongelmia systemaattisesti</li>
-                <li>✓ Hyvät tiimityötaidot ja kommunikaatiokyky</li>
-              </ul>
-            </div>
+            {isEditing ? (
+              <>
+                <div style={{ backgroundColor: "#e3f2fd", padding: "25px", borderRadius: "8px", marginBottom: "30px" }}>
+                  <input
+                    type="text"
+                    value="Miksi minut?"
+                    readOnly
+                    style={{
+                      color: "#1565c0",
+                      fontSize: "18px",
+                      fontWeight: "bold",
+                      border: "none",
+                      backgroundColor: "transparent",
+                      marginBottom: "10px",
+                      width: "100%",
+                    }}
+                  />
+                  <textarea
+                    value="Vahva perusta kaikkiin web-kehityksen aspekteihin. Kokemus täyden pinon (full-stack) sovelluskehityksestä. Innokas oppija ja uudistaa omaa osaamistaan jatkuvasti. Kyky ratkaista hankalia ongelmia systemaattisesti. Hyvät tiimityötaidot ja kommunikaatiokyky."
+                    onChange={() => {}} // Placeholder, could be made editable if needed
+                    style={{
+                      paddingLeft: "20px",
+                      lineHeight: "1.8",
+                      color: "#1a237e",
+                      border: "1px solid #ddd",
+                      borderRadius: "4px",
+                      padding: "10px",
+                      width: "100%",
+                      minHeight: "120px",
+                    }}
+                  />
+                </div>
 
-            <div style={{ backgroundColor: "#e8f5e9", padding: "25px", borderRadius: "8px" }}>
-              <h3 style={{ color: "#1b5e20" }}>Mitä etsin?</h3>
-              <ul style={{ paddingLeft: "20px", lineHeight: "1.8", color: "#1b5e20" }}>
-                <li>📌 Junior/Mid-level kehittäjän positio</li>
-                <li>📌 Mahdollisuus kasvaa ja kehittyä ammatillisesti</li>
-                <li>📌 Oppia kokeneemmilta kehittäjiltä</li>
-                <li>📌 Osallistua mielenkiintoisiin projekteihin</li>
-                <li>📌 Toimiva tiimi, jossa arvostetaan hyvää koodia</li>
-              </ul>
-            </div>
+                <div style={{ backgroundColor: "#e8f5e9", padding: "25px", borderRadius: "8px" }}>
+                  <input
+                    type="text"
+                    value="Mitä etsin?"
+                    readOnly
+                    style={{
+                      color: "#1b5e20",
+                      fontSize: "18px",
+                      fontWeight: "bold",
+                      border: "none",
+                      backgroundColor: "transparent",
+                      marginBottom: "10px",
+                      width: "100%",
+                    }}
+                  />
+                  <textarea
+                    value="Junior/Mid-level kehittäjän positio. Mahdollisuus kasvaa ja kehittyä ammatillisesti. Oppia kokeneemmilta kehittäjiltä. Osallistua mielenkiintoisiin projekteihin. Toimiva tiimi, jossa arvostetaan hyvää koodia."
+                    onChange={() => {}} // Placeholder
+                    style={{
+                      paddingLeft: "20px",
+                      lineHeight: "1.8",
+                      color: "#1b5e20",
+                      border: "1px solid #ddd",
+                      borderRadius: "4px",
+                      padding: "10px",
+                      width: "100%",
+                      minHeight: "120px",
+                    }}
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ backgroundColor: "#e3f2fd", padding: "25px", borderRadius: "8px", marginBottom: "30px" }}>
+                  <h3 style={{ color: "#1565c0" }}>Miksi minut?</h3>
+                  <ul style={{ paddingLeft: "20px", lineHeight: "1.8", color: "#1a237e" }}>
+                    <li>✓ Vahva perusta kaikkiin web-kehityksen aspekteihin</li>
+                    <li>✓ Kokemus täyden pinon (full-stack) sovelluskehityksestä</li>
+                    <li>✓ Innokas oppija ja uudistaa omaa osaamistaan jatkuvasti</li>
+                    <li>✓ Kyky ratkaista hankalia ongelmia systemaattisesti</li>
+                    <li>✓ Hyvät tiimityötaidot ja kommunikaatiokyky</li>
+                  </ul>
+                </div>
+
+                <div style={{ backgroundColor: "#e8f5e9", padding: "25px", borderRadius: "8px" }}>
+                  <h3 style={{ color: "#1b5e20" }}>Mitä etsin?</h3>
+                  <ul style={{ paddingLeft: "20px", lineHeight: "1.8", color: "#1b5e20" }}>
+                    <li>📌 Junior/Mid-level kehittäjän positio</li>
+                    <li>📌 Mahdollisuus kasvaa ja kehittyä ammatillisesti</li>
+                    <li>📌 Oppia kokeneemmilta kehittäjiltä</li>
+                    <li>📌 Osallistua mielenkiintoisiin projekteihin</li>
+                    <li>📌 Toimiva tiimi, jossa arvostetaan hyvää koodia</li>
+                  </ul>
+                </div>
+              </>
+            )}
           </section>
+        )}
+
+        {/* Projects Gallery */}
+        {activeSection === "projects" && (
+          <ProjectGallery />
         )}
 
         {/* Call to Action */}
@@ -391,6 +1036,7 @@ export default function Portfolio() {
             </a>
           </div>
         </section>
+      </div>
       </div>
     </>
   );

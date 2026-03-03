@@ -1,3 +1,25 @@
+/* Portfolio Page Styles */
+.portfolio-page {
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #e2e8f0;
+  padding-bottom: 60px;
+}
+
+.portfolio-container {
+  padding: 40px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.divider {
+  border: none;
+  height: 1px;
+  background: rgba(148, 163, 184, 0.2);
+  margin: 0;
+}
+
 .portfolio-grid {
   display: flex;
   justify-content: space-between;
@@ -14,6 +36,7 @@
   font-size: 40px;
   font-weight: 400;
   margin-bottom: 10px;
+  color: #f1f5f9;
 }
 
 .size-24 {
@@ -26,4 +49,5 @@
 
 .font-sample p {
   margin: 4px 0;
+  color: #cbd5e1;
 }
