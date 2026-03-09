@@ -39,12 +39,13 @@
  * Fallback: jos AI epäonnistuu, palautetaan tyhjät rakenteet.
  */
 
-import client from "./client.js";
+import client, { AZURE_MODEL } from "./client.js";
 import { getAiNamingInstructions } from "../config/synonyms.js";
 
 export async function analyzeGithubPortfolio(portfolioText) {
 
   const response = await client.chat.completions.create({
+    model: AZURE_MODEL,
     response_format: { type: "json_object" },
     temperature: 0.1,
     max_tokens: 2500,

@@ -26,10 +26,11 @@
  * Käytettävissä suoraan frontissa tai backissa ilman erillistä parsea.
  */
 
-import client from "../LLM/client.js";
+import client, { AZURE_MODEL } from "../LLM/client.js";
 
 export async function summarizeJob(jobText) {
   const response = await client.chat.completions.create({
+    model: AZURE_MODEL,
     response_format: { type: "json_object" },
     temperature: 0.15,
     max_tokens: 1200,

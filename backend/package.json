@@ -1,11 +1,13 @@
 {
   "type": "module",
   "scripts": {
+    "start": "node index.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch"
   },
   "dependencies": {
     "@azure/identity": "latest",
+    "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "openai": "^6.17.0"

@@ -140,7 +140,7 @@ export default function Jobs() {
                     </div>
                     {job.recommended && (
                       <div style={{ fontSize: "12px", marginTop: "5px", color: "#4CAF50" }}>
-                        ⭐ Suositeltu
+                        Suositeltu
                       </div>
                     )}
                   </div>
@@ -166,7 +166,7 @@ export default function Jobs() {
                     onMouseLeave={(e) => e.target.style.opacity = "0.8"}
                     title="Poista hakemus"
                   >
-                    🗑️
+                    Poista
                   </button>
                 </div>
               ))}
@@ -211,7 +211,7 @@ export default function Jobs() {
                           fontWeight: "500",
                         }}
                       >
-                        {isMatched ? "✓ " : "✗ "}
+                        {isMatched ? "Sopii: " : "Puuttuu: "}
                         {skill}
                       </span>
                     );
@@ -222,7 +222,7 @@ export default function Jobs() {
               {/* Puuttuvat taidot */}
               {currentJob.missingSkills.length > 0 && (
                 <div style={{ backgroundColor: "rgba(255, 107, 107, 0.15)", padding: "20px", borderRadius: "12px", marginBottom: "25px", borderLeft: "4px solid #ef4444", border: "1px solid rgba(239, 68, 68, 0.3)" }}>
-                  <h4 style={{ marginTop: 0, marginBottom: "15px", color: "#ef4444" }}>⚠️ Puuttuvat taidot:</h4>
+                  <h4 style={{ marginTop: 0, marginBottom: "15px", color: "#ef4444" }}>Puuttuvat taidot:</h4>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                     {currentJob.missingSkills.map((skill) => (
                       <div
@@ -240,13 +240,12 @@ export default function Jobs() {
                           gap: "6px",
                         }}
                       >
-                        <span style={{ fontSize: "16px" }}>❌</span>
                         {skill}
                       </div>
                     ))}
                   </div>
                   <p style={{ margin: "15px 0 0 0", fontSize: "13px", color: "#f87171" }}>
-                    💡 Suositus: Näiden taitojen kehittäminen parantaisi yhteensopivuutta tämän työpaikan kanssa.
+                    Suositus: Näiden taitojen kehittäminen parantaisi yhteensopivuutta tämän työpaikan kanssa.
                   </p>
                 </div>
               )}
@@ -254,7 +253,7 @@ export default function Jobs() {
               {/* Suositeltu työpaikka */}
               {currentJob.recommended && (
                 <div style={{ backgroundColor: "rgba(76, 185, 68, 0.15)", padding: "20px", borderRadius: "12px", border: "1px solid rgba(76, 185, 68, 0.3)" }}>
-                  <h4 style={{ margin: "0 0 10px 0", color: "#4CAF50" }}>✨ Suositeltu työpaikka sinulle</h4>
+                  <h4 style={{ margin: "0 0 10px 0", color: "#4CAF50" }}>Suositeltu työpaikka sinulle</h4>
                   <p style={{ margin: 0, color: "#cbd5e1" }}>
                     Tämä paikkaisteeltosi on paras vastine sinun taidoillesi. Henkilökohtainen yhteensopivuus on{" "}
                     <strong style={{ color: "#4CAF50" }}>{currentJob.compatibility}%</strong>.
@@ -280,7 +279,7 @@ export default function Jobs() {
                 onMouseEnter={(e) => (e.target.style.backgroundColor = "#1565c0")}
                 onMouseLeave={(e) => (e.target.style.backgroundColor = "#1976d2")}
               >
-                📝 Hae tätä työpaikkaa
+                Hae tätä työpaikkaa
               </button> */}
             </div>
           </div>

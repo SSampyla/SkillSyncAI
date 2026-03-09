@@ -1,14 +1,66 @@
 import Navbar from "../components/Navbar";
 import { useState, useEffect } from "react";
+import { jsPDF } from "jspdf";
+import {
+  searchJobs,
+  generateCoverLetterDraft,
+  generateEditedCvDraft,
+} from "../services/api";
 import "../styles/portfolio.css";
+
+const normalize = (value) => `${value ?? ""}`.trim().toLowerCase();
+
+const parseKeywords = (rawInput) =>
+  rawInput
+    .split(/[,;\n]/)
+    .map((k) => k.trim())
+    .filter(Boolean);
+
+const matchesCriteria = (job, criteria) => {
+  const titleMatch =
+    !criteria.jobTitle || normalize(job.title).includes(normalize(criteria.jobTitle));
+  const locationMatch =
+    !criteria.location || normalize(job.location).includes(normalize(criteria.location));
+
+  const searchText = [
+    job.title,
+    job.company,
+    job.description,
+    job.location,
+    ...(job.requiredSkills || []),
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  const keywords = criteria.keywords || [];
+  const keywordMatch =
+    keywords.length === 0 ||
+    keywords.every((keyword) => searchText.includes(normalize(keyword)));
+
+  return titleMatch && locationMatch && keywordMatch;
+};
+
+const buildJobText = (job) => {
+  const requiredSkills = Array.isArray(job.requiredSkills)
+    ? job.requiredSkills.join(", ")
+    : "";
+
+  return [
+    `Title: ${job.title || ""}`,
+    `Company: ${job.company || ""}`,
+    `Location: ${job.location || ""}`,
+    `Type: ${job.type || ""}`,
+    `Description: ${job.description || ""}`,
+    `Required skills: ${requiredSkills}`,
+  ].join("\n");
+};
 
 export default function AvoimetTyopaikat() {
   // Hakukriteerit
   const [searchCriteria, setSearchCriteria] = useState({
     jobTitle: "Frontend Developer",
     location: "Helsinki",
-    keywords: ["React", "JavaScript"],
-    experience: "mid"
+    keywords: ["React", "JavaScript"]
   });
 
   // Hakutulokset ja loading-state
@@ -17,48 +69,173 @@ export default function AvoimetTyopaikat() {
   const [searched, setSearched] = useState(false);
   const [keywordInput, setKeywordInput] = useState("React, JavaScript");
   const [searchMeta, setSearchMeta] = useState({ responseTime: null, sources: [] });
+  const [customizationJob, setCustomizationJob] = useState(null);
+  const [applicantText, setApplicantText] = useState(
+    "Kirjoita tähän oma osaamisprofiilisi: koulutus, projektit, teknologiat ja vahvuudet."
+  );
+  const [cvText, setCvText] = useState(
+    "Kirjoita tähän nykyinen CV-luonnos, jonka haluat räätälöidä tähän työpaikkaan."
+  );
+  const [coverLetterDraft, setCoverLetterDraft] = useState("");
+  const [editedCvDraft, setEditedCvDraft] = useState("");
+  const [draftLoading, setDraftLoading] = useState({ coverLetter: false, cv: false });
+  const [draftError, setDraftError] = useState("");
+
+  const openCustomizationPanel = (job) => {
+    setCustomizationJob(job);
+    setCoverLetterDraft("");
+    setEditedCvDraft("");
+    setDraftError("");
+  };
+
+  const closeCustomizationPanel = () => {
+    setCustomizationJob(null);
+    setDraftError("");
+  };
+
+  const createCoverLetter = async () => {
+    if (!customizationJob) {
+      return;
+    }
+
+    if (!applicantText.trim()) {
+      setDraftError("Lisää ensin oma osaamisprofiili saatekirjettä varten.");
+      return;
+    }
+
+    setDraftError("");
+    setDraftLoading((prev) => ({ ...prev, coverLetter: true }));
+
+    try {
+      const response = await generateCoverLetterDraft({
+        jobText: buildJobText(customizationJob),
+        applicantText: applicantText.trim(),
+        language: "Finnish",
+        matchData: {
+          matchedKeywords: customizationJob.matchedSkills || customizationJob.requiredSkills || [],
+        },
+      });
+
+      setCoverLetterDraft(response.coverLetter || "Saatekirjeluonnosta ei saatu muodostettua.");
+    } catch (err) {
+      setDraftError(`Saatekirjeen luonti epäonnistui: ${err.message}`);
+    } finally {
+      setDraftLoading((prev) => ({ ...prev, coverLetter: false }));
+    }
+  };
+
+  const createEditedCv = async () => {
+    if (!customizationJob) {
+      return;
+    }
+
+    if (!cvText.trim()) {
+      setDraftError("Lisää ensin CV-teksti, jotta räätälöinti voidaan tehdä.");
+      return;
+    }
+
+    setDraftError("");
+    setDraftLoading((prev) => ({ ...prev, cv: true }));
+
+    try {
+      const response = await generateEditedCvDraft({
+        jobText: buildJobText(customizationJob),
+        cvText: cvText.trim(),
+        language: "Finnish",
+      });
+
+      setEditedCvDraft(response.editedCV || "CV-luonnosta ei saatu muodostettua.");
+    } catch (err) {
+      setDraftError(`CV:n räätälöinti epäonnistui: ${err.message}`);
+    } finally {
+      setDraftLoading((prev) => ({ ...prev, cv: false }));
+    }
+  };
+
+  const downloadDraftAsPdf = (draftType) => {
+    const isCoverLetter = draftType === "coverLetter";
+    const draftText = isCoverLetter ? coverLetterDraft : editedCvDraft;
+
+    if (!draftText.trim()) {
+      setDraftError("Ei ladattavaa sisältöä. Luo luonnos ensin.");
+      return;
+    }
+
+    const fileName = isCoverLetter ? "saatekirje-luonnos.pdf" : "cv-luonnos.pdf";
+    const heading = isCoverLetter ? "Saatekirjeluonnos" : "Räätälöity CV-luonnos";
+
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "pt",
+      format: "a4",
+    });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 44;
+    const maxWidth = pageWidth - margin * 2;
+    let y = margin;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text(heading, margin, y);
+    y += 26;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+
+    const paragraphs = draftText.replace(/\r\n/g, "\n").split("\n");
+    paragraphs.forEach((paragraph) => {
+      const printableParagraph = paragraph.trim().length ? paragraph : " ";
+      const lines = doc.splitTextToSize(printableParagraph, maxWidth);
+
+      lines.forEach((line) => {
+        if (y > pageHeight - margin) {
+          doc.addPage();
+          y = margin;
+        }
+        doc.text(line, margin, y);
+        y += 16;
+      });
+
+      y += 4;
+    });
+
+    doc.save(fileName);
+  };
 
   // Hae työpaikkoja
   const handleSearch = async (e) => {
     e.preventDefault();
-    console.log("🔍 Haku aloitettu", searchCriteria);
     setLoading(true);
 
+    const criteria = {
+      ...searchCriteria,
+      jobTitle: searchCriteria.jobTitle.trim(),
+      location: searchCriteria.location.trim(),
+      keywords: parseKeywords(keywordInput),
+    };
+
+    setSearchCriteria(criteria);
+
     try {
-      console.log("📤 Lähetetään pyyntö: http://localhost:3000/api/jobs/search");
-      const response = await fetch("http://localhost:3000/api/jobs/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(searchCriteria)
+      const data = await searchJobs(criteria);
+      setAvailableJobs(data.jobs || []);
+      setSearchMeta({
+        responseTime: data.responseTimeMs || null,
+        sources: data.sources || ["Kaikki lahteet"]
       });
-
-      console.log("📥 Vastaus saatu:", response.status);
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log("✅ Data parsittu:", data);
-        setAvailableJobs(data.jobs);
-        setSearchMeta({
-          responseTime: data.responseTimeMs,
-          sources: data.sources || ["Kaikki lähteet"]
-        });
-        setSearched(true);
-      } else {
-        console.error("❌ API virhe:", response.status);
-        alert("Haku epäonnistui. Käytetään demo-dataa.");
-        setAvailableJobs(getDemoJobs());
-        setSearchMeta({
-          responseTime: null,
-          sources: ["Demo-data"]
-        });
-        setSearched(true);
-      }
+      setSearched(true);
     } catch (err) {
-      console.error("❌ Verkkovirhe:", err);
-      setAvailableJobs(getDemoJobs());
+      console.error("API virhe:", err);
+      const filteredDemoJobs = getDemoJobs().filter((job) =>
+        matchesCriteria(job, criteria)
+      );
+
+      setAvailableJobs(filteredDemoJobs);
       setSearchMeta({
         responseTime: null,
-        sources: ["Demo-data"]
+        sources: ["Demo-data (suodatettu)"]
       });
       setSearched(true);
     } finally {
@@ -246,7 +423,7 @@ export default function AvoimetTyopaikat() {
 
         {/* Hakumuoto */}
         <form onSubmit={handleSearch} style={{ marginBottom: "30px", padding: "20px", backgroundColor: "rgba(76, 99, 255, 0.1)", borderRadius: "16px", border: "1px solid rgba(76, 99, 255, 0.3)" }}>
-          <h3 style={{ color: "#f1f5f9", marginTop: 0 }}>🔍 Automaattinen Haku</h3>
+          <h3 style={{ color: "#f1f5f9", marginTop: 0 }}>Automaattinen Haku</h3>
           
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "15px", marginBottom: "15px" }}>
             <div>
@@ -291,28 +468,6 @@ export default function AvoimetTyopaikat() {
               />
             </div>
 
-            <div>
-              <label style={{ display: "block", color: "#cbd5e1", marginBottom: "5px", fontSize: "0.9rem", fontWeight: "500" }}>
-                Kokemus
-              </label>
-              <select
-                value={searchCriteria.experience}
-                onChange={(e) => setSearchCriteria({ ...searchCriteria, experience: e.target.value })}
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  backgroundColor: "rgba(30, 41, 59, 0.6)",
-                  border: "1px solid rgba(148, 163, 184, 0.3)",
-                  borderRadius: "8px",
-                  color: "#f1f5f9",
-                  fontSize: "0.95rem"
-                }}
-              >
-                <option value="junior">Junior</option>
-                <option value="mid">Mid-level</option>
-                <option value="senior">Senior</option>
-              </select>
-            </div>
           </div>
 
           <div style={{ marginBottom: "15px" }}>
@@ -324,7 +479,10 @@ export default function AvoimetTyopaikat() {
               value={keywordInput}
               onChange={(e) => {
                 setKeywordInput(e.target.value);
-                setSearchCriteria({ ...searchCriteria, keywords: e.target.value.split(",").map(k => k.trim()) });
+                setSearchCriteria({
+                  ...searchCriteria,
+                  keywords: parseKeywords(e.target.value),
+                });
               }}
               placeholder="esim. React, JavaScript, TypeScript"
               style={{
@@ -367,7 +525,7 @@ export default function AvoimetTyopaikat() {
               }
             }}
           >
-            {loading ? "🔄 Haetaan..." : "🚀 Hae työpaikkoja"}
+            {loading ? "Haetaan..." : "Hae työpaikkoja"}
           </button>
         </form>
 
@@ -378,7 +536,6 @@ export default function AvoimetTyopaikat() {
             color: "#cbd5e1",
             fontSize: "1.1rem"
           }}>
-            <p style={{ fontSize: "3rem", marginBottom: "10px" }}>🔍</p>
             <p>Käytä hakumuotoa etsiäksesi sinulle sopivia työpaikkoja</p>
             <p style={{ fontSize: "0.9rem", color: "#94a3b8", marginTop: "10px" }}>
               Haku käy läpi Duunitori, LinkedIn ja yritysten omat sivut
@@ -388,14 +545,14 @@ export default function AvoimetTyopaikat() {
 
         {searched && availableJobs.length === 0 && (
           <p style={{ color: "#ef4444", fontSize: "1.1rem", textAlign: "center", padding: "20px" }}>
-            ❌ Ei löytynyt työpaikkoja annettujen kriteerien perusteella.
+            Ei löytynyt työpaikkoja annettujen kriteerien perusteella.
           </p>
         )}
 
         {availableJobs.length > 0 && (
           <div style={{ marginBottom: "20px" }}>
             <p style={{ color: "#cbd5e1", fontSize: "0.95rem", marginBottom: "8px" }}>
-              📊 Löytyi {availableJobs.length} työpaikkaa
+              Löytyi {availableJobs.length} työpaikkaa
               {searchMeta.responseTime && ` (haettu ${searchMeta.responseTime}ms)`}
             </p>
             {searchMeta.sources && searchMeta.sources.length > 0 && (
@@ -410,7 +567,7 @@ export default function AvoimetTyopaikat() {
                     fontSize: "12px",
                     fontWeight: "500"
                   }}>
-                    🔗 {source}
+                    {source}
                   </span>
                 ))}
               </div>
@@ -467,7 +624,7 @@ export default function AvoimetTyopaikat() {
                     fontSize: "12px",
                     fontWeight: "500"
                   }}>
-                    📌 {job.source}
+                    {job.source}
                   </span>
                 </div>
                 <div style={{ display: "flex", gap: "20px", alignItems: "center", marginBottom: "15px" }}>
@@ -477,9 +634,9 @@ export default function AvoimetTyopaikat() {
                   <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px", color: "#94a3b8" }}>
                       <span>💰 {job.salary}</span>
-                      <span>📅 {job.type}</span>
-                      <span>🕒 {job.posted}</span>
-                      {job.recommended && <span style={{ color: "#4CAF50", fontWeight: "600" }}>⭐ Suositeltu sinulle</span>}
+                      <span>Tyyppi: {job.type}</span>
+                      <span>Julkaistu: {job.posted}</span>
+                      {job.recommended && <span style={{ color: "#4CAF50", fontWeight: "600" }}>Suositeltu sinulle</span>}
                     </div>
                   </div>
                 </div>
@@ -504,7 +661,7 @@ export default function AvoimetTyopaikat() {
                             fontWeight: "500",
                           }}
                         >
-                          {isMatched ? "✓ " : "✗ "}
+                          {isMatched ? "Sopii: " : "Puuttuu: "}
                           {skill}
                         </span>
                       );
@@ -512,40 +669,256 @@ export default function AvoimetTyopaikat() {
                   </div>
                 </div>
 
-                <button
-                  onClick={() => applyForJob(job)}
-                  disabled={isApplied}
-                  style={{
-                    width: "100%",
-                    padding: "12px 24px",
-                    background: isApplied ? "rgba(148, 163, 184, 0.3)" : "linear-gradient(135deg, #ff6b6b, #4c63ff)",
-                    color: "#ffffff",
-                    border: isApplied ? "1px solid rgba(148, 163, 184, 0.3)" : "none",
-                    borderRadius: "10px",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    cursor: isApplied ? "not-allowed" : "pointer",
-                    transition: "all 0.3s ease",
-                    boxShadow: isApplied ? "none" : "0 4px 12px rgba(76, 99, 255, 0.3)",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isApplied) {
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                      e.currentTarget.style.boxShadow = "0 6px 16px rgba(76, 99, 255, 0.4)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isApplied) {
-                      e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(76, 99, 255, 0.3)";
-                    }
-                  }}
-                >
-                  {isApplied ? "✓ Hakemus lähetetty" : "📝 Hae työpaikkaa"}
-                </button>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "10px" }}>
+                  <button
+                    onClick={() => applyForJob(job)}
+                    disabled={isApplied}
+                    style={{
+                      width: "100%",
+                      padding: "12px 24px",
+                      background: isApplied ? "rgba(148, 163, 184, 0.3)" : "linear-gradient(135deg, #ff6b6b, #4c63ff)",
+                      color: "#ffffff",
+                      border: isApplied ? "1px solid rgba(148, 163, 184, 0.3)" : "none",
+                      borderRadius: "10px",
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      cursor: isApplied ? "not-allowed" : "pointer",
+                      transition: "all 0.3s ease",
+                      boxShadow: isApplied ? "none" : "0 4px 12px rgba(76, 99, 255, 0.3)",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isApplied) {
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                        e.currentTarget.style.boxShadow = "0 6px 16px rgba(76, 99, 255, 0.4)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isApplied) {
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow = "0 4px 12px rgba(76, 99, 255, 0.3)";
+                      }
+                    }}
+                  >
+                    {isApplied ? "Hakemus lähetetty" : "Hae työpaikkaa"}
+                  </button>
+
+                  <button
+                    onClick={() => openCustomizationPanel(job)}
+                    style={{
+                      width: "100%",
+                      padding: "11px 20px",
+                      backgroundColor: "rgba(14, 116, 144, 0.2)",
+                      color: "#67e8f9",
+                      border: "1px solid rgba(103, 232, 249, 0.35)",
+                      borderRadius: "10px",
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Luo AI-luonnokset
+                  </button>
+                </div>
               </div>
             );
           })}
+          </div>
+        )}
+
+        {customizationJob && (
+          <div
+            onClick={closeCustomizationPanel}
+            style={{
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(2, 6, 23, 0.75)",
+              zIndex: 2000,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              padding: "20px",
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: "min(920px, 100%)",
+                maxHeight: "90vh",
+                overflowY: "auto",
+                backgroundColor: "#0f172a",
+                border: "1px solid rgba(148, 163, 184, 0.25)",
+                borderRadius: "16px",
+                padding: "24px",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "center", marginBottom: "12px" }}>
+                <div>
+                  <h3 style={{ margin: 0, color: "#e2e8f0" }}>AI-räätälöinti: {customizationJob.title}</h3>
+                  <p style={{ margin: "6px 0 0 0", color: "#94a3b8", fontSize: "14px" }}>
+                    Luo työpaikkakohtainen saatekirjeluonnos ja CV-luonnos tämän ilmoituksen painotusten mukaan.
+                  </p>
+                </div>
+                <button
+                  onClick={closeCustomizationPanel}
+                  style={{
+                    border: "1px solid rgba(148, 163, 184, 0.35)",
+                    background: "transparent",
+                    color: "#cbd5e1",
+                    borderRadius: "8px",
+                    padding: "8px 10px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Sulje
+                </button>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "14px", marginBottom: "14px" }}>
+                <label style={{ color: "#cbd5e1", fontSize: "14px", fontWeight: "600" }}>Oma osaamisprofiili (saatekirjeen pohja)</label>
+                <textarea
+                  value={applicantText}
+                  onChange={(e) => setApplicantText(e.target.value)}
+                  style={{
+                    width: "100%",
+                    minHeight: "120px",
+                    borderRadius: "10px",
+                    border: "1px solid rgba(148, 163, 184, 0.3)",
+                    backgroundColor: "rgba(15, 23, 42, 0.7)",
+                    color: "#e2e8f0",
+                    padding: "12px",
+                  }}
+                />
+
+                <label style={{ color: "#cbd5e1", fontSize: "14px", fontWeight: "600" }}>Nykyinen CV-teksti (CV-räätälöintiä varten)</label>
+                <textarea
+                  value={cvText}
+                  onChange={(e) => setCvText(e.target.value)}
+                  style={{
+                    width: "100%",
+                    minHeight: "140px",
+                    borderRadius: "10px",
+                    border: "1px solid rgba(148, 163, 184, 0.3)",
+                    backgroundColor: "rgba(15, 23, 42, 0.7)",
+                    color: "#e2e8f0",
+                    padding: "12px",
+                  }}
+                />
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "10px", marginBottom: "14px" }}>
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  <button
+                    onClick={createCoverLetter}
+                    disabled={draftLoading.coverLetter}
+                    style={{
+                      padding: "10px 16px",
+                      borderRadius: "10px",
+                      border: "none",
+                      background: "linear-gradient(135deg, #0ea5e9, #2563eb)",
+                      color: "white",
+                      cursor: draftLoading.coverLetter ? "wait" : "pointer",
+                      fontWeight: "600",
+                    }}
+                  >
+                    {draftLoading.coverLetter ? "Luodaan saatekirjettä..." : "Luo saatekirjeluonnos"}
+                  </button>
+
+                  <button
+                    onClick={() => downloadDraftAsPdf("coverLetter")}
+                    disabled={!coverLetterDraft.trim()}
+                    style={{
+                      padding: "10px 14px",
+                      borderRadius: "8px",
+                      border: "1px solid rgba(125, 211, 252, 0.4)",
+                      backgroundColor: !coverLetterDraft.trim() ? "rgba(51, 65, 85, 0.45)" : "rgba(14, 116, 144, 0.2)",
+                      color: !coverLetterDraft.trim() ? "#94a3b8" : "#bae6fd",
+                      cursor: !coverLetterDraft.trim() ? "not-allowed" : "pointer",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Lataa saatekirje PDF
+                  </button>
+                </div>
+
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  <button
+                    onClick={createEditedCv}
+                    disabled={draftLoading.cv}
+                    style={{
+                      padding: "10px 16px",
+                      borderRadius: "10px",
+                      border: "1px solid rgba(167, 139, 250, 0.5)",
+                      backgroundColor: "rgba(76, 29, 149, 0.2)",
+                      color: "#ddd6fe",
+                      cursor: draftLoading.cv ? "wait" : "pointer",
+                      fontWeight: "600",
+                    }}
+                  >
+                    {draftLoading.cv ? "Räätälöidään CV:tä..." : "Räätälöi CV-luonnos"}
+                  </button>
+
+                  <button
+                    onClick={() => downloadDraftAsPdf("cv")}
+                    disabled={!editedCvDraft.trim()}
+                    style={{
+                      padding: "10px 14px",
+                      borderRadius: "8px",
+                      border: "1px solid rgba(167, 139, 250, 0.5)",
+                      backgroundColor: !editedCvDraft.trim() ? "rgba(51, 65, 85, 0.45)" : "rgba(76, 29, 149, 0.2)",
+                      color: !editedCvDraft.trim() ? "#94a3b8" : "#ddd6fe",
+                      cursor: !editedCvDraft.trim() ? "not-allowed" : "pointer",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Lataa CV PDF
+                  </button>
+                </div>
+              </div>
+
+              {draftError && (
+                <p style={{ margin: "0 0 14px 0", color: "#f87171", fontSize: "14px" }}>
+                  {draftError}
+                </p>
+              )}
+
+              {coverLetterDraft && (
+                <div style={{ marginBottom: "14px" }}>
+                  <h4 style={{ margin: "0 0 8px 0", color: "#e2e8f0" }}>Saatekirjeluonnos</h4>
+                  <textarea
+                    value={coverLetterDraft}
+                    onChange={(e) => setCoverLetterDraft(e.target.value)}
+                    style={{
+                      width: "100%",
+                      minHeight: "180px",
+                      borderRadius: "10px",
+                      border: "1px solid rgba(148, 163, 184, 0.35)",
+                      backgroundColor: "rgba(15, 23, 42, 0.7)",
+                      color: "#e2e8f0",
+                      padding: "12px",
+                    }}
+                  />
+                </div>
+              )}
+
+              {editedCvDraft && (
+                <div>
+                  <h4 style={{ margin: "0 0 8px 0", color: "#e2e8f0" }}>Räätälöity CV-luonnos</h4>
+                  <textarea
+                    value={editedCvDraft}
+                    onChange={(e) => setEditedCvDraft(e.target.value)}
+                    style={{
+                      width: "100%",
+                      minHeight: "220px",
+                      borderRadius: "10px",
+                      border: "1px solid rgba(148, 163, 184, 0.35)",
+                      backgroundColor: "rgba(15, 23, 42, 0.7)",
+                      color: "#e2e8f0",
+                      padding: "12px",
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

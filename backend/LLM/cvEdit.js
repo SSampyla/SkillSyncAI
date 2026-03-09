@@ -1,8 +1,9 @@
-import client from "./client.js";
+import client, { AZURE_MODEL } from "./client.js";
 
 export async function generateEditedCV(jobText, cvText, language) {
 
     const response = await client.chat.completions.create({
+        model: AZURE_MODEL,
         response_format: { type: "json_object" },
         temperature: 0.2,
         max_tokens: 2000,

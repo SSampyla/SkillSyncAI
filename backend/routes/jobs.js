@@ -71,6 +71,7 @@ import { summarizeJob } from "../LLM/jobSummary.js";
 import { extractJobSkills } from "../LLM/jobExtractSkills.js";
 import { extractCandidateSkills } from "../LLM/jobExtractSkills.js";
 import { generateCoverLetter } from "../LLM/jobCoverLetter.js";
+import { searchJobsFromAllSources } from "../services/jobScraper.js";
 
 const router = express.Router();
 const MAX_TEXT_LENGTH = 20000; // Body json max 20k merkkiä (~3000-4000 sanaa). Voi muokata, jos ei riitä
@@ -132,22 +133,100 @@ const validateApplicantText = (req, res, next) => {
   next();
 };
 
+const validateSearchInput = (req, res, next) => {
+  const { jobTitle, location, keywords, experience } = req.body;
+
+  if (!jobTitle?.trim()) {
+    return res.status(400).json({ error: "Tehtavan nimi puuttuu." });
+  }
+
+  if (jobTitle.length > 120) {
+    return res.status(413).json({ error: "Tehtavan nimi on liian pitka." });
+  }
+
+  if (location && location.length > 120) {
+    return res.status(413).json({ error: "Sijainti on liian pitka." });
+  }
+
+  if (keywords && !Array.isArray(keywords)) {
+    return res.status(400).json({ error: "keywords-kentan tulee olla taulukko." });
+  }
+
+  if (
+    experience &&
+    !["junior", "mid", "senior"].includes(experience)
+  ) {
+    return res.status(400).json({ error: "experience-kenta ei ole sallittu arvo." });
+  }
+
+  next();
+};
+
 const handleRouteError = (res, err, startTime, context) => {
   const duration = Date.now() - startTime;
   console.error(`${context} failed (${duration} ms)`);
 
-  if (err.status) {
+  const upstreamStatus = err?.status || err?.statusCode || err?.error?.status;
+  const upstreamMessage = err?.message || err?.error?.message;
+  const upstreamCode = err?.code || err?.error?.code;
+
+  if (upstreamStatus) {
     console.error("Azure OpenAI error:", {
-      status: err.status,
-      message: err.message,
-      code: err.code
+      status: upstreamStatus,
+      message: upstreamMessage,
+      code: upstreamCode
     });
-    return res.status(502).json({ error: "Tekoälypalvelu ei vastannut oikein." });
+    return res.status(502).json({
+      error: upstreamMessage || "Tekoaly-palvelu ei vastannut oikein.",
+    });
   }
 
   console.error("Backend error:", err);
   res.status(500).json({ error: `Palvelinvirhe ${context.toLowerCase()}.` });
 };
+
+
+// ============================
+// ----- /api/jobs/search -----
+// ============================
+
+router.post("/search", validateSearchInput, async (req, res) => {
+  console.log("POST /api/jobs/search called");
+  const startTime = Date.now();
+
+  try {
+    const {
+      jobTitle,
+      location = "",
+      keywords = [],
+      experience = "",
+    } = req.body;
+
+    const cleanedKeywords = keywords
+      .map((k) => `${k}`.trim())
+      .filter(Boolean)
+      .slice(0, 15);
+
+    const jobs = await searchJobsFromAllSources(
+      jobTitle.trim(),
+      location?.trim() ?? "",
+      cleanedKeywords,
+      experience
+    );
+    const sources = [...new Set(jobs.map((job) => job.source).filter(Boolean))];
+
+    const duration = Date.now() - startTime;
+
+    console.log(`POST /api/jobs/search success (${duration} ms)`);
+    res.json({
+      jobs,
+      sources,
+      responseTimeMs: duration,
+    });
+  } catch (err) {
+    handleRouteError(res, err, startTime, "Tyopaikkahaussa");
+  }
+});
 
 
 // =============================
@@ -201,7 +280,7 @@ router.post("/letter", validateLetterInput, async (req, res) => {
   try {
 
     const { applicantText, jobText, language, matchData } = req.body;
-    const letterData = await generateCoverLetter(applicantText, jobText, language, matchData);
+    const letterData = await generateCoverLetter(jobText, applicantText, language, matchData);
 
     const duration = Date.now() - startTime;
     console.log(`POST /api/jobs/letter success (${duration} ms)`);

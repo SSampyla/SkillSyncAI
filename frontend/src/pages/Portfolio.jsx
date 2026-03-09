@@ -150,7 +150,7 @@ export default function Portfolio() {
               {/* Contact Info */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", marginTop: "20px", fontSize: "14px", color: "#f0f0f0" }}>
                 <div>
-                  <strong>📧 Email:</strong>{" "}
+                  <strong>Email:</strong>{" "}
                   <input
                     type="email"
                     value={profile.email}
@@ -166,7 +166,7 @@ export default function Portfolio() {
                   />
                 </div>
                 <div>
-                  <strong>📱 Puhelin:</strong>{" "}
+                  <strong>Puhelin:</strong>{" "}
                   <input
                     type="tel"
                     value={profile.phone}
@@ -182,7 +182,7 @@ export default function Portfolio() {
                   />
                 </div>
                 <div>
-                  <strong>📍 Sijainti:</strong>{" "}
+                  <strong>Sijainti:</strong>{" "}
                   <input
                     type="text"
                     value={profile.location}
@@ -198,7 +198,7 @@ export default function Portfolio() {
                   />
                 </div>
                 <div>
-                  <strong>🔗 LinkedIn:</strong> linkedin.com/in/developer
+                  <strong>LinkedIn:</strong> linkedin.com/in/developer
                 </div>
                 <div style={{ gridColumn: "1 / -1" }}>
                   <strong>GitHub:</strong> github.com/developer
@@ -214,16 +214,16 @@ export default function Portfolio() {
               {/* Contact Info */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", marginTop: "20px", fontSize: "14px", color: "#f0f0f0" }}>
                 <div>
-                  <strong>📧 Email:</strong> {profile.email}
+                  <strong>Email:</strong> {profile.email}
                 </div>
                 <div>
-                  <strong>📱 Puhelin:</strong> {profile.phone}
+                  <strong>Puhelin:</strong> {profile.phone}
                 </div>
                 <div>
-                  <strong>📍 Sijainti:</strong> {profile.location}
+                  <strong>Sijainti:</strong> {profile.location}
                 </div>
                 <div>
-                  <strong>🔗 LinkedIn:</strong> linkedin.com/in/developer
+                  <strong>LinkedIn:</strong> linkedin.com/in/developer
                 </div>
                 <div style={{ gridColumn: "1 / -1" }}>
                   <strong>GitHub:</strong> github.com/developer
@@ -254,7 +254,7 @@ export default function Portfolio() {
 
         {/* Navigation Tabs */}
         <div style={{ display: "flex", gap: "10px", marginBottom: "30px", flexWrap: "wrap" }}>
-          {["profile", "skills", "experience", "education", "projects"].map((section) => (
+          {["profile", "skills", "experience", "education"].map((section) => (
             <button
               key={section}
               onClick={() => setActiveSection(section)}
@@ -276,9 +276,7 @@ export default function Portfolio() {
                 ? "Taidot"
                 : section === "experience"
                 ? "Kokemus"
-                : section === "education"
-                ? "Koulutus"
-                : "Projektit"}
+                : "Koulutus"}
             </button>
           ))}
         </div>
@@ -875,7 +873,7 @@ export default function Portfolio() {
                       textAlign: "center",
                     }}
                   >
-                    <p style={{ margin: 0, fontWeight: "bold", color: "#ffffff" }}>✓ {cert}</p>
+                    <p style={{ margin: 0, fontWeight: "bold", color: "#ffffff" }}>{cert}</p>
                   </div>
                 ))}
               </div>
@@ -956,22 +954,22 @@ export default function Portfolio() {
                 <div style={{ backgroundColor: "#e3f2fd", padding: "25px", borderRadius: "8px", marginBottom: "30px" }}>
                   <h3 style={{ color: "#1565c0" }}>Miksi minut?</h3>
                   <ul style={{ paddingLeft: "20px", lineHeight: "1.8", color: "#1a237e" }}>
-                    <li>✓ Vahva perusta kaikkiin web-kehityksen aspekteihin</li>
-                    <li>✓ Kokemus täyden pinon (full-stack) sovelluskehityksestä</li>
-                    <li>✓ Innokas oppija ja uudistaa omaa osaamistaan jatkuvasti</li>
-                    <li>✓ Kyky ratkaista hankalia ongelmia systemaattisesti</li>
-                    <li>✓ Hyvät tiimityötaidot ja kommunikaatiokyky</li>
+                    <li>Vahva perusta kaikkiin web-kehityksen aspekteihin</li>
+                    <li>Kokemus täyden pinon (full-stack) sovelluskehityksestä</li>
+                    <li>Innokas oppija ja uudistaa omaa osaamistaan jatkuvasti</li>
+                    <li>Kyky ratkaista hankalia ongelmia systemaattisesti</li>
+                    <li>Hyvät tiimityötaidot ja kommunikaatiokyky</li>
                   </ul>
                 </div>
 
                 <div style={{ backgroundColor: "#e8f5e9", padding: "25px", borderRadius: "8px" }}>
                   <h3 style={{ color: "#1b5e20" }}>Mitä etsin?</h3>
                   <ul style={{ paddingLeft: "20px", lineHeight: "1.8", color: "#1b5e20" }}>
-                    <li>📌 Junior/Mid-level kehittäjän positio</li>
-                    <li>📌 Mahdollisuus kasvaa ja kehittyä ammatillisesti</li>
-                    <li>📌 Oppia kokeneemmilta kehittäjiltä</li>
-                    <li>📌 Osallistua mielenkiintoisiin projekteihin</li>
-                    <li>📌 Toimiva tiimi, jossa arvostetaan hyvää koodia</li>
+                    <li>Junior/Mid-level kehittäjän positio</li>
+                    <li>Mahdollisuus kasvaa ja kehittyä ammatillisesti</li>
+                    <li>Oppia kokeneemmilta kehittäjiltä</li>
+                    <li>Osallistua mielenkiintoisiin projekteihin</li>
+                    <li>Toimiva tiimi, jossa arvostetaan hyvää koodia</li>
                   </ul>
                 </div>
               </>
@@ -1002,7 +1000,7 @@ export default function Portfolio() {
                 fontWeight: "bold",
               }}
             >
-              📧 Lähetä Sähköposti
+              Lähetä Sähköposti
             </a>
             <a
               href="https://linkedin.com/in/developer"
@@ -1017,7 +1015,7 @@ export default function Portfolio() {
                 fontWeight: "bold",
               }}
             >
-              💼 LinkedIn
+              LinkedIn
             </a>
             <a
               href="https://github.com/developer"
@@ -1032,7 +1030,7 @@ export default function Portfolio() {
                 fontWeight: "bold",
               }}
             >
-              🔗 GitHub
+              GitHub
             </a>
           </div>
         </section>

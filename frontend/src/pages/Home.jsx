@@ -13,7 +13,7 @@ export default function Home() {
         <section className="hero-section">
           <div className="hero-content">
             <div className="hero-badge">
-              <span className="badge-icon">🤖</span>
+              <span className="badge-icon">AI</span>
               <span>Tekoäly-pohjainen osaamisen arviointi</span>
             </div>
             <h1 className="hero-title">
@@ -28,25 +28,11 @@ export default function Home() {
             </p>
             <div className="hero-buttons">
               <Link to="/portfolio" className="btn btn-primary">
-                📁 Luo Portfolio
+                Luo Portfolio
               </Link>
               <Link to="/avoimet-tyopaikat" className="btn btn-secondary">
-                💼 Selaa Työpaikkoja
+                Selaa Työpaikkoja
               </Link>
-            </div>
-          </div>
-          <div className="hero-visual">
-            <div className="floating-card card-1">
-              <div className="card-icon">🎓</div>
-              <div className="card-text">Osaaminen</div>
-            </div>
-            <div className="floating-card card-2">
-              <div className="card-icon">🤝</div>
-              <div className="card-text">AI Match</div>
-            </div>
-            <div className="floating-card card-3">
-              <div className="card-icon">💼</div>
-              <div className="card-text">Työpaikka</div>
             </div>
           </div>
         </section>
@@ -56,7 +42,7 @@ export default function Home() {
           <h2 className="section-title">Miten SkillSync AI toimii?</h2>
           <div className="features-grid">
             <div className="feature-card">
-              <div className="feature-icon">🎯</div>
+              <div className="feature-icon">01</div>
               <h3>Osaamisen Analysointi</h3>
               <p>
                 Tekoäly analysoi portfoliosi, projektisi ja taitosi automaattisesti – 
@@ -64,7 +50,7 @@ export default function Home() {
               </p>
             </div>
             <div className="feature-card">
-              <div className="feature-icon">🔍</div>
+              <div className="feature-icon">02</div>
               <h3>Älykäs Matching</h3>
               <p>
                 Kehittynyt algoritmi vertaa osaamistasi työpaikkojen vaatimuksiin ja 
@@ -72,7 +58,7 @@ export default function Home() {
               </p>
             </div>
             <div className="feature-card">
-              <div className="feature-icon">📊</div>
+              <div className="feature-icon">03</div>
               <h3>Osaamispuutteiden Tunnistus</h3>
               <p>
                 Näe selkeästi, mitä taitoja sinulta vielä puuttuu haluamaasi työhön ja 
@@ -80,7 +66,7 @@ export default function Home() {
               </p>
             </div>
             <div className="feature-card">
-              <div className="feature-icon">✍️</div>
+              <div className="feature-icon">04</div>
               <h3>AI-generoidut Hakemukset</h3>
               <p>
                 Luo räätälöityjä motivaatiokirjeitä ja hakemuksia sekunneissa – 
@@ -88,7 +74,7 @@ export default function Home() {
               </p>
             </div>
             <div className="feature-card">
-              <div className="feature-icon">🚀</div>
+              <div className="feature-icon">05</div>
               <h3>Uran Kehitys</h3>
               <p>
                 Seuraa omaa kehitystäsi, aseta tavoitteita ja näe miten osaamisesi 
@@ -96,7 +82,7 @@ export default function Home() {
               </p>
             </div>
             <div className="feature-card">
-              <div className="feature-icon">🌐</div>
+              <div className="feature-icon">06</div>
               <h3>Reaaliaikaiset Työpaikat</h3>
               <p>
                 Pääsy ajankohtaisiin työpaikkailmoituksiin, jotka vastaavat 

@@ -38,7 +38,7 @@
  *
  */
 
-import client from "./client.js";
+import client, { AZURE_MODEL } from "./client.js";
 
 export async function generateLearningRecommendations(
     jobSkillsRequiredAll,
@@ -47,6 +47,7 @@ export async function generateLearningRecommendations(
 ) {
 
     const response = await client.chat.completions.create({
+        model: AZURE_MODEL,
         response_format: { type: "json_object" },
         temperature: 0.05,
         max_tokens: 1400,

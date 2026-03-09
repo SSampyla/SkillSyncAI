@@ -20,12 +20,13 @@
  * Käytettävissä suoraan frontissa tai backissa ilman erillistä parsea.
  */
 
-import client from "./client.js";
+import client, { AZURE_MODEL } from "./client.js";
 import { getAiNamingInstructions } from "../config/synonyms.js";
 
 export async function extractJobSkills(jobText) {
 
   const response = await client.chat.completions.create({
+    model: AZURE_MODEL,
     response_format: { type: "json_object" },
     temperature: 0.075,
     max_tokens: 1000,
@@ -87,6 +88,7 @@ ${getAiNamingInstructions}
 export async function extractCandidateSkills(applicantText) {
 
   const response = await client.chat.completions.create({
+    model: AZURE_MODEL,
     response_format: { type: "json_object" },
     temperature: 0.075,
     max_tokens: 1000,

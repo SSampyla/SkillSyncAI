@@ -16,6 +16,7 @@
 
 import express from "express";
 import dotenv from "dotenv";
+import cors from "cors";
 import jobsRoutes from "./routes/jobs.js";
 import portfolioRoutes from "./routes/portfolioLLM.js";
 import cvRoutes from "./routes/cvLLM.js";
@@ -25,6 +26,11 @@ dotenv.config();
 
 const app = express();
 app.use(express.json()); //JSON parseri
+app.use(
+	cors({
+		origin: process.env.FRONTEND_ORIGIN || true,
+	})
+);
 
 // Routejen määrittelyt
 app.use("/api/jobs", jobsRoutes);

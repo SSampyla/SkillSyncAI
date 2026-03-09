@@ -212,7 +212,7 @@ export default function ProjectGallery() {
               className="close-btn"
               onClick={() => setSelectedProject(null)}
             >
-              ✕
+              X
             </button>
 
             {!isEditMode && (
@@ -234,7 +234,7 @@ export default function ProjectGallery() {
                   zIndex: 1000,
                 }}
               >
-                ✏️ Muokkaa
+                Muokkaa
               </button>
             )}
 
@@ -263,7 +263,7 @@ export default function ProjectGallery() {
                         fontWeight: "bold",
                       }}
                     >
-                      ✕
+                      X
                     </button>
                   )}
                 </div>
@@ -272,7 +272,7 @@ export default function ProjectGallery() {
 
             {isEditMode && (
               <div style={{ padding: "20px", backgroundColor: "rgba(76, 99, 255, 0.1)", borderRadius: "12px", marginBottom: "20px" }}>
-                <h4 style={{ color: "#7dd3fc", marginTop: "0" }}>📸 Lisää tai muokkaa kuvia</h4>
+                <h4 style={{ color: "#7dd3fc", marginTop: "0" }}>Lisää tai muokkaa kuvia</h4>
                 <div style={{ marginBottom: "15px" }}>
                   <label style={{ display: "block", color: "#cbd5e1", marginBottom: "5px", fontSize: "0.9rem" }}>
                     Kuvan URL:
@@ -416,7 +416,7 @@ export default function ProjectGallery() {
 
               {/* Live Demo Link with Edit */}
               <div className="demo-section" style={{ marginTop: "20px" }}>
-                <h3>🚀 Live Demo</h3>
+                <h3>Live Demo</h3>
                 {isEditMode ? (
                   <div style={{ marginBottom: "15px" }}>
                     <input
@@ -476,7 +476,7 @@ export default function ProjectGallery() {
 
               {/* Impact */}
               <div className="impact-section">
-                <h3>💡 Vaikutus</h3>
+                <h3>Vaikutus</h3>
                 <p>{isEditMode ? editedProject.impact : selectedProject.impact}</p>
               </div>
 
@@ -504,7 +504,7 @@ export default function ProjectGallery() {
                       fontWeight: "600",
                     }}
                   >
-                    ✓ Tallenna Muutokset
+                    Tallenna Muutokset
                   </button>
                   <button
                     onClick={cancelEdit}
@@ -520,7 +520,7 @@ export default function ProjectGallery() {
                       fontWeight: "600",
                     }}
                   >
-                    ✕ Peruuta
+                    Peruuta
                   </button>
                 </div>
               )}
@@ -535,7 +535,7 @@ export default function ProjectGallery() {
                       rel="noopener noreferrer"
                       className="link-btn primary"
                     >
-                      🚀 Live Demo
+                      Live Demo
                     </a>
                   )}
                   {selectedProject.github && (
@@ -545,7 +545,7 @@ export default function ProjectGallery() {
                       rel="noopener noreferrer"
                       className="link-btn secondary"
                     >
-                      💻 GitHub
+                      GitHub
                     </a>
                   )}
                 </div>

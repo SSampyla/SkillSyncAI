@@ -22,6 +22,8 @@ import OpenAI from "openai";
 
 dotenv.config();
 
+export const AZURE_MODEL = process.env.AZURE_OPENAI_DEPLOYMENT;
+
 // Luodaan client AZURE OpenAI:lle
 const client = new OpenAI({
   apiKey: process.env.AZURE_OPENAI_KEY, 

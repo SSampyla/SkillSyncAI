@@ -48,15 +48,19 @@ const handleRouteError = (res, err, startTime, context) => {
     const duration = Date.now() - startTime;
     console.error(`${context} failed (${duration} ms)`);
 
-    if (err.status) {
+    const upstreamStatus = err?.status || err?.statusCode || err?.error?.status;
+    const upstreamMessage = err?.message || err?.error?.message;
+    const upstreamCode = err?.code || err?.error?.code;
+
+    if (upstreamStatus) {
         console.error("Azure OpenAI error:", {
-            status: err.status,
-            message: err.message,
-            code: err.code
+            status: upstreamStatus,
+            message: upstreamMessage,
+            code: upstreamCode
         });
 
         return res.status(502).json({
-            error: "Tekoälypalvelu ei vastannut oikein."
+            error: upstreamMessage || "Tekoaly-palvelu ei vastannut oikein."
         });
     }
 

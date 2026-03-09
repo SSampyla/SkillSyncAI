@@ -9,9 +9,9 @@
 /* Hero Section */
 .hero-section {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 60px;
-  align-items: center;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  justify-items: center;
   max-width: 1400px;
   margin: 0 auto;
   padding: 100px 40px;
@@ -19,7 +19,8 @@
 }
 
 .hero-content {
-  max-width: 600px;
+  max-width: 900px;
+  text-align: center;
 }
 
 .hero-badge {
@@ -32,7 +33,7 @@
   border-radius: 30px;
   font-size: 0.9rem;
   color: #7dd3fc;
-  margin-bottom: 30px;
+  margin: 0 auto 30px auto;
   animation: fadeInDown 0.8s ease;
 }
 
@@ -84,6 +85,7 @@
 
 .hero-buttons {
   display: flex;
+  justify-content: center;
   gap: 15px;
   flex-wrap: wrap;
   animation: fadeInUp 0.8s ease 0.6s both;
@@ -126,64 +128,6 @@
 .btn-large {
   padding: 18px 40px;
   font-size: 1.1rem;
-}
-
-/* Hero Visual */
-.hero-visual {
-  position: relative;
-  height: 500px;
-  animation: fadeIn 1s ease 0.3s both;
-}
-
-.floating-card {
-  position: absolute;
-  background: rgba(30, 41, 59, 0.8);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 16px;
-  padding: 30px;
-  text-align: center;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  animation: float 3s ease-in-out infinite;
-}
-
-.floating-card.card-1 {
-  top: 50px;
-  left: 50px;
-  animation-delay: 0s;
-}
-
-.floating-card.card-2 {
-  top: 200px;
-  right: 100px;
-  background: linear-gradient(135deg, rgba(76, 99, 255, 0.2), rgba(255, 107, 107, 0.2));
-  animation-delay: 1s;
-}
-
-.floating-card.card-3 {
-  bottom: 80px;
-  left: 120px;
-  animation-delay: 2s;
-}
-
-.card-icon {
-  font-size: 3rem;
-  margin-bottom: 10px;
-}
-
-.card-text {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #f1f5f9;
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-20px);
-  }
 }
 
 @keyframes fadeInUp {
@@ -371,13 +315,8 @@
 /* Responsive */
 @media (max-width: 1024px) {
   .hero-section {
-    grid-template-columns: 1fr;
     gap: 40px;
     padding: 60px 30px;
-  }
-
-  .hero-visual {
-    height: 400px;
   }
 
   .hero-title {
@@ -399,22 +338,6 @@
   }
 
   .hero-description {
-    font-size: 1rem;
-  }
-
-  .hero-visual {
-    height: 300px;
-  }
-
-  .floating-card {
-    padding: 20px;
-  }
-
-  .card-icon {
-    font-size: 2rem;
-  }
-
-  .card-text {
     font-size: 1rem;
   }
 
