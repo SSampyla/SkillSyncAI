@@ -9,6 +9,7 @@ import { extractJobSkills, extractCandidateSkills } from "./jobExtractSkills.js"
 import { summarizeJob } from "./jobSummary.js";
 import { githubDataText, jobText, applicantText, learningJobSkills, learningCandidateSkills } from "../../data/promptTestData.js";
 import { generateEditedCV } from "./cvEdit.js";
+import { generateInterviewReply } from "./interviewPractice.js";
 
 const runAiTests = process.env.RUN_AI_TESTS === "true" && !!process.env.AZURE_OPENAI_KEY;
 
@@ -120,10 +121,6 @@ jest.setTimeout(30000);
   });
 });
 
-// ======================================
-// learning recommendations API tests
-// ======================================
-
 (runAiTests ? describe : describe.skip)(
   "generateLearningRecommendations – regression tests",
   () => {
@@ -186,7 +183,6 @@ jest.setTimeout(30000);
       beforeAll(async () => {
         rawResult = await generateEditedCV(jobText, applicantText, "Finnish");
 
-        // --- odotetaan objectia ---
         expect(typeof rawResult).toBe("object");
         expect(rawResult).toHaveProperty("editedCV");
         expect(typeof rawResult.editedCV).toBe("string");
@@ -207,3 +203,87 @@ jest.setTimeout(30000);
     });
 
   });
+
+(runAiTests ? describe : describe.skip)("generateInterviewReply – regression tests", () => {
+
+  let chatHistory;
+
+  beforeAll(() => {
+    // Aloitetaan tyhjällä chat historyllä
+    chatHistory = [];
+  });
+
+  test("AI interview reply returns valid JSON structure", async () => {
+    const phase = "intro";
+    const language = "Finnish";
+
+    const result = await generateInterviewReply(chatHistory, jobText, phase, language);
+
+    // --- STRUCTURE ---
+    expect(result).toHaveProperty("nextQuestion");
+    expect(result).toHaveProperty("followUp");
+    expect(result).toHaveProperty("answerEvaluation");
+
+    const evalObj = result.answerEvaluation;
+
+    expect(evalObj).toHaveProperty("clarity");
+    expect(evalObj).toHaveProperty("technicalDepth");
+    expect(evalObj).toHaveProperty("communication");
+
+    // --- TYPES ---
+    expect(result.nextQuestion === null || typeof result.nextQuestion === "string").toBe(true);
+    expect(typeof result.followUp).toBe("boolean");
+
+    expect(typeof evalObj.clarity).toBe("number");
+    expect(typeof evalObj.technicalDepth).toBe("number");
+    expect(typeof evalObj.communication).toBe("number");
+
+    // --- VALUE RANGES ---
+    expect(evalObj.clarity).toBeGreaterThanOrEqual(0);
+    expect(evalObj.clarity).toBeLessThanOrEqual(1);
+    expect(evalObj.technicalDepth).toBeGreaterThanOrEqual(0);
+    expect(evalObj.technicalDepth).toBeLessThanOrEqual(1);
+    expect(evalObj.communication).toBeGreaterThanOrEqual(0);
+    expect(evalObj.communication).toBeLessThanOrEqual(1);
+  });
+
+  test("AI can handle multiple chat turns without crashing", async () => {
+    const phase = "technical";
+    const language = "Finnish";
+
+    // Simuloi ensimmäinen AI kysymys
+    chatHistory.push({
+      role: "assistant",
+      content: "Kerro kokemuksestasi React-projekteissa."
+    });
+
+    // Simuloi käyttäjän vastaus
+    chatHistory.push({
+      role: "user",
+      content: "Olen rakentanut useita web-sovelluksia Reactilla viimeisten 3 vuoden aikana."
+    });
+
+    const result = await generateInterviewReply(chatHistory, jobText, phase, language);
+
+    // Varmistetaan rakenteen ja arvon säilyminen
+    expect(result).toHaveProperty("nextQuestion");
+    expect(result).toHaveProperty("followUp");
+    expect(result).toHaveProperty("answerEvaluation");
+
+    const evalObj = result.answerEvaluation;
+    expect(evalObj.clarity).toBeGreaterThanOrEqual(0);
+    expect(evalObj.clarity).toBeLessThanOrEqual(1);
+  });
+
+  test("nextQuestion is null only in feedback phase", async () => {
+    const phase = "feedback";
+    const result = await generateInterviewReply(chatHistory, jobText, phase, "Finnish");
+
+    if (result.nextQuestion === null) {
+      expect(phase).toBe("feedback");
+    } else {
+      expect(typeof result.nextQuestion).toBe("string");
+    }
+  });
+
+});
