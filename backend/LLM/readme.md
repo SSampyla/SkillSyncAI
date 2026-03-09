@@ -74,6 +74,68 @@ $resCvEdit = Invoke-RestMethod `
 
 $resCvEdit.editedCV
 
+# 8. TESTAA /API/INTERVIEW/PRACTICE
+
+## 8.1 Luo chat history (tyhjä aloitus)
+$chatHistory = @()
+
+## 8.2 Ensimmäinen kysymys (AI aloittaa)
+
+## 8.2 Ensimmäinen kysymys (AI aloittaa)
+$body1 = @{
+    jobText = $jobText
+    phase = "intro"
+    language = "Finnish"
+    chatHistory = $chatHistory
+} | ConvertTo-Json -Depth 5
+
+$res1 = Invoke-RestMethod `
+    -Uri "http://localhost:3000/api/interview/practice" `
+    -Method POST `
+    -Body $body1 `
+    -ContentType "application/json; charset=utf-8"
+
+## 8.3 Lisää AI kysymys chat historyyn
+$chatHistory += [PSCustomObject]@{
+    role = "assistant"
+    content = $res1.nextQuestion
+}
+
+## -- LOOP START --
+## 8.4 Simuloi käyttäjän vastaus ja lisää se historyyn
+$userAnswer = "[Kirjoita vastaus tähän]"
+
+$chatHistory += [PSCustomObject]@{
+    role = "user"
+    content = $userAnswer
+}
+
+## 8.5 Seuraava haastattelukysymys
+$body2 = @{
+    jobText = $jobText
+    phase = "technical"
+    language = "Finnish"
+    chatHistory = $chatHistory
+} | ConvertTo-Json -Depth 5
+
+$res2 = Invoke-RestMethod `
+    -Uri "http://localhost:3000/api/interview/practice" `
+    -Method POST `
+    -Body $body2 `
+    -ContentType "application/json; charset=utf-8"
+
+## 8.6 Lisää uusi AI kysymys chat historyyn
+$chatHistory += [PSCustomObject]@{
+    role = "assistant"
+    content = $res2.nextQuestion
+}
+## -- LOOP END --
+
+## 8.7 Tulosta chat history
+$chatHistory | Format-List
+
+
+
 ## Jos vastaukset ei aukea, Tarkista vastauksen kaikki kentät Get-Member komennolla. 
 $resSummary | Get-Member 
 $resSkillsJob | Get-Member
@@ -81,6 +143,8 @@ $resLetter | Get-Member
 $resSkillsApplicant | Get-Member
 $resPortfolio | Get-Member
 $resCvEdit | Get-Member
+$res1 | Get-Member
+$res2 | Get-Member
 
 ----------------------------------------------------------------------------
 # Esimerkkivastaus POST /api/jobs/summary
