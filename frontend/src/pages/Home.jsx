@@ -1,147 +1,287 @@
 import Navbar from "../components/Navbar";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "../styles/home.css";
+import { useState, useEffect } from "react";
 
-export default function Home() {
-  return (
-    <>
-      <Navbar />
-      <hr style={{ margin: "0", border: "none", height: "1px", background: "rgba(148, 163, 184, 0.2)" }} />
-      
-      <div className="home-container">
-        {/* Hero Section */}
-        <section className="hero-section">
-          <div className="hero-content">
-            <div className="hero-badge">
-              <span className="badge-icon">AI</span>
-              <span>Tekoäly-pohjainen osaamisen arviointi</span>
-            </div>
-            <h1 className="hero-title">
-              <span className="gradient-text">SkillSync AI</span>
-            </h1>
-            <p className="hero-subtitle">
-              Kuroa umpeen kuilu todellisen osaamisesi ja työmarkkinoiden vaatimusten välillä
-            </p>
-            <p className="hero-description">
-              Tekoäly tulkkina opiskelijan osaamisen ja työnantajan tarpeiden välillä – 
-              löydä täydellinen match ja vie urasi seuraavalle tasolle.
-            </p>
-            <div className="hero-buttons">
-              <Link to="/portfolio" className="btn btn-primary">
-                Luo Portfolio
-              </Link>
-              <Link to="/avoimet-tyopaikat" className="btn btn-secondary">
-                Selaa Työpaikkoja
-              </Link>
-            </div>
-          </div>
-        </section>
 
-        {/* Features Section */}
-        <section className="features-section">
-          <h2 className="section-title">Miten SkillSync AI toimii?</h2>
-          <div className="features-grid">
-            <div className="feature-card">
-              <div className="feature-icon">01</div>
-              <h3>Osaamisen Analysointi</h3>
-              <p>
-                Tekoäly analysoi portfoliosi, projektisi ja taitosi automaattisesti – 
-                ei enää tylsiä lomakkeita tai manuaalista datansyöttöä.
-              </p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">02</div>
-              <h3>Älykäs Matching</h3>
-              <p>
-                Kehittynyt algoritmi vertaa osaamistasi työpaikkojen vaatimuksiin ja 
-                löytää sinulle parhaat mahdollisuudet reaaliajassa.
-              </p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">03</div>
-              <h3>Osaamispuutteiden Tunnistus</h3>
-              <p>
-                Näe selkeästi, mitä taitoja sinulta vielä puuttuu haluamaasi työhön ja 
-                saa suosituksia kehittymiseen.
-              </p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">04</div>
-              <h3>AI-generoidut Hakemukset</h3>
-              <p>
-                Luo räätälöityjä motivaatiokirjeitä ja hakemuksia sekunneissa – 
-                tekoäly huolehtii että osaamisesi tulee esiin parhaalla tavalla.
-              </p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">05</div>
-              <h3>Uran Kehitys</h3>
-              <p>
-                Seuraa omaa kehitystäsi, aseta tavoitteita ja näe miten osaamisesi 
-                kasvaa ajan myötä.
-              </p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">06</div>
-              <h3>Reaaliaikaiset Työpaikat</h3>
-              <p>
-                Pääsy ajankohtaisiin työpaikkailmoituksiin, jotka vastaavat 
-                profiiliasi ja osaamistasi täydellisesti.
-              </p>
-            </div>
-          </div>
-        </section>
+/*Lisätty kotisivulle profiilin luonti ja taitovalinnat.
 
-        {/* Benefits Section */}
-        <section className="benefits-section">
-          <div className="benefits-content">
-            <h2 className="section-title">Miksi valita SkillSync AI?</h2>
-            <div className="benefits-list">
-              <div className="benefit-item">
-                <div className="benefit-number">01</div>
-                <div className="benefit-text">
-                  <h4>Säästä aikaa</h4>
-                  <p>Automatisoi portfolion luominen ja hakemusten kirjoittaminen</p>
-                </div>
-              </div>
-              <div className="benefit-item">
-                <div className="benefit-number">02</div>
-                <div className="benefit-text">
-                  <h4>Paranna mahdollisuuksia</h4>
-                  <p>Kohdenna hakemuksesi täydellisesti työnantajan tarpeisiin</p>
-                </div>
-              </div>
-              <div className="benefit-item">
-                <div className="benefit-number">03</div>
-                <div className="benefit-text">
-                  <h4>Kehity ammattilaisena</h4>
-                  <p>Tunnista kehityskohteet ja saa räätälöityjä oppimissuosituksia</p>
-                </div>
-              </div>
-              <div className="benefit-item">
-                <div className="benefit-number">04</div>
-                <div className="benefit-text">
-                  <h4>Datavetoinen päätöksenteko</h4>
-                  <p>Tee uravalintoja perustuen todelliseen dataan ja AI-analyysiin</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+Tiedot siirtyvät portofolio-sivulle, jossa ne ovat vielä muokattavissa
+*/
 
-        {/* CTA Section */}
-        <section className="cta-section">
-          <div className="cta-content">
-            <h2>Aloita matkasi tänään</h2>
-            <p>Liity satoihin opiskelijoihin, jotka ovat jo löytäneet unelmiensa työpaikan SkillSync AI:n avulla</p>
-            <div className="cta-buttons">
-              <Link to="/portfolio" className="btn btn-primary btn-large">
-                Luo Portfolio Nyt →
-              </Link>
+
+    const navigate = useNavigate();
+
+    const [showForm, setShowForm] = useState(false);
+
+    const [profile, setProfile] = useState({
+        name: "",
+        title: "",
+        email: "",
+        phone: "",
+        location: "",
+        github: "",
+        linkedin: "",
+        summary: "",
+        skills: {
+            frontend: [],
+            backend: [],
+            tools: [],
+            other: []
+        }
+    });
+
+    const availableSkills = {
+        frontend: ["React.js", "Vue.js", "Angular", "JavaScript", "TypeScript", "HTML5", "CSS3"],
+        backend: ["Node.js", "Express.js", "Python", "Django", "Java", ".NET"],
+        tools: ["Git", "GitHub", "Docker", "Postman", "VS Code"],
+    };
+
+    const [selectedSkills, setSelectedSkills] = useState({
+        frontend: profile.skills?.frontend || [],
+        backend: profile.skills?.backend || [],
+        tools: profile.skills?.tools || [],
+        other: profile.skills?.other || []
+    });
+
+    // Synkkaa skills profileen ja localStorageen
+    useEffect(() => {
+
+        const updatedProfile = {
+            ...profile,
+            skills: selectedSkills
+        };
+
+        setProfile(updatedProfile);
+
+        localStorage.setItem("profile", JSON.stringify(updatedProfile));
+
+    }, [selectedSkills]);
+
+    function createProfile(e) {
+
+        e.preventDefault();
+
+        const fullProfile = {
+            ...profile,
+            skills: selectedSkills
+        };
+
+        localStorage.setItem("profile", JSON.stringify(fullProfile));
+
+        navigate("/portfolio");
+    }
+
+    function toggleSkill(category, skill) {
+
+        const updated = { ...selectedSkills };
+
+        if (updated[category].includes(skill)) {
+            updated[category] = updated[category].filter(s => s !== skill);
+        } else {
+            updated[category] = [...updated[category], skill];
+        }
+
+        setSelectedSkills(updated);
+    }
+
+    return (
+        <>
+            <Navbar />
+            <hr style={{ margin: "0", border: "none", height: "1px", background: "rgba(148, 163, 184, 0.2)" }} />
+
+            <div className="home-container">
+
+                {/* Hero Section */}
+                <section className="hero-section">
+                    <div className="hero-content">
+
+                        <div className="hero-badge">
+                            <span className="badge-icon">AI</span>
+                            <span>Tekoäly-pohjainen osaamisen arviointi</span>
+                        </div>
+
+                        <h1 className="hero-title">
+                            <span className="gradient-text">SkillSync AI</span>
+                        </h1>
+
+                        <p className="hero-subtitle">
+                            Kuroa umpeen kuilu todellisen osaamisesi ja työmarkkinoiden vaatimusten välillä
+                        </p>
+
+                        <p className="hero-description">
+                            Tekoäly tulkkina opiskelijan osaamisen ja työnantajan tarpeiden välillä –
+                            löydä täydellinen match ja vie urasi seuraavalle tasolle.
+                        </p>
+
+                        <div className="hero-buttons">
+
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => setShowForm(true)}
+                            >
+                                Luo Portfolio
+                            </button>
+
+                            <Link to="/avoimet-tyopaikat" className="btn btn-secondary">
+                                Selaa Työpaikkoja
+                            </Link>
+
+                        </div>
+
+                    </div>
+                </section>
+
+                {/* MODAL PROFILE FORM */}
+
+                {showForm && (
+
+                    <div className="modal-overlay">
+
+                        <div className="modal-card">
+
+                            <button
+                                className="modal-close"
+                                onClick={() => setShowForm(false)}
+                            >
+                                ✕
+                            </button>
+
+                            <h2>Luo Profiilisi</h2>
+
+                            <form
+                                onSubmit={createProfile}
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: "12px"
+                                }}
+                            >
+
+                                <input
+                                    placeholder="Nimi"
+                                    onChange={(e) =>
+                                        setProfile({ ...profile, name: e.target.value })
+                                    }
+                                />
+
+                                <input
+                                    placeholder="Titteli (esim Full Stack Developer)"
+                                    onChange={(e) =>
+                                        setProfile({ ...profile, title: e.target.value })
+                                    }
+                                />
+
+                                <input
+                                    placeholder="Email"
+                                    onChange={(e) =>
+                                        setProfile({ ...profile, email: e.target.value })
+                                    }
+                                />
+
+                                <input
+                                    placeholder="Puhelin"
+                                    onChange={(e) =>
+                                        setProfile({ ...profile, phone: e.target.value })
+                                    }
+                                />
+
+                                <input
+                                    placeholder="Sijainti"
+                                    onChange={(e) =>
+                                        setProfile({ ...profile, location: e.target.value })
+                                    }
+                                />
+
+                                <input
+                                    placeholder="GitHub username"
+                                    onChange={(e) =>
+                                        setProfile({ ...profile, github: e.target.value })
+                                    }
+                                />
+
+                                <input
+                                    placeholder="LinkedIn username"
+                                    onChange={(e) =>
+                                        setProfile({ ...profile, linkedin: e.target.value })
+                                    }
+                                />
+
+                                <textarea
+                                    placeholder="Lyhyt esittely"
+                                    onChange={(e) =>
+                                        setProfile({ ...profile, summary: e.target.value })
+                                    }
+                                />
+
+                                <button type="submit" className="btn btn-primary">
+                                    Luo Portfolio
+                                </button>
+
+                                <h3>Valitse teknologiat</h3>
+
+                                {Object.entries(availableSkills).map(([category, skills]) => (
+
+                                    <div key={category} style={{ marginBottom: "15px" }}>
+
+                                        <strong style={{ textTransform: "capitalize" }}>
+                                            {category}
+                                        </strong>
+
+                                        <div style={{
+                                            display: "flex",
+                                            flexWrap: "wrap",
+                                            gap: "8px",
+                                            marginTop: "8px"
+                                        }}>
+
+                                            {skills.map(skill => (
+
+                                                <span
+                                                    key={skill}
+                                                    onClick={() => toggleSkill(category, skill)}
+                                                    style={{
+                                                        padding: "6px 12px",
+                                                        borderRadius: "16px",
+                                                        cursor: "pointer",
+                                                        background:
+                                                            selectedSkills[category]?.includes(skill)
+                                                                ? "#4c63ff"
+                                                                : "#334155",
+                                                        color: "white",
+                                                        fontSize: "13px"
+                                                    }}
+                                                >
+                                                    {skill}
+                                                </span>
+
+                                            ))}
+
+                                        </div>
+
+                                    </div>
+
+                                ))}
+
+                            </form>
+
+                        </div>
+
+                    </div>
+
+                )}
+
+                {/* Features Section */}
+                <section className="features-section">
+                    <h2 className="section-title">Miten SkillSync AI toimii?</h2>
+
+                    <div className="features-grid">
+                        {/* jätin tämän koskematta */}
+                    </div>
+
+                </section>
+
             </div>
-          </div>
-        </section>
-      </div>
-    </>
-  );
+        </>
+    );
 }

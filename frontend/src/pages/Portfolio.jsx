@@ -1,21 +1,56 @@
 import Navbar from "../components/Navbar";
 import ProjectGallery from "../components/ProjectGallery";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "../styles/portfolio.css";
 
-export default function Portfolio() {
-  const [activeSection, setActiveSection] = useState("profile");
-  const [isEditing, setIsEditing] = useState(false);
 
-  const [profile, setProfile] = useState({
-    name: "Ohjelmistokehittäjä",
-    title: "Full Stack Developer",
-    email: "developer@example.com",
-    phone: "+358 00 000 000",
-    location: "Helsinki, Finland",
-    summary:
-      "Motivoitunut ja oppimisorientoitunut full-stack web-sovelluskehittäjä, jolla on vahva perusta React- ja Node.js-teknologioissa. Kiinnostunut luomaan käyttäjäystävällisiä ja tehokkaita sovelluksia. Aktiivisesti hakee uusia haasteita ja oppimismahdollisuuksia.",
-  });
+/Kovakoodatut käyttäjätiedot korvataan home-sivulla luoduilla tiedoilla/
+export default function Portfolio() {
+
+    const [activeSection, setActiveSection] = useState("profile");
+    const [isEditing, setIsEditing] = useState(false);
+
+    const [profile, setProfile] = useState(() => {
+
+        const storedProfile = localStorage.getItem("profile");
+
+        if (storedProfile) {
+            return JSON.parse(storedProfile);
+        }
+
+        return {
+            name: "Ohjelmistokehittäjä",
+            title: "Full Stack Developer",
+            email: "developer@example.com",
+            phone: "+358 00 000 000",
+            location: "Helsinki, Finland",
+            summary: "Motivoitunut IT-alan opiskelija etsii ensimmäistä askelta urallaan ohjelmistokehittäjänä",
+            github: "developer",
+            linkedin: "developer",
+            skills: {
+                frontend: [],
+                backend: [],
+                tools: [],
+                other: [],
+            }
+        };
+    });
+
+    const [selectedSkills, setSelectedSkills] = useState({
+        frontend: profile.skills?.frontend || [],
+        backend: profile.skills?.backend || [],
+        tools: profile.skills?.tools || [],
+        other: profile.skills?.other || []
+    });
+
+    useEffect(() => {
+        const updatedProfile = {
+            ...profile,
+            skills: selectedSkills
+        };
+
+        localStorage.setItem("profile", JSON.stringify(updatedProfile));
+    }, [profile, selectedSkills]);
 
   const availableSkills = {
     frontend: [
@@ -41,12 +76,7 @@ export default function Portfolio() {
     ],
   };
 
-  const [selectedSkills, setSelectedSkills] = useState({
-    frontend: ["React.js", "JavaScript (ES6+)", "HTML5", "CSS3", "Vite", "ESLint", "Responsive Design"],
-    backend: ["Node.js", "Express.js", "REST APIs", "API Design", "JavaScript"],
-    tools: ["Git", "GitHub", "VS Code", "npm", "JSON", "Postman"],
-    other: ["Problem Solving", "Team Collaboration", "Self-learning", "Agile Methodology"],
-  });
+
 
   const [experience, setExperience] = useState([
     {
@@ -198,10 +228,24 @@ export default function Portfolio() {
                   />
                 </div>
                 <div>
-                  <strong>LinkedIn:</strong> linkedin.com/in/developer
+                                      <strong>LinkedIn:</strong>{" "}
+                                      <a
+                                          href={`https://linkedin.com/in/${profile.linkedin}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                      >
+                                          linkedin.com/in/{profile.linkedin}
+                                      </a>
                 </div>
                 <div style={{ gridColumn: "1 / -1" }}>
-                  <strong>GitHub:</strong> github.com/developer
+                <strong>GitHub:</strong>{" "}
+                 <a
+                  href={`https://github.com/${profile.github}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                   >
+                   github.com/{profile.github}
+                  </a>
                 </div>
               </div>
             </>
@@ -223,10 +267,24 @@ export default function Portfolio() {
                   <strong>Sijainti:</strong> {profile.location}
                 </div>
                 <div>
-                  <strong>LinkedIn:</strong> linkedin.com/in/developer
+                                          <strong>LinkedIn:</strong>{" "}
+                                          <a
+                                              href={`https://linkedin.com/in/${profile.linkedin}`}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                          >
+                                              linkedin.com/in/{profile.linkedin}
+                                          </a>
                 </div>
                 <div style={{ gridColumn: "1 / -1" }}>
-                  <strong>GitHub:</strong> github.com/developer
+                                          <strong>GitHub:</strong>{" "}
+                                          <a
+                                              href={`https://github.com/${profile.github}`}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                          >
+                                              github.com/{profile.github}
+                                          </a>
                 </div>
               </div>
             </>
