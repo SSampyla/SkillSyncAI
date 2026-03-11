@@ -1,7 +1,8 @@
 import Navbar from "../components/Navbar";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/home.css";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { availableSkills, createEmptyPortfolio } from "../data/portfolioTemplate";
 
 
 /*Lisätty kotisivulle profiilin luonti ja taitovalinnat.
@@ -9,66 +10,122 @@ import { useState, useEffect } from "react";
 Tiedot siirtyvät portofolio-sivulle, jossa ne ovat vielä muokattavissa
 */
 
+function Home() {
 
     const navigate = useNavigate();
 
     const [showForm, setShowForm] = useState(false);
 
-    const [profile, setProfile] = useState({
-        name: "",
+    const [profile, setProfile] = useState(() => createEmptyPortfolio());
+
+    const [selectedSkills, setSelectedSkills] = useState(() =>
+        createEmptyPortfolio().skills
+    );
+
+    const [experienceDraft, setExperienceDraft] = useState({
         title: "",
-        email: "",
-        phone: "",
-        location: "",
-        github: "",
-        linkedin: "",
-        summary: "",
-        skills: {
-            frontend: [],
-            backend: [],
-            tools: [],
-            other: []
-        }
+        company: "",
+        period: "",
+        description: "",
+        achievements: ""
     });
 
-    const availableSkills = {
-        frontend: ["React.js", "Vue.js", "Angular", "JavaScript", "TypeScript", "HTML5", "CSS3"],
-        backend: ["Node.js", "Express.js", "Python", "Django", "Java", ".NET"],
-        tools: ["Git", "GitHub", "Docker", "Postman", "VS Code"],
-    };
-
-    const [selectedSkills, setSelectedSkills] = useState({
-        frontend: profile.skills?.frontend || [],
-        backend: profile.skills?.backend || [],
-        tools: profile.skills?.tools || [],
-        other: profile.skills?.other || []
+    const [educationDraft, setEducationDraft] = useState({
+        degree: "",
+        institution: "",
+        year: "",
+        relevant: ""
     });
 
-    // Synkkaa skills profileen ja localStorageen
-    useEffect(() => {
+    const [certificationsText, setCertificationsText] = useState("");
+    const [whyMeText, setWhyMeText] = useState("");
+    const [lookingForText, setLookingForText] = useState("");
 
-        const updatedProfile = {
-            ...profile,
-            skills: selectedSkills
-        };
+    const splitLines = (value) =>
+        value
+            .split("\n")
+            .map((line) => line.trim())
+            .filter(Boolean);
 
-        setProfile(updatedProfile);
+    const hasAnyValue = (values) => values.some((value) => value.trim() !== "");
 
-        localStorage.setItem("profile", JSON.stringify(updatedProfile));
+    function resetForm() {
+        const emptyProfile = createEmptyPortfolio();
+        setProfile(emptyProfile);
+        setSelectedSkills(emptyProfile.skills);
+        setExperienceDraft({
+            title: "",
+            company: "",
+            period: "",
+            description: "",
+            achievements: ""
+        });
+        setEducationDraft({
+            degree: "",
+            institution: "",
+            year: "",
+            relevant: ""
+        });
+        setCertificationsText("");
+        setWhyMeText("");
+        setLookingForText("");
+    }
 
-    }, [selectedSkills]);
+    function openCreateForm() {
+        localStorage.removeItem("profile");
+        resetForm();
+        setShowForm(true);
+    }
 
     function createProfile(e) {
 
         e.preventDefault();
 
+        const includeExperience = hasAnyValue([
+            experienceDraft.title,
+            experienceDraft.company,
+            experienceDraft.period,
+            experienceDraft.description,
+            experienceDraft.achievements
+        ]);
+
+        const includeEducation = hasAnyValue([
+            educationDraft.degree,
+            educationDraft.institution,
+            educationDraft.year,
+            educationDraft.relevant
+        ]);
+
         const fullProfile = {
             ...profile,
-            skills: selectedSkills
+            skills: selectedSkills,
+            experience: includeExperience
+                ? [{
+                    title: experienceDraft.title,
+                    company: experienceDraft.company,
+                    period: experienceDraft.period,
+                    description: experienceDraft.description,
+                    achievements: splitLines(experienceDraft.achievements)
+                }]
+                : [],
+            education: includeEducation
+                ? [{
+                    degree: educationDraft.degree,
+                    institution: educationDraft.institution,
+                    year: educationDraft.year,
+                    relevant: splitLines(educationDraft.relevant)
+                }]
+                : [],
+            certifications: splitLines(certificationsText),
+            profileSummary: {
+                whyMe: splitLines(whyMeText),
+                lookingFor: splitLines(lookingForText)
+            }
         };
 
         localStorage.setItem("profile", JSON.stringify(fullProfile));
 
+        setShowForm(false);
         navigate("/portfolio");
     }
 
@@ -88,7 +145,7 @@ Tiedot siirtyvät portofolio-sivulle, jossa ne ovat vielä muokattavissa
     return (
         <>
             <Navbar />
-            <hr style={{ margin: "0", border: "none", height: "1px", background: "rgba(148, 163, 184, 0.2)" }} />
+            <hr className="divider" />
 
             <div className="home-container">
 
@@ -117,8 +174,9 @@ Tiedot siirtyvät portofolio-sivulle, jossa ne ovat vielä muokattavissa
                         <div className="hero-buttons">
 
                             <button
+                                type="button"
                                 className="btn btn-primary"
-                                onClick={() => setShowForm(true)}
+                                onClick={openCreateForm}
                             >
                                 Luo Portfolio
                             </button>
@@ -136,12 +194,13 @@ Tiedot siirtyvät portofolio-sivulle, jossa ne ovat vielä muokattavissa
 
                 {showForm && (
 
-                    <div className="modal-overlay">
+                    <div className="home-modal-overlay">
 
-                        <div className="modal-card">
+                        <div className="home-modal-card">
 
                             <button
-                                className="modal-close"
+                                type="button"
+                                className="home-modal-close"
                                 onClick={() => setShowForm(false)}
                             >
                                 ✕
@@ -160,63 +219,67 @@ Tiedot siirtyvät portofolio-sivulle, jossa ne ovat vielä muokattavissa
 
                                 <input
                                     placeholder="Nimi"
+                                    value={profile.name}
                                     onChange={(e) =>
-                                        setProfile({ ...profile, name: e.target.value })
+                                        setProfile((prev) => ({ ...prev, name: e.target.value }))
                                     }
                                 />
 
                                 <input
                                     placeholder="Titteli (esim Full Stack Developer)"
+                                    value={profile.title}
                                     onChange={(e) =>
-                                        setProfile({ ...profile, title: e.target.value })
+                                        setProfile((prev) => ({ ...prev, title: e.target.value }))
                                     }
                                 />
 
                                 <input
                                     placeholder="Email"
+                                    value={profile.email}
                                     onChange={(e) =>
-                                        setProfile({ ...profile, email: e.target.value })
+                                        setProfile((prev) => ({ ...prev, email: e.target.value }))
                                     }
                                 />
 
                                 <input
                                     placeholder="Puhelin"
+                                    value={profile.phone}
                                     onChange={(e) =>
-                                        setProfile({ ...profile, phone: e.target.value })
+                                        setProfile((prev) => ({ ...prev, phone: e.target.value }))
                                     }
                                 />
 
                                 <input
                                     placeholder="Sijainti"
+                                    value={profile.location}
                                     onChange={(e) =>
-                                        setProfile({ ...profile, location: e.target.value })
+                                        setProfile((prev) => ({ ...prev, location: e.target.value }))
                                     }
                                 />
 
                                 <input
                                     placeholder="GitHub username"
+                                    value={profile.github}
                                     onChange={(e) =>
-                                        setProfile({ ...profile, github: e.target.value })
+                                        setProfile((prev) => ({ ...prev, github: e.target.value }))
                                     }
                                 />
 
                                 <input
                                     placeholder="LinkedIn username"
+                                    value={profile.linkedin}
                                     onChange={(e) =>
-                                        setProfile({ ...profile, linkedin: e.target.value })
+                                        setProfile((prev) => ({ ...prev, linkedin: e.target.value }))
                                     }
                                 />
 
                                 <textarea
                                     placeholder="Lyhyt esittely"
+                                    value={profile.summary}
                                     onChange={(e) =>
-                                        setProfile({ ...profile, summary: e.target.value })
+                                        setProfile((prev) => ({ ...prev, summary: e.target.value }))
                                     }
                                 />
-
-                                <button type="submit" className="btn btn-primary">
-                                    Luo Portfolio
-                                </button>
 
                                 <h3>Valitse teknologiat</h3>
 
@@ -263,6 +326,96 @@ Tiedot siirtyvät portofolio-sivulle, jossa ne ovat vielä muokattavissa
 
                                 ))}
 
+                                <h3>Kokemus (ensimmainen)</h3>
+                                <input
+                                    placeholder="Rooli / projekti"
+                                    value={experienceDraft.title}
+                                    onChange={(e) =>
+                                        setExperienceDraft({ ...experienceDraft, title: e.target.value })
+                                    }
+                                />
+                                <input
+                                    placeholder="Organisaatio / projekti"
+                                    value={experienceDraft.company}
+                                    onChange={(e) =>
+                                        setExperienceDraft({ ...experienceDraft, company: e.target.value })
+                                    }
+                                />
+                                <input
+                                    placeholder="Ajanjakso"
+                                    value={experienceDraft.period}
+                                    onChange={(e) =>
+                                        setExperienceDraft({ ...experienceDraft, period: e.target.value })
+                                    }
+                                />
+                                <textarea
+                                    placeholder="Kuvaus"
+                                    value={experienceDraft.description}
+                                    onChange={(e) =>
+                                        setExperienceDraft({ ...experienceDraft, description: e.target.value })
+                                    }
+                                />
+                                <textarea
+                                    placeholder="Saavutukset, yksi per rivi"
+                                    value={experienceDraft.achievements}
+                                    onChange={(e) =>
+                                        setExperienceDraft({ ...experienceDraft, achievements: e.target.value })
+                                    }
+                                />
+
+                                <h3>Koulutus (ensimmainen)</h3>
+                                <input
+                                    placeholder="Tutkinto"
+                                    value={educationDraft.degree}
+                                    onChange={(e) =>
+                                        setEducationDraft({ ...educationDraft, degree: e.target.value })
+                                    }
+                                />
+                                <input
+                                    placeholder="Oppilaitos"
+                                    value={educationDraft.institution}
+                                    onChange={(e) =>
+                                        setEducationDraft({ ...educationDraft, institution: e.target.value })
+                                    }
+                                />
+                                <input
+                                    placeholder="Vuosi / ajanjakso"
+                                    value={educationDraft.year}
+                                    onChange={(e) =>
+                                        setEducationDraft({ ...educationDraft, year: e.target.value })
+                                    }
+                                />
+                                <textarea
+                                    placeholder="Relevantit kurssit, yksi per rivi"
+                                    value={educationDraft.relevant}
+                                    onChange={(e) =>
+                                        setEducationDraft({ ...educationDraft, relevant: e.target.value })
+                                    }
+                                />
+
+                                <h3>Sertifikaatit</h3>
+                                <textarea
+                                    placeholder="Yksi sertifikaatti per rivi"
+                                    value={certificationsText}
+                                    onChange={(e) => setCertificationsText(e.target.value)}
+                                />
+
+                                <h3>Profiilin yhteenveto</h3>
+                                <textarea
+                                    placeholder="Miksi minut? yksi vahvuus per rivi"
+                                    value={whyMeText}
+                                    onChange={(e) => setWhyMeText(e.target.value)}
+                                />
+                                <textarea
+                                    placeholder="Mita etsin? yksi kohta per rivi"
+                                    value={lookingForText}
+                                    onChange={(e) => setLookingForText(e.target.value)}
+                                />
+
+                                <button type="submit" className="btn btn-primary">
+                                    Luo Portfolio
+                                </button>
+
                             </form>
 
                         </div>
@@ -285,3 +438,5 @@ Tiedot siirtyvät portofolio-sivulle, jossa ne ovat vielä muokattavissa
         </>
     );
 }
+
+export default Home;

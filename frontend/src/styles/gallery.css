@@ -2,14 +2,16 @@
 .gallery-wrapper {
   width: 100%;
   min-height: 100vh;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
 }
 
 /* Gallery Container */
 .gallery-container {
   width: 100%;
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  background: transparent;
   color: #e2e8f0;
+  padding-top: 48px;
   padding-bottom: 60px;
 }
 
@@ -18,6 +20,63 @@
   height: 1px;
   background: rgba(148, 163, 184, 0.2);
   margin: 0;
+}
+
+.gallery-actions {
+  margin-top: 22px;
+  display: flex;
+  justify-content: center;
+}
+
+.gallery-header {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.gallery-header-text {
+  max-width: 780px;
+}
+
+.gallery-title {
+  margin: 0;
+  font-size: 3rem;
+  line-height: 1.1;
+  color: #f1f5f9;
+}
+
+.gallery-subtitle {
+  margin: 12px 0 0;
+  color: #cbd5e1;
+  font-size: 1.1rem;
+  line-height: 1.5;
+}
+
+.add-project-btn {
+  padding: 11px 20px;
+  border: 1px solid rgba(125, 211, 252, 0.35);
+  border-radius: 10px;
+  background: rgba(125, 211, 252, 0.12);
+  color: #7dd3fc;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.add-project-btn:hover {
+  background: rgba(125, 211, 252, 0.2);
+  border-color: rgba(125, 211, 252, 0.55);
+}
+
+.filter-section {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 8px 20px 0;
 }
 
 
@@ -280,6 +339,30 @@
   color: #ff6b6b;
 }
 
+.modal-top-actions {
+  position: absolute;
+  top: 20px;
+  right: 70px;
+  z-index: 12;
+  display: flex;
+  gap: 10px;
+}
+
+.delete-project-btn {
+  padding: 10px 14px;
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.delete-project-btn:hover {
+  background: rgba(239, 68, 68, 0.28);
+}
+
 /* Modal Gallery */
 .modal-gallery {
   display: grid;
@@ -487,6 +570,15 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  .gallery-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .add-project-btn {
+    align-self: flex-start;
+  }
+
   .gallery-title {
     font-size: 2.2rem;
   }
@@ -512,6 +604,12 @@
   .modal-gallery {
     padding: 20px;
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .modal-top-actions {
+    position: static;
+    margin: 16px 20px 0;
+    justify-content: flex-end;
   }
 
   .filter-tags {

@@ -2,120 +2,105 @@ import Navbar from "../components/Navbar";
 import ProjectGallery from "../components/ProjectGallery";
 import { useState, useEffect } from "react";
 import "../styles/portfolio.css";
+import {
+  availableSkills,
+  createEmptyEducation,
+  createEmptyExperience,
+  createEmptyPortfolio,
+} from "../data/portfolioTemplate";
 
-
-/Kovakoodatut käyttäjätiedot korvataan home-sivulla luoduilla tiedoilla/
 export default function Portfolio() {
+    const normalizeProfile = (rawProfile) => {
+      const emptyProfile = createEmptyPortfolio();
+
+      if (!rawProfile || typeof rawProfile !== "object") {
+        return emptyProfile;
+      }
+
+      return {
+        ...emptyProfile,
+        ...rawProfile,
+        skills: {
+          ...emptyProfile.skills,
+          ...(rawProfile.skills || {}),
+        },
+        experience: Array.isArray(rawProfile.experience)
+          ? rawProfile.experience.map((item) => ({
+              ...createEmptyExperience(),
+              ...item,
+              achievements: Array.isArray(item?.achievements)
+                ? item.achievements
+                : [""],
+            }))
+          : [],
+        education: Array.isArray(rawProfile.education)
+          ? rawProfile.education.map((item) => ({
+              ...createEmptyEducation(),
+              ...item,
+              relevant: Array.isArray(item?.relevant) ? item.relevant : [""],
+            }))
+          : [],
+        certifications: Array.isArray(rawProfile.certifications)
+          ? rawProfile.certifications
+          : [],
+        profileSummary: {
+          ...emptyProfile.profileSummary,
+          ...(rawProfile.profileSummary || {}),
+          whyMe: Array.isArray(rawProfile.profileSummary?.whyMe)
+            ? rawProfile.profileSummary.whyMe
+            : [],
+          lookingFor: Array.isArray(rawProfile.profileSummary?.lookingFor)
+            ? rawProfile.profileSummary.lookingFor
+            : [],
+        },
+      };
+    };
 
     const [activeSection, setActiveSection] = useState("profile");
     const [isEditing, setIsEditing] = useState(false);
 
     const [profile, setProfile] = useState(() => {
-
         const storedProfile = localStorage.getItem("profile");
 
-        if (storedProfile) {
-            return JSON.parse(storedProfile);
+        if (!storedProfile) {
+            return createEmptyPortfolio();
         }
 
-        return {
-            name: "Ohjelmistokehittäjä",
-            title: "Full Stack Developer",
-            email: "developer@example.com",
-            phone: "+358 00 000 000",
-            location: "Helsinki, Finland",
-            summary: "Motivoitunut IT-alan opiskelija etsii ensimmäistä askelta urallaan ohjelmistokehittäjänä",
-            github: "developer",
-            linkedin: "developer",
-            skills: {
-                frontend: [],
-                backend: [],
-                tools: [],
-                other: [],
-            }
+        try {
+            return normalizeProfile(JSON.parse(storedProfile));
+        } catch {
+            return createEmptyPortfolio();
         };
     });
 
-    const [selectedSkills, setSelectedSkills] = useState({
-        frontend: profile.skills?.frontend || [],
-        backend: profile.skills?.backend || [],
-        tools: profile.skills?.tools || [],
-        other: profile.skills?.other || []
-    });
+    const [selectedSkills, setSelectedSkills] = useState(profile.skills);
+    const [experience, setExperience] = useState(profile.experience || []);
+    const [education, setEducation] = useState(profile.education || []);
+    const [certifications, setCertifications] = useState(profile.certifications || []);
+    const [profileSummary, setProfileSummary] = useState(
+      profile.profileSummary || createEmptyPortfolio().profileSummary
+    );
 
     useEffect(() => {
         const updatedProfile = {
             ...profile,
-            skills: selectedSkills
+            skills: selectedSkills,
+            experience,
+            education,
+            certifications,
+            profileSummary,
         };
 
         localStorage.setItem("profile", JSON.stringify(updatedProfile));
-    }, [profile, selectedSkills]);
+    }, [profile, selectedSkills, experience, education, certifications, profileSummary]);
 
-  const availableSkills = {
-    frontend: [
-      "React.js", "Vue.js", "Angular", "JavaScript (ES6+)", "TypeScript", "HTML5", "CSS3", "SASS/SCSS",
-      "Tailwind CSS", "Bootstrap", "Material-UI", "Vite", "Webpack", "Babel", "ESLint", "Prettier",
-      "Responsive Design", "PWA", "Next.js", "Gatsby"
-    ],
-    backend: [
-      "Node.js", "Express.js", "NestJS", "Python", "Django", "Flask", "Java", "Spring Boot",
-      "C#", ".NET", "PHP", "Laravel", "Ruby", "Rails", "Go", "REST APIs", "GraphQL",
-      "API Design", "Microservices", "Docker", "Kubernetes", "MongoDB", "PostgreSQL", "MySQL"
-    ],
-    tools: [
-      "Git", "GitHub", "GitLab", "Bitbucket", "VS Code", "IntelliJ IDEA", "npm", "Yarn", "pnpm",
-      "JSON", "XML", "Postman", "Insomnia", "Swagger", "Figma", "Adobe XD", "Jira", "Trello",
-      "Slack", "Discord", "Jenkins", "GitHub Actions", "CircleCI"
-    ],
-    other: [
-      "Problem Solving", "Team Collaboration", "Self-learning", "Agile Methodology", "Scrum",
-      "Kanban", "Test-Driven Development", "Unit Testing", "Integration Testing", "CI/CD",
-      "Code Review", "Mentoring", "Project Management", "Time Management", "Communication",
-      "Leadership", "Creativity", "Adaptability"
-    ],
-  };
+    const parseLines = (value) =>
+      value
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
 
-
-
-  const [experience, setExperience] = useState([
-    {
-      title: "Full Stack Development Project",
-      company: "Job Matching Application",
-      period: "2025-2026",
-      description:
-        "Kehitin täyden pinon sovellusta, joka käyttää AI:ta kandidaatin ja työpaikan yhteensopivuuden analysointiin.",
-      achievements: [
-        "React-pohjaisen frontend-sovelluksen kehitys ja toteutus",
-        "Node.js/Express backend API:n rakentaminen",
-        "LLM-integraatio työtaitojen hakemiseksi",
-        "Tietokannan suunnittelu ja Postman-testaus",
-      ],
-    },
-    {
-      title: "Portfolio Website",
-      company: "Personal Project",
-      period: "2025-2026",
-      description: "Luoin modernin ja responsiivisen portfoliosivuston, joka esittelee taidot ja projektit.",
-      achievements: [
-        "React + Vite toteutetun responsiivisen sivuston rakentaminen",
-        "React Router -pohjaisen navigaation toteutus",
-        "CSS + inline styles styling",
-        "Käyttäjäystävällisen käyttöliittymän suunnittelu",
-      ],
-    },
-  ]);
-
-  const [education, setEducation] = useState([
-    {
-      degree: "Ohjelmistotuotanto",
-      institution: "Savonia-ammattikorkeakoulu",
-      year: "2024-2026",
-      relevant: ["Web-sovelluskehitys", "Full Stack -perusteet", "Ohjelmistoarkkitehtuuri", "Tiimityöskentely"],
-    },
-  ]);
-
-  const [certifications, setCertifications] = useState(["JavaScript", "React Basics", "Agile Development"]);
+    const joinLines = (items) => (Array.isArray(items) ? items.join("\n") : "");
 
   return (
     <>
@@ -474,6 +459,7 @@ export default function Portfolio() {
                   borderLeft: "4px solid #0066cc",
                   borderRadius: "6px",
                   backgroundColor: "#ffffff",
+                  color: "#1f2937",
                 }}
               >
                 {isEditing ? (
@@ -636,13 +622,7 @@ export default function Portfolio() {
             {isEditing && (
               <button
                 onClick={() => {
-                  setExperience([...experience, {
-                    title: "",
-                    company: "",
-                    period: "",
-                    description: "",
-                    achievements: [""],
-                  }]);
+                  setExperience([...experience, createEmptyExperience()]);
                 }}
                 style={{
                   backgroundColor: "#007bff",
@@ -674,6 +654,7 @@ export default function Portfolio() {
                   borderLeft: "4px solid #4CAF50",
                   borderRadius: "6px",
                   backgroundColor: "#ffffff",
+                  color: "#1f2937",
                 }}
               >
                 {isEditing ? (
@@ -828,12 +809,7 @@ export default function Portfolio() {
             {isEditing && (
               <button
                 onClick={() => {
-                  setEducation([...education, {
-                    degree: "",
-                    institution: "",
-                    year: "",
-                    relevant: [""],
-                  }]);
+                  setEducation([...education, createEmptyEducation()]);
                 }}
                 style={{
                   backgroundColor: "#007bff",
@@ -946,25 +922,16 @@ export default function Portfolio() {
             {isEditing ? (
               <>
                 <div style={{ backgroundColor: "#e3f2fd", padding: "25px", borderRadius: "8px", marginBottom: "30px" }}>
-                  <input
-                    type="text"
-                    value="Miksi minut?"
-                    readOnly
-                    style={{
-                      color: "#1565c0",
-                      fontSize: "18px",
-                      fontWeight: "bold",
-                      border: "none",
-                      backgroundColor: "transparent",
-                      marginBottom: "10px",
-                      width: "100%",
-                    }}
-                  />
+                  <h3 style={{ color: "#1565c0", marginTop: 0 }}>Miksi minut?</h3>
                   <textarea
-                    value="Vahva perusta kaikkiin web-kehityksen aspekteihin. Kokemus täyden pinon (full-stack) sovelluskehityksestä. Innokas oppija ja uudistaa omaa osaamistaan jatkuvasti. Kyky ratkaista hankalia ongelmia systemaattisesti. Hyvät tiimityötaidot ja kommunikaatiokyky."
-                    onChange={() => {}} // Placeholder, could be made editable if needed
+                    value={joinLines(profileSummary.whyMe)}
+                    onChange={(e) =>
+                      setProfileSummary({
+                        ...profileSummary,
+                        whyMe: parseLines(e.target.value),
+                      })
+                    }
                     style={{
-                      paddingLeft: "20px",
                       lineHeight: "1.8",
                       color: "#1a237e",
                       border: "1px solid #ddd",
@@ -977,25 +944,16 @@ export default function Portfolio() {
                 </div>
 
                 <div style={{ backgroundColor: "#e8f5e9", padding: "25px", borderRadius: "8px" }}>
-                  <input
-                    type="text"
-                    value="Mitä etsin?"
-                    readOnly
-                    style={{
-                      color: "#1b5e20",
-                      fontSize: "18px",
-                      fontWeight: "bold",
-                      border: "none",
-                      backgroundColor: "transparent",
-                      marginBottom: "10px",
-                      width: "100%",
-                    }}
-                  />
+                  <h3 style={{ color: "#1b5e20", marginTop: 0 }}>Mitä etsin?</h3>
                   <textarea
-                    value="Junior/Mid-level kehittäjän positio. Mahdollisuus kasvaa ja kehittyä ammatillisesti. Oppia kokeneemmilta kehittäjiltä. Osallistua mielenkiintoisiin projekteihin. Toimiva tiimi, jossa arvostetaan hyvää koodia."
-                    onChange={() => {}} // Placeholder
+                    value={joinLines(profileSummary.lookingFor)}
+                    onChange={(e) =>
+                      setProfileSummary({
+                        ...profileSummary,
+                        lookingFor: parseLines(e.target.value),
+                      })
+                    }
                     style={{
-                      paddingLeft: "20px",
                       lineHeight: "1.8",
                       color: "#1b5e20",
                       border: "1px solid #ddd",
@@ -1011,24 +969,28 @@ export default function Portfolio() {
               <>
                 <div style={{ backgroundColor: "#e3f2fd", padding: "25px", borderRadius: "8px", marginBottom: "30px" }}>
                   <h3 style={{ color: "#1565c0" }}>Miksi minut?</h3>
-                  <ul style={{ paddingLeft: "20px", lineHeight: "1.8", color: "#1a237e" }}>
-                    <li>Vahva perusta kaikkiin web-kehityksen aspekteihin</li>
-                    <li>Kokemus täyden pinon (full-stack) sovelluskehityksestä</li>
-                    <li>Innokas oppija ja uudistaa omaa osaamistaan jatkuvasti</li>
-                    <li>Kyky ratkaista hankalia ongelmia systemaattisesti</li>
-                    <li>Hyvät tiimityötaidot ja kommunikaatiokyky</li>
-                  </ul>
+                  {profileSummary.whyMe.length > 0 ? (
+                    <ul style={{ paddingLeft: "20px", lineHeight: "1.8", color: "#1a237e" }}>
+                      {profileSummary.whyMe.map((item, idx) => (
+                        <li key={idx}>{item}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p style={{ color: "#1a237e", margin: 0 }}>Ei lisattya sisaltoa viela.</p>
+                  )}
                 </div>
 
                 <div style={{ backgroundColor: "#e8f5e9", padding: "25px", borderRadius: "8px" }}>
                   <h3 style={{ color: "#1b5e20" }}>Mitä etsin?</h3>
-                  <ul style={{ paddingLeft: "20px", lineHeight: "1.8", color: "#1b5e20" }}>
-                    <li>Junior/Mid-level kehittäjän positio</li>
-                    <li>Mahdollisuus kasvaa ja kehittyä ammatillisesti</li>
-                    <li>Oppia kokeneemmilta kehittäjiltä</li>
-                    <li>Osallistua mielenkiintoisiin projekteihin</li>
-                    <li>Toimiva tiimi, jossa arvostetaan hyvää koodia</li>
-                  </ul>
+                  {profileSummary.lookingFor.length > 0 ? (
+                    <ul style={{ paddingLeft: "20px", lineHeight: "1.8", color: "#1b5e20" }}>
+                      {profileSummary.lookingFor.map((item, idx) => (
+                        <li key={idx}>{item}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p style={{ color: "#1b5e20", margin: 0 }}>Ei lisattya sisaltoa viela.</p>
+                  )}
                 </div>
               </>
             )}
@@ -1041,14 +1003,14 @@ export default function Portfolio() {
         )}
 
         {/* Call to Action */}
-        <section style={{ marginTop: "50px", paddingTop: "30px", borderTop: "2px solid #eee", textAlign: "center", backgroundColor: "#f0f7ff", padding: "30px", borderRadius: "8px" }}>
-          <h2>Kiinnostunut Yhteistyöstä?</h2>
+        <section style={{ marginTop: "50px", paddingTop: "30px", borderTop: "2px solid #eee", textAlign: "center", backgroundColor: "#f0f7ff", padding: "30px", borderRadius: "8px", color: "#1f2937" }}>
+          <h2 style={{ color: "#1f2937" }}>Kiinnostunut Yhteistyöstä?</h2>
           <p style={{ fontSize: "16px", color: "#555", marginBottom: "25px" }}>
             Ota minuun yhteyttä uusista mahdollisuuksista tai kyselyistä!
           </p>
           <div style={{ display: "flex", gap: "15px", justifyContent: "center", flexWrap: "wrap" }}>
             <a
-              href="mailto:developer@example.com"
+              href={profile.email ? `mailto:${profile.email}` : "#"}
               style={{
                 padding: "12px 30px",
                 backgroundColor: "#0066cc",
@@ -1056,12 +1018,14 @@ export default function Portfolio() {
                 textDecoration: "none",
                 borderRadius: "6px",
                 fontWeight: "bold",
+                opacity: profile.email ? 1 : 0.5,
+                pointerEvents: profile.email ? "auto" : "none",
               }}
             >
               Lähetä Sähköposti
             </a>
             <a
-              href="https://linkedin.com/in/developer"
+              href={profile.linkedin ? `https://linkedin.com/in/${profile.linkedin}` : "#"}
               target="_blank"
               rel="noopener noreferrer"
               style={{
@@ -1071,12 +1035,14 @@ export default function Portfolio() {
                 textDecoration: "none",
                 borderRadius: "6px",
                 fontWeight: "bold",
+                opacity: profile.linkedin ? 1 : 0.5,
+                pointerEvents: profile.linkedin ? "auto" : "none",
               }}
             >
               LinkedIn
             </a>
             <a
-              href="https://github.com/developer"
+              href={profile.github ? `https://github.com/${profile.github}` : "#"}
               target="_blank"
               rel="noopener noreferrer"
               style={{
@@ -1086,6 +1052,8 @@ export default function Portfolio() {
                 textDecoration: "none",
                 borderRadius: "6px",
                 fontWeight: "bold",
+                opacity: profile.github ? 1 : 0.5,
+                pointerEvents: profile.github ? "auto" : "none",
               }}
             >
               GitHub
