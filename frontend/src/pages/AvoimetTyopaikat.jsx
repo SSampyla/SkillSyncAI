@@ -80,9 +80,11 @@ export default function AvoimetTyopaikat() {
   const [editedCvDraft, setEditedCvDraft] = useState("");
   const [draftLoading, setDraftLoading] = useState({ coverLetter: false, cv: false });
   const [draftError, setDraftError] = useState("");
+  const [selectedDraftTarget, setSelectedDraftTarget] = useState("coverLetter");
 
-  const openCustomizationPanel = (job) => {
+  const openCustomizationPanel = (job, draftTarget = "coverLetter") => {
     setCustomizationJob(job);
+    setSelectedDraftTarget(draftTarget);
     setCoverLetterDraft("");
     setEditedCvDraft("");
     setDraftError("");
@@ -90,6 +92,7 @@ export default function AvoimetTyopaikat() {
 
   const closeCustomizationPanel = () => {
     setCustomizationJob(null);
+    setSelectedDraftTarget("coverLetter");
     setDraftError("");
   };
 
@@ -383,12 +386,12 @@ export default function AvoimetTyopaikat() {
     const x2 = 75 + 60 * Math.cos((angle * Math.PI) / 180);
     const y2 = 75 + 60 * Math.sin((angle * Math.PI) / 180);
 
-    const color = compatibility >= 80 ? "#4CAF50" : compatibility >= 70 ? "#FFC107" : "#FF6B6B";
+    const color = compatibility >= 80 ? "var(--color-success)" : compatibility >= 70 ? "#FFC107" : "#FF6B6B";
 
     return (
       <svg width="150" height="150" viewBox="0 0 150 150" style={{ filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.3))" }}>
         {/* Taustakehä */}
-        <circle cx="75" cy="75" r="60" fill="rgba(148, 163, 184, 0.2)" opacity="0.5" />
+        <circle cx="75" cy="75" r="60" fill="var(--border-soft-72)" opacity="0.5" />
 
         {/* Yhteensopivuuskehä */}
         <path
@@ -398,11 +401,11 @@ export default function AvoimetTyopaikat() {
         />
 
         {/* Keskellä oleva teksti */}
-        <circle cx="75" cy="75" r="42" fill="rgba(30, 41, 59, 0.9)" />
+        <circle cx="75" cy="75" r="42" fill="var(--surface-card)" />
         <text x="75" y="70" fontSize="28" fontWeight="bold" textAnchor="middle" fill={color}>
           {compatibility}%
         </text>
-        <text x="75" y="88" fontSize="10" textAnchor="middle" fill="#cbd5e1">
+        <text x="75" y="88" fontSize="10" textAnchor="middle" fill="var(--text-secondary)">
           Match
         </text>
       </svg>
@@ -416,18 +419,18 @@ export default function AvoimetTyopaikat() {
 
       <div className="portfolio-page">
       <div className="portfolio-container">
-        <h1 style={{ marginBottom: "10px", color: "#f1f5f9", fontSize: "2.5rem" }}>Avoimet Työpaikat</h1>
-        <p style={{ color: "#cbd5e1", marginBottom: "10px", fontSize: "1.1rem" }}>
+        <h1 style={{ marginBottom: "10px", color: "var(--text-primary)", fontSize: "2.5rem" }}>Avoimet Työpaikat</h1>
+        <p style={{ color: "var(--text-secondary)", marginBottom: "10px", fontSize: "1.1rem" }}>
           Löydä sinulle sopivia työpaikkoja
         </p>
 
         {/* Hakumuoto */}
-        <form onSubmit={handleSearch} style={{ marginBottom: "30px", padding: "20px", backgroundColor: "rgba(76, 99, 255, 0.1)", borderRadius: "16px", border: "1px solid rgba(76, 99, 255, 0.3)" }}>
-          <h3 style={{ color: "#f1f5f9", marginTop: 0 }}>Automaattinen Haku</h3>
+        <form onSubmit={handleSearch} style={{ marginBottom: "30px", padding: "20px", backgroundColor: "rgba(40, 61, 168, 0.10)", borderRadius: "16px", border: "1px solid rgba(40, 61, 168, 0.24)" }}>
+          <h3 style={{ color: "var(--text-primary)", marginTop: 0 }}>Automaattinen Haku</h3>
           
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "15px", marginBottom: "15px" }}>
             <div>
-              <label style={{ display: "block", color: "#cbd5e1", marginBottom: "5px", fontSize: "0.9rem", fontWeight: "500" }}>
+              <label style={{ display: "block", color: "var(--text-secondary)", marginBottom: "5px", fontSize: "0.9rem", fontWeight: "500" }}>
                 Tehtävän nimi
               </label>
               <input
@@ -438,17 +441,17 @@ export default function AvoimetTyopaikat() {
                 style={{
                   width: "100%",
                   padding: "10px",
-                  backgroundColor: "rgba(30, 41, 59, 0.6)",
-                  border: "1px solid rgba(148, 163, 184, 0.3)",
+                  backgroundColor: "var(--surface-glass)",
+                  border: "1px solid var(--border-soft-82)",
                   borderRadius: "8px",
-                  color: "#f1f5f9",
+                  color: "var(--text-primary)",
                   fontSize: "0.95rem"
                 }}
               />
             </div>
 
             <div>
-              <label style={{ display: "block", color: "#cbd5e1", marginBottom: "5px", fontSize: "0.9rem", fontWeight: "500" }}>
+              <label style={{ display: "block", color: "var(--text-secondary)", marginBottom: "5px", fontSize: "0.9rem", fontWeight: "500" }}>
                 Sijainti
               </label>
               <input
@@ -459,10 +462,10 @@ export default function AvoimetTyopaikat() {
                 style={{
                   width: "100%",
                   padding: "10px",
-                  backgroundColor: "rgba(30, 41, 59, 0.6)",
-                  border: "1px solid rgba(148, 163, 184, 0.3)",
+                  backgroundColor: "var(--surface-glass)",
+                  border: "1px solid var(--border-soft-82)",
                   borderRadius: "8px",
-                  color: "#f1f5f9",
+                  color: "var(--text-primary)",
                   fontSize: "0.95rem"
                 }}
               />
@@ -471,7 +474,7 @@ export default function AvoimetTyopaikat() {
           </div>
 
           <div style={{ marginBottom: "15px" }}>
-            <label style={{ display: "block", color: "#cbd5e1", marginBottom: "5px", fontSize: "0.9rem", fontWeight: "500" }}>
+            <label style={{ display: "block", color: "var(--text-secondary)", marginBottom: "5px", fontSize: "0.9rem", fontWeight: "500" }}>
               Avainsanat (pilkulla erotettu)
             </label>
             <input
@@ -488,10 +491,10 @@ export default function AvoimetTyopaikat() {
               style={{
                 width: "100%",
                 padding: "10px",
-                backgroundColor: "rgba(30, 41, 59, 0.6)",
-                border: "1px solid rgba(148, 163, 184, 0.3)",
+                backgroundColor: "var(--surface-glass)",
+                border: "1px solid var(--border-soft-82)",
                 borderRadius: "8px",
-                color: "#f1f5f9",
+                color: "var(--text-primary)",
                 fontSize: "0.95rem"
               }}
             />
@@ -502,7 +505,7 @@ export default function AvoimetTyopaikat() {
             disabled={loading}
             style={{
               padding: "12px 30px",
-              background: loading ? "rgba(148, 163, 184, 0.3)" : "linear-gradient(135deg, #ff6b6b, #4c63ff)",
+              background: loading ? "var(--border-soft-82)" : "linear-gradient(135deg, var(--color-primary), var(--color-primary-strong))",
               color: "#ffffff",
               border: "none",
               borderRadius: "10px",
@@ -510,18 +513,18 @@ export default function AvoimetTyopaikat() {
               fontWeight: "600",
               cursor: loading ? "wait" : "pointer",
               transition: "all 0.3s ease",
-              boxShadow: loading ? "none" : "0 4px 12px rgba(76, 99, 255, 0.3)"
+              boxShadow: loading ? "none" : "0 4px 12px rgba(40, 61, 168, 0.24)"
             }}
             onMouseEnter={(e) => {
               if (!loading) {
                 e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow = "0 6px 16px rgba(76, 99, 255, 0.4)";
+                e.currentTarget.style.boxShadow = "0 6px 16px rgba(40, 61, 168, 0.32)";
               }
             }}
             onMouseLeave={(e) => {
               if (!loading) {
                 e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 4px 12px rgba(76, 99, 255, 0.3)";
+                e.currentTarget.style.boxShadow = "0 4px 12px rgba(40, 61, 168, 0.24)";
               }
             }}
           >
@@ -533,11 +536,11 @@ export default function AvoimetTyopaikat() {
           <div style={{
             textAlign: "center",
             padding: "60px 20px",
-            color: "#cbd5e1",
+            color: "var(--text-secondary)",
             fontSize: "1.1rem"
           }}>
             <p>Käytä hakumuotoa etsiäksesi sinulle sopivia työpaikkoja</p>
-            <p style={{ fontSize: "0.9rem", color: "#94a3b8", marginTop: "10px" }}>
+            <p style={{ fontSize: "0.9rem", color: "var(--text-muted)", marginTop: "10px" }}>
               Haku käy läpi Duunitori, LinkedIn ja yritysten omat sivut
             </p>
           </div>
@@ -551,7 +554,7 @@ export default function AvoimetTyopaikat() {
 
         {availableJobs.length > 0 && (
           <div style={{ marginBottom: "20px" }}>
-            <p style={{ color: "#cbd5e1", fontSize: "0.95rem", marginBottom: "8px" }}>
+            <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem", marginBottom: "8px" }}>
               Löytyi {availableJobs.length} työpaikkaa
               {searchMeta.responseTime && ` (haettu ${searchMeta.responseTime}ms)`}
             </p>
@@ -561,8 +564,8 @@ export default function AvoimetTyopaikat() {
                   <span key={idx} style={{
                     display: "inline-block",
                     padding: "4px 10px",
-                    backgroundColor: "rgba(76, 99, 255, 0.2)",
-                    color: "#4c63ff",
+                    backgroundColor: "rgba(40, 61, 168, 0.16)",
+                    color: "var(--color-primary)",
                     borderRadius: "6px",
                     fontSize: "12px",
                     fontWeight: "500"
@@ -584,24 +587,24 @@ export default function AvoimetTyopaikat() {
                 key={job.id}
                 style={{
                   padding: "24px",
-                  border: "1px solid rgba(148, 163, 184, 0.2)",
+                  border: "1px solid var(--border-soft-72)",
                   borderRadius: "16px",
-                  backgroundColor: "rgba(30, 41, 59, 0.6)",
+                  backgroundColor: "var(--surface-glass)",
                   backdropFilter: "blur(10px)",
                   boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
                   transition: "all 0.3s ease",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = "translateY(-5px)";
-                  e.currentTarget.style.borderColor = "rgba(76, 99, 255, 0.4)";
+                  e.currentTarget.style.borderColor = "rgba(40, 61, 168, 0.32)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.borderColor = "rgba(148, 163, 184, 0.2)";
+                  e.currentTarget.style.borderColor = "var(--border-soft-72)";
                 }}
               >
-                <h3 style={{ margin: "0 0 10px 0", color: "#7dd3fc", fontSize: "1.4rem" }}>{job.title}</h3>
-                <p style={{ margin: "0 0 15px 0", fontSize: "16px", color: "#cbd5e1" }}>
+                <h3 style={{ margin: "0 0 10px 0", color: "var(--color-primary)", fontSize: "1.4rem" }}>{job.title}</h3>
+                <p style={{ margin: "0 0 15px 0", fontSize: "16px", color: "var(--text-secondary)" }}>
                   <strong>{job.company}</strong> • {job.location}
                 </p>
 
@@ -613,13 +616,13 @@ export default function AvoimetTyopaikat() {
                     backgroundColor: 
                       job.source === "Duunitori" ? "rgba(255, 107, 107, 0.2)" :
                       job.source === "LinkedIn" ? "rgba(0, 102, 153, 0.2)" :
-                      job.source === "Yrityksen sivu" ? "rgba(76, 99, 255, 0.2)" :
-                      "rgba(148, 163, 184, 0.2)",
+                      job.source === "Yrityksen sivu" ? "rgba(40, 61, 168, 0.16)" :
+                      "var(--border-soft-72)",
                     color: 
                       job.source === "Duunitori" ? "#ef4444" :
                       job.source === "LinkedIn" ? "#06b6d4" :
-                      job.source === "Yrityksen sivu" ? "#4c63ff" :
-                      "#94a3b8",
+                      job.source === "Yrityksen sivu" ? "var(--color-primary)" :
+                      "var(--text-muted)",
                     borderRadius: "6px",
                     fontSize: "12px",
                     fontWeight: "500"
@@ -632,19 +635,19 @@ export default function AvoimetTyopaikat() {
                     {renderPieChart(job.compatibility)}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px", color: "#94a3b8" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px", color: "var(--text-muted)" }}>
                       <span>💰 {job.salary}</span>
                       <span>Tyyppi: {job.type}</span>
                       <span>Julkaistu: {job.posted}</span>
-                      {job.recommended && <span style={{ color: "#4CAF50", fontWeight: "600" }}>Suositeltu sinulle</span>}
+                      {job.recommended && <span style={{ color: "var(--color-success)", fontWeight: "600" }}>Suositeltu sinulle</span>}
                     </div>
                   </div>
                 </div>
 
-                <p style={{ color: "#cbd5e1", marginBottom: "15px", lineHeight: "1.6" }}>{job.description}</p>
+                <p style={{ color: "var(--text-secondary)", marginBottom: "15px", lineHeight: "1.6" }}>{job.description}</p>
 
                 <div style={{ marginBottom: "15px" }}>
-                  <h4 style={{ margin: "0 0 8px 0", fontSize: "14px", color: "#f1f5f9" }}>Vaaditut Taidot:</h4>
+                  <h4 style={{ margin: "0 0 8px 0", fontSize: "14px", color: "var(--text-primary)" }}>Vaaditut Taidot:</h4>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                     {job.requiredSkills.map((skill) => {
                       const isMatched = job.matchedSkills.includes(skill);
@@ -654,7 +657,7 @@ export default function AvoimetTyopaikat() {
                           style={{
                             padding: "6px 12px",
                             backgroundColor: isMatched ? "rgba(76, 185, 68, 0.2)" : "rgba(239, 68, 68, 0.2)",
-                            color: isMatched ? "#4CAF50" : "#ef4444",
+                            color: isMatched ? "var(--color-success)" : "#ef4444",
                             border: `1px solid ${isMatched ? "rgba(76, 185, 68, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
                             borderRadius: "8px",
                             fontSize: "12px",
@@ -676,48 +679,67 @@ export default function AvoimetTyopaikat() {
                     style={{
                       width: "100%",
                       padding: "12px 24px",
-                      background: isApplied ? "rgba(148, 163, 184, 0.3)" : "linear-gradient(135deg, #ff6b6b, #4c63ff)",
+                      background: isApplied ? "var(--border-soft-82)" : "linear-gradient(135deg, var(--color-primary), var(--color-primary-strong))",
                       color: "#ffffff",
-                      border: isApplied ? "1px solid rgba(148, 163, 184, 0.3)" : "none",
+                      border: isApplied ? "1px solid var(--border-soft-82)" : "none",
                       borderRadius: "10px",
                       fontSize: "14px",
                       fontWeight: "600",
                       cursor: isApplied ? "not-allowed" : "pointer",
                       transition: "all 0.3s ease",
-                      boxShadow: isApplied ? "none" : "0 4px 12px rgba(76, 99, 255, 0.3)",
+                      boxShadow: isApplied ? "none" : "0 4px 12px rgba(40, 61, 168, 0.24)",
                     }}
                     onMouseEnter={(e) => {
                       if (!isApplied) {
                         e.currentTarget.style.transform = "translateY(-2px)";
-                        e.currentTarget.style.boxShadow = "0 6px 16px rgba(76, 99, 255, 0.4)";
+                        e.currentTarget.style.boxShadow = "0 6px 16px rgba(40, 61, 168, 0.32)";
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (!isApplied) {
                         e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow = "0 4px 12px rgba(76, 99, 255, 0.3)";
+                        e.currentTarget.style.boxShadow = "0 4px 12px rgba(40, 61, 168, 0.24)";
                       }
                     }}
                   >
                     {isApplied ? "Hakemus lähetetty" : "Hae työpaikkaa"}
                   </button>
 
-                  <button
-                    onClick={() => openCustomizationPanel(job)}
-                    style={{
-                      width: "100%",
-                      padding: "11px 20px",
-                      backgroundColor: "rgba(14, 116, 144, 0.2)",
-                      color: "#67e8f9",
-                      border: "1px solid rgba(103, 232, 249, 0.35)",
-                      borderRadius: "10px",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Luo AI-luonnokset
-                  </button>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                    <button
+                      onClick={() => openCustomizationPanel(job, "coverLetter")}
+                      style={{
+                        width: "100%",
+                        padding: "11px 12px",
+                        backgroundColor: "rgba(40, 61, 168, 0.1)",
+                        color: "var(--color-primary)",
+                        border: "1px solid rgba(40, 61, 168, 0.3)",
+                        borderRadius: "10px",
+                        fontSize: "13px",
+                        fontWeight: "700",
+                        cursor: "pointer",
+                      }}
+                    >
+                      AI Saatekirje
+                    </button>
+
+                    <button
+                      onClick={() => openCustomizationPanel(job, "cv")}
+                      style={{
+                        width: "100%",
+                        padding: "11px 12px",
+                        backgroundColor: "rgba(52, 199, 89, 0.12)",
+                        color: "var(--color-success)",
+                        border: "1px solid rgba(52, 199, 89, 0.3)",
+                        borderRadius: "10px",
+                        fontSize: "13px",
+                        fontWeight: "700",
+                        cursor: "pointer",
+                      }}
+                    >
+                      AI CV
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -745,25 +767,28 @@ export default function AvoimetTyopaikat() {
                 width: "min(920px, 100%)",
                 maxHeight: "90vh",
                 overflowY: "auto",
-                backgroundColor: "#0f172a",
-                border: "1px solid rgba(148, 163, 184, 0.25)",
+                backgroundColor: "var(--surface-soft)",
+                border: "1px solid var(--border-soft-78)",
                 borderRadius: "16px",
                 padding: "24px",
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "center", marginBottom: "12px" }}>
                 <div>
-                  <h3 style={{ margin: 0, color: "#e2e8f0" }}>AI-räätälöinti: {customizationJob.title}</h3>
-                  <p style={{ margin: "6px 0 0 0", color: "#94a3b8", fontSize: "14px" }}>
+                  <h3 style={{ margin: 0, color: "var(--text-primary)" }}>AI-räätälöinti: {customizationJob.title}</h3>
+                  <p style={{ margin: "6px 0 0 0", color: "var(--text-muted)", fontSize: "14px" }}>
                     Luo työpaikkakohtainen saatekirjeluonnos ja CV-luonnos tämän ilmoituksen painotusten mukaan.
+                  </p>
+                  <p style={{ margin: "6px 0 0 0", color: "var(--text-secondary)", fontSize: "13px", fontWeight: "600" }}>
+                    Avattu: {selectedDraftTarget === "coverLetter" ? "Saatekirje" : "CV"}
                   </p>
                 </div>
                 <button
                   onClick={closeCustomizationPanel}
                   style={{
-                    border: "1px solid rgba(148, 163, 184, 0.35)",
+                    border: "1px solid var(--border-soft-90)",
                     background: "transparent",
-                    color: "#cbd5e1",
+                    color: "var(--text-secondary)",
                     borderRadius: "8px",
                     padding: "8px 10px",
                     cursor: "pointer",
@@ -773,107 +798,119 @@ export default function AvoimetTyopaikat() {
                 </button>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "14px", marginBottom: "14px" }}>
-                <label style={{ color: "#cbd5e1", fontSize: "14px", fontWeight: "600" }}>Oma osaamisprofiili (saatekirjeen pohja)</label>
-                <textarea
-                  value={applicantText}
-                  onChange={(e) => setApplicantText(e.target.value)}
-                  style={{
-                    width: "100%",
-                    minHeight: "120px",
-                    borderRadius: "10px",
-                    border: "1px solid rgba(148, 163, 184, 0.3)",
-                    backgroundColor: "rgba(15, 23, 42, 0.7)",
-                    color: "#e2e8f0",
-                    padding: "12px",
-                  }}
-                />
+              {selectedDraftTarget === "coverLetter" && (
+                <>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "14px", marginBottom: "14px" }}>
+                    <label style={{ color: "var(--text-secondary)", fontSize: "14px", fontWeight: "600" }}>
+                      Oma osaamisprofiili (saatekirjeen pohja)
+                    </label>
+                    <textarea
+                      value={applicantText}
+                      onChange={(e) => setApplicantText(e.target.value)}
+                      style={{
+                        width: "100%",
+                        minHeight: "140px",
+                        borderRadius: "10px",
+                        border: "1px solid var(--border-soft-82)",
+                        backgroundColor: "var(--surface-input)",
+                        color: "var(--text-primary)",
+                        padding: "12px",
+                      }}
+                    />
+                  </div>
 
-                <label style={{ color: "#cbd5e1", fontSize: "14px", fontWeight: "600" }}>Nykyinen CV-teksti (CV-räätälöintiä varten)</label>
-                <textarea
-                  value={cvText}
-                  onChange={(e) => setCvText(e.target.value)}
-                  style={{
-                    width: "100%",
-                    minHeight: "140px",
-                    borderRadius: "10px",
-                    border: "1px solid rgba(148, 163, 184, 0.3)",
-                    backgroundColor: "rgba(15, 23, 42, 0.7)",
-                    color: "#e2e8f0",
-                    padding: "12px",
-                  }}
-                />
-              </div>
+                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "14px" }}>
+                    <button
+                      onClick={createCoverLetter}
+                      disabled={draftLoading.coverLetter}
+                      style={{
+                        padding: "10px 16px",
+                        borderRadius: "10px",
+                        border: "none",
+                        background: "linear-gradient(135deg, var(--color-primary), var(--color-primary-strong))",
+                        color: "white",
+                        cursor: draftLoading.coverLetter ? "wait" : "pointer",
+                        fontWeight: "600",
+                      }}
+                    >
+                      {draftLoading.coverLetter ? "Luodaan saatekirjettä..." : "Luo saatekirjeluonnos"}
+                    </button>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "10px", marginBottom: "14px" }}>
-                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                  <button
-                    onClick={createCoverLetter}
-                    disabled={draftLoading.coverLetter}
-                    style={{
-                      padding: "10px 16px",
-                      borderRadius: "10px",
-                      border: "none",
-                      background: "linear-gradient(135deg, #0ea5e9, #2563eb)",
-                      color: "white",
-                      cursor: draftLoading.coverLetter ? "wait" : "pointer",
-                      fontWeight: "600",
-                    }}
-                  >
-                    {draftLoading.coverLetter ? "Luodaan saatekirjettä..." : "Luo saatekirjeluonnos"}
-                  </button>
+                    <button
+                      onClick={() => downloadDraftAsPdf("coverLetter")}
+                      disabled={!coverLetterDraft.trim()}
+                      style={{
+                        padding: "10px 14px",
+                        borderRadius: "8px",
+                        border: "1px solid rgba(40, 61, 168, 0.35)",
+                        backgroundColor: !coverLetterDraft.trim() ? "rgba(51, 65, 85, 0.45)" : "rgba(40, 61, 168, 0.12)",
+                        color: !coverLetterDraft.trim() ? "var(--text-muted)" : "var(--color-primary)",
+                        cursor: !coverLetterDraft.trim() ? "not-allowed" : "pointer",
+                        fontWeight: "600",
+                      }}
+                    >
+                      Lataa saatekirje PDF
+                    </button>
+                  </div>
+                </>
+              )}
 
-                  <button
-                    onClick={() => downloadDraftAsPdf("coverLetter")}
-                    disabled={!coverLetterDraft.trim()}
-                    style={{
-                      padding: "10px 14px",
-                      borderRadius: "8px",
-                      border: "1px solid rgba(125, 211, 252, 0.4)",
-                      backgroundColor: !coverLetterDraft.trim() ? "rgba(51, 65, 85, 0.45)" : "rgba(14, 116, 144, 0.2)",
-                      color: !coverLetterDraft.trim() ? "#94a3b8" : "#bae6fd",
-                      cursor: !coverLetterDraft.trim() ? "not-allowed" : "pointer",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Lataa saatekirje PDF
-                  </button>
-                </div>
+              {selectedDraftTarget === "cv" && (
+                <>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "14px", marginBottom: "14px" }}>
+                    <label style={{ color: "var(--text-secondary)", fontSize: "14px", fontWeight: "600" }}>
+                      Nykyinen CV-teksti (CV-räätälöintiä varten)
+                    </label>
+                    <textarea
+                      value={cvText}
+                      onChange={(e) => setCvText(e.target.value)}
+                      style={{
+                        width: "100%",
+                        minHeight: "180px",
+                        borderRadius: "10px",
+                        border: "1px solid var(--border-soft-82)",
+                        backgroundColor: "var(--surface-input)",
+                        color: "var(--text-primary)",
+                        padding: "12px",
+                      }}
+                    />
+                  </div>
 
-                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                  <button
-                    onClick={createEditedCv}
-                    disabled={draftLoading.cv}
-                    style={{
-                      padding: "10px 16px",
-                      borderRadius: "10px",
-                      border: "1px solid rgba(167, 139, 250, 0.5)",
-                      backgroundColor: "rgba(76, 29, 149, 0.2)",
-                      color: "#ddd6fe",
-                      cursor: draftLoading.cv ? "wait" : "pointer",
-                      fontWeight: "600",
-                    }}
-                  >
-                    {draftLoading.cv ? "Räätälöidään CV:tä..." : "Räätälöi CV-luonnos"}
-                  </button>
+                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "14px" }}>
+                    <button
+                      onClick={createEditedCv}
+                      disabled={draftLoading.cv}
+                      style={{
+                        padding: "10px 16px",
+                        borderRadius: "10px",
+                        border: "none",
+                        background: "linear-gradient(135deg, var(--color-success), #2ea54b)",
+                        color: "white",
+                        cursor: draftLoading.cv ? "wait" : "pointer",
+                        fontWeight: "600",
+                      }}
+                    >
+                      {draftLoading.cv ? "Räätälöidään CV:tä..." : "Räätälöi CV-luonnos"}
+                    </button>
 
-                  <button
-                    onClick={() => downloadDraftAsPdf("cv")}
-                    disabled={!editedCvDraft.trim()}
-                    style={{
-                      padding: "10px 14px",
-                      borderRadius: "8px",
-                      border: "1px solid rgba(167, 139, 250, 0.5)",
-                      backgroundColor: !editedCvDraft.trim() ? "rgba(51, 65, 85, 0.45)" : "rgba(76, 29, 149, 0.2)",
-                      color: !editedCvDraft.trim() ? "#94a3b8" : "#ddd6fe",
-                      cursor: !editedCvDraft.trim() ? "not-allowed" : "pointer",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Lataa CV PDF
-                  </button>
-                </div>
-              </div>
+                    <button
+                      onClick={() => downloadDraftAsPdf("cv")}
+                      disabled={!editedCvDraft.trim()}
+                      style={{
+                        padding: "10px 14px",
+                        borderRadius: "8px",
+                        border: "1px solid rgba(52, 199, 89, 0.4)",
+                        backgroundColor: !editedCvDraft.trim() ? "rgba(51, 65, 85, 0.45)" : "rgba(52, 199, 89, 0.14)",
+                        color: !editedCvDraft.trim() ? "var(--text-muted)" : "var(--color-success)",
+                        cursor: !editedCvDraft.trim() ? "not-allowed" : "pointer",
+                        fontWeight: "600",
+                      }}
+                    >
+                      Lataa CV PDF
+                    </button>
+                  </div>
+                </>
+              )}
 
               {draftError && (
                 <p style={{ margin: "0 0 14px 0", color: "#f87171", fontSize: "14px" }}>
@@ -881,9 +918,9 @@ export default function AvoimetTyopaikat() {
                 </p>
               )}
 
-              {coverLetterDraft && (
+              {selectedDraftTarget === "coverLetter" && coverLetterDraft && (
                 <div style={{ marginBottom: "14px" }}>
-                  <h4 style={{ margin: "0 0 8px 0", color: "#e2e8f0" }}>Saatekirjeluonnos</h4>
+                  <h4 style={{ margin: "0 0 8px 0", color: "var(--text-primary)" }}>Saatekirjeluonnos</h4>
                   <textarea
                     value={coverLetterDraft}
                     onChange={(e) => setCoverLetterDraft(e.target.value)}
@@ -891,18 +928,18 @@ export default function AvoimetTyopaikat() {
                       width: "100%",
                       minHeight: "180px",
                       borderRadius: "10px",
-                      border: "1px solid rgba(148, 163, 184, 0.35)",
-                      backgroundColor: "rgba(15, 23, 42, 0.7)",
-                      color: "#e2e8f0",
+                      border: "1px solid var(--border-soft-90)",
+                      backgroundColor: "var(--surface-input)",
+                      color: "var(--text-primary)",
                       padding: "12px",
                     }}
                   />
                 </div>
               )}
 
-              {editedCvDraft && (
+              {selectedDraftTarget === "cv" && editedCvDraft && (
                 <div>
-                  <h4 style={{ margin: "0 0 8px 0", color: "#e2e8f0" }}>Räätälöity CV-luonnos</h4>
+                  <h4 style={{ margin: "0 0 8px 0", color: "var(--text-primary)" }}>Räätälöity CV-luonnos</h4>
                   <textarea
                     value={editedCvDraft}
                     onChange={(e) => setEditedCvDraft(e.target.value)}
@@ -910,9 +947,9 @@ export default function AvoimetTyopaikat() {
                       width: "100%",
                       minHeight: "220px",
                       borderRadius: "10px",
-                      border: "1px solid rgba(148, 163, 184, 0.35)",
-                      backgroundColor: "rgba(15, 23, 42, 0.7)",
-                      color: "#e2e8f0",
+                      border: "1px solid var(--border-soft-90)",
+                      backgroundColor: "var(--surface-input)",
+                      color: "var(--text-primary)",
                       padding: "12px",
                     }}
                   />

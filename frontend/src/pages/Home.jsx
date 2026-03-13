@@ -309,8 +309,8 @@ function Home() {
                                                         cursor: "pointer",
                                                         background:
                                                             selectedSkills[category]?.includes(skill)
-                                                                ? "#4c63ff"
-                                                                : "#334155",
+                                                                ? "var(--color-primary)"
+                                                                : "var(--surface-muted)",
                                                         color: "white",
                                                         fontSize: "13px"
                                                     }}

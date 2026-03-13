@@ -110,7 +110,7 @@ export default function Portfolio() {
       <div className="portfolio-page">
       <div className="portfolio-container">
         {/* Header Section */}
-        <section style={{ marginBottom: "50px", backgroundColor: "rgba(30, 41, 59, 0.6)", padding: "30px", borderRadius: "16px", color: "#ffffff", border: "1px solid rgba(148, 163, 184, 0.2)" }}>
+        <section style={{ marginBottom: "50px", backgroundColor: "var(--surface-glass)", padding: "30px", borderRadius: "16px", color: "var(--text-primary)", border: "1px solid var(--border-soft-72)" }}>
           {isEditing ? (
             <>
               <input
@@ -121,9 +121,9 @@ export default function Portfolio() {
                   fontSize: "32px",
                   fontWeight: "bold",
                   backgroundColor: "transparent",
-                  border: "1px solid #64b5f6",
+                  border: "1px solid var(--color-primary)",
                   borderRadius: "4px",
-                  color: "#ffffff",
+                  color: "var(--text-primary)",
                   padding: "5px",
                   marginBottom: "10px",
                   width: "100%",
@@ -136,9 +136,9 @@ export default function Portfolio() {
                 style={{
                   fontSize: "24px",
                   backgroundColor: "transparent",
-                  border: "1px solid #64b5f6",
+                  border: "1px solid var(--color-primary)",
                   borderRadius: "4px",
-                  color: "#64b5f6",
+                  color: "var(--color-primary)",
                   padding: "5px",
                   marginBottom: "20px",
                   width: "100%",
@@ -152,9 +152,9 @@ export default function Portfolio() {
                   lineHeight: "1.6",
                   maxWidth: "900px",
                   backgroundColor: "transparent",
-                  border: "1px solid #e0e0e0",
+                  border: "1px solid var(--border-soft)",
                   borderRadius: "4px",
-                  color: "#e0e0e0",
+                  color: "var(--text-secondary)",
                   padding: "10px",
                   marginBottom: "20px",
                   width: "100%",
@@ -163,7 +163,7 @@ export default function Portfolio() {
               />
               
               {/* Contact Info */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", marginTop: "20px", fontSize: "14px", color: "#f0f0f0" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", marginTop: "20px", fontSize: "14px", color: "var(--text-secondary)" }}>
                 <div>
                   <strong>Email:</strong>{" "}
                   <input
@@ -172,9 +172,9 @@ export default function Portfolio() {
                     onChange={(e) => setProfile({ ...profile, email: e.target.value })}
                     style={{
                       backgroundColor: "transparent",
-                      border: "1px solid #f0f0f0",
+                      border: "1px solid var(--border-soft)",
                       borderRadius: "4px",
-                      color: "#f0f0f0",
+                      color: "var(--text-primary)",
                       padding: "2px 5px",
                       width: "150px",
                     }}
@@ -188,9 +188,9 @@ export default function Portfolio() {
                     onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
                     style={{
                       backgroundColor: "transparent",
-                      border: "1px solid #f0f0f0",
+                      border: "1px solid var(--border-soft)",
                       borderRadius: "4px",
-                      color: "#f0f0f0",
+                      color: "var(--text-primary)",
                       padding: "2px 5px",
                       width: "150px",
                     }}
@@ -204,9 +204,9 @@ export default function Portfolio() {
                     onChange={(e) => setProfile({ ...profile, location: e.target.value })}
                     style={{
                       backgroundColor: "transparent",
-                      border: "1px solid #f0f0f0",
+                      border: "1px solid var(--border-soft)",
                       borderRadius: "4px",
-                      color: "#f0f0f0",
+                      color: "var(--text-primary)",
                       padding: "2px 5px",
                       width: "150px",
                     }}
@@ -236,12 +236,12 @@ export default function Portfolio() {
             </>
           ) : (
             <>
-              <h1 style={{ margin: "0 0 10px 0", fontSize: "32px", color: "#ffffff" }}>{profile.name}</h1>
-              <h2 style={{ margin: "0 0 20px 0", fontSize: "24px", color: "#64b5f6" }}>{profile.title}</h2>
-              <p style={{ margin: "0 0 15px 0", fontSize: "16px", lineHeight: "1.6", maxWidth: "900px", color: "#e0e0e0" }}>{profile.summary}</p>
+              <h1 style={{ margin: "0 0 10px 0", fontSize: "32px", color: "var(--text-primary)" }}>{profile.name}</h1>
+              <h2 style={{ margin: "0 0 20px 0", fontSize: "24px", color: "var(--color-primary)" }}>{profile.title}</h2>
+              <p style={{ margin: "0 0 15px 0", fontSize: "16px", lineHeight: "1.6", maxWidth: "900px", color: "var(--text-secondary)" }}>{profile.summary}</p>
               
               {/* Contact Info */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", marginTop: "20px", fontSize: "14px", color: "#f0f0f0" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", marginTop: "20px", fontSize: "14px", color: "var(--text-secondary)" }}>
                 <div>
                   <strong>Email:</strong> {profile.email}
                 </div>
@@ -303,8 +303,8 @@ export default function Portfolio() {
               onClick={() => setActiveSection(section)}
               style={{
                 padding: "12px 24px",
-                backgroundColor: activeSection === section ? "#0066cc" : "#f0f0f0",
-                color: activeSection === section ? "white" : "#333",
+                backgroundColor: activeSection === section ? "var(--color-primary)" : "var(--surface-soft)",
+                color: activeSection === section ? "white" : "var(--text-primary)",
                 border: "none",
                 borderRadius: "6px",
                 cursor: "pointer",
@@ -368,7 +368,7 @@ export default function Portfolio() {
                         key={skill}
                         style={{
                           padding: "8px 16px",
-                          backgroundColor: "#1976d2",
+                          backgroundColor: "var(--color-primary)",
                           color: "#ffffff",
                           borderRadius: "20px",
                           fontSize: "14px",
@@ -388,7 +388,7 @@ export default function Portfolio() {
                         key={skill}
                         style={{
                           padding: "8px 16px",
-                          backgroundColor: "#7b1fa2",
+                          backgroundColor: "var(--color-primary-strong)",
                           color: "#ffffff",
                           borderRadius: "20px",
                           fontSize: "14px",
@@ -408,7 +408,7 @@ export default function Portfolio() {
                         key={skill}
                         style={{
                           padding: "8px 16px",
-                          backgroundColor: "#388e3c",
+                          backgroundColor: "var(--color-success)",
                           color: "#ffffff",
                           borderRadius: "20px",
                           fontSize: "14px",
@@ -428,7 +428,7 @@ export default function Portfolio() {
                         key={skill}
                         style={{
                           padding: "8px 16px",
-                          backgroundColor: "#f57c04",
+                          backgroundColor: "var(--color-primary)",
                           color: "#ffffff",
                           borderRadius: "20px",
                           fontSize: "14px",
@@ -455,11 +455,11 @@ export default function Portfolio() {
                 style={{
                   marginBottom: "30px",
                   padding: "25px",
-                  border: "1px solid #ddd",
-                  borderLeft: "4px solid #0066cc",
+                  border: "1px solid var(--border-soft)",
+                  borderLeft: "4px solid var(--color-primary)",
                   borderRadius: "6px",
                   backgroundColor: "#ffffff",
-                  color: "#1f2937",
+                  color: "var(--text-primary)",
                 }}
               >
                 {isEditing ? (
@@ -477,7 +477,7 @@ export default function Portfolio() {
                           style={{
                             fontSize: "18px",
                             fontWeight: "bold",
-                            border: "1px solid #ddd",
+                            border: "1px solid var(--border-soft)",
                             borderRadius: "4px",
                             padding: "5px",
                             width: "100%",
@@ -494,9 +494,9 @@ export default function Portfolio() {
                           }}
                           style={{
                             fontSize: "16px",
-                            color: "#0066cc",
+                            color: "var(--color-primary)",
                             fontWeight: "bold",
-                            border: "1px solid #ddd",
+                            border: "1px solid var(--border-soft)",
                             borderRadius: "4px",
                             padding: "5px",
                             width: "100%",
@@ -512,9 +512,9 @@ export default function Portfolio() {
                           setExperience(updatedExp);
                         }}
                         style={{
-                          color: "#666",
+                          color: "var(--text-muted)",
                           fontSize: "14px",
-                          border: "1px solid #ddd",
+                          border: "1px solid var(--border-soft)",
                           borderRadius: "4px",
                           padding: "5px",
                           width: "120px",
@@ -529,9 +529,9 @@ export default function Portfolio() {
                         setExperience(updatedExp);
                       }}
                       style={{
-                        color: "#666",
+                        color: "var(--text-muted)",
                         marginBottom: "15px",
-                        border: "1px solid #ddd",
+                        border: "1px solid var(--border-soft)",
                         borderRadius: "4px",
                         padding: "10px",
                         width: "100%",
@@ -552,7 +552,7 @@ export default function Portfolio() {
                             flex: 1,
                             marginBottom: "8px",
                             color: "#555",
-                            border: "1px solid #ddd",
+                            border: "1px solid var(--border-soft)",
                             borderRadius: "4px",
                             padding: "5px",
                             minHeight: "30px",
@@ -602,11 +602,11 @@ export default function Portfolio() {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "10px" }}>
                       <div>
                         <h3 style={{ margin: "0 0 5px 0" }}>{exp.title}</h3>
-                        <p style={{ margin: 0, color: "#0066cc", fontWeight: "bold" }}>{exp.company}</p>
+                        <p style={{ margin: 0, color: "var(--color-primary)", fontWeight: "bold" }}>{exp.company}</p>
                       </div>
-                      <span style={{ color: "#666", fontSize: "14px" }}>{exp.period}</span>
+                      <span style={{ color: "var(--text-muted)", fontSize: "14px" }}>{exp.period}</span>
                     </div>
-                    <p style={{ color: "#666", marginBottom: "15px" }}>{exp.description}</p>
+                    <p style={{ color: "var(--text-muted)", marginBottom: "15px" }}>{exp.description}</p>
                     <h4 style={{ marginTop: 0, marginBottom: "10px" }}>Saavutukset:</h4>
                     <ul style={{ margin: 0, paddingLeft: "20px" }}>
                       {exp.achievements.map((achievement, idx) => (
@@ -650,11 +650,11 @@ export default function Portfolio() {
                 style={{
                   marginBottom: "30px",
                   padding: "25px",
-                  border: "1px solid #ddd",
-                  borderLeft: "4px solid #4CAF50",
+                  border: "1px solid var(--border-soft)",
+                  borderLeft: "4px solid var(--color-success)",
                   borderRadius: "6px",
                   backgroundColor: "#ffffff",
-                  color: "#1f2937",
+                  color: "var(--text-primary)",
                 }}
               >
                 {isEditing ? (
@@ -672,7 +672,7 @@ export default function Portfolio() {
                           style={{
                             fontSize: "18px",
                             fontWeight: "bold",
-                            border: "1px solid #ddd",
+                            border: "1px solid var(--border-soft)",
                             borderRadius: "4px",
                             padding: "5px",
                             width: "100%",
@@ -689,8 +689,8 @@ export default function Portfolio() {
                           }}
                           style={{
                             fontSize: "16px",
-                            color: "#666",
-                            border: "1px solid #ddd",
+                            color: "var(--text-muted)",
+                            border: "1px solid var(--border-soft)",
                             borderRadius: "4px",
                             padding: "5px",
                             width: "100%",
@@ -706,10 +706,10 @@ export default function Portfolio() {
                           setEducation(updatedEdu);
                         }}
                         style={{
-                          color: "#666",
+                          color: "var(--text-muted)",
                           fontSize: "14px",
                           fontWeight: "bold",
-                          border: "1px solid #ddd",
+                          border: "1px solid var(--border-soft)",
                           borderRadius: "4px",
                           padding: "5px",
                           width: "120px",
@@ -730,11 +730,11 @@ export default function Portfolio() {
                           style={{
                             flex: 1,
                             padding: "6px 12px",
-                            backgroundColor: "#388e3c",
+                            backgroundColor: "var(--color-success)",
                             color: "#ffffff",
                             borderRadius: "16px",
                             fontSize: "13px",
-                            border: "1px solid #ddd",
+                            border: "1px solid var(--border-soft)",
                             marginRight: "10px",
                           }}
                         />
@@ -781,9 +781,9 @@ export default function Portfolio() {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "15px" }}>
                       <div>
                         <h3 style={{ margin: "0 0 5px 0" }}>{edu.degree}</h3>
-                        <p style={{ margin: 0, color: "#666" }}>{edu.institution}</p>
+                        <p style={{ margin: 0, color: "var(--text-muted)" }}>{edu.institution}</p>
                       </div>
-                      <span style={{ color: "#666", fontSize: "14px", fontWeight: "bold" }}>{edu.year}</span>
+                      <span style={{ color: "var(--text-muted)", fontSize: "14px", fontWeight: "bold" }}>{edu.year}</span>
                     </div>
                     <h4 style={{ marginTop: 0, marginBottom: "10px" }}>Relevantit Kurssit:</h4>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
@@ -792,7 +792,7 @@ export default function Portfolio() {
                           key={idx}
                           style={{
                             padding: "6px 12px",
-                            backgroundColor: "#388e3c",
+                            backgroundColor: "var(--color-success)",
                             color: "#ffffff",
                             borderRadius: "16px",
                             fontSize: "13px",
@@ -833,8 +833,8 @@ export default function Portfolio() {
                     key={index}
                     style={{
                       padding: "15px 20px",
-                      backgroundColor: "#f57c04",
-                      border: "1px solid #f57c04",
+                      backgroundColor: "var(--color-primary)",
+                      border: "1px solid var(--color-primary)",
                       borderRadius: "6px",
                       textAlign: "center",
                     }}
@@ -901,8 +901,8 @@ export default function Portfolio() {
                     key={index}
                     style={{
                       padding: "15px 20px",
-                      backgroundColor: "#f57c04",
-                      border: "1px solid #f57c04",
+                      backgroundColor: "var(--color-primary)",
+                      border: "1px solid var(--color-primary)",
                       borderRadius: "6px",
                       textAlign: "center",
                     }}
@@ -922,7 +922,7 @@ export default function Portfolio() {
             {isEditing ? (
               <>
                 <div style={{ backgroundColor: "#e3f2fd", padding: "25px", borderRadius: "8px", marginBottom: "30px" }}>
-                  <h3 style={{ color: "#1565c0", marginTop: 0 }}>Miksi minut?</h3>
+                  <h3 style={{ color: "var(--color-primary-strong)", marginTop: 0 }}>Miksi minut?</h3>
                   <textarea
                     value={joinLines(profileSummary.whyMe)}
                     onChange={(e) =>
@@ -934,7 +934,7 @@ export default function Portfolio() {
                     style={{
                       lineHeight: "1.8",
                       color: "#1a237e",
-                      border: "1px solid #ddd",
+                      border: "1px solid var(--border-soft)",
                       borderRadius: "4px",
                       padding: "10px",
                       width: "100%",
@@ -956,7 +956,7 @@ export default function Portfolio() {
                     style={{
                       lineHeight: "1.8",
                       color: "#1b5e20",
-                      border: "1px solid #ddd",
+                      border: "1px solid var(--border-soft)",
                       borderRadius: "4px",
                       padding: "10px",
                       width: "100%",
@@ -968,7 +968,7 @@ export default function Portfolio() {
             ) : (
               <>
                 <div style={{ backgroundColor: "#e3f2fd", padding: "25px", borderRadius: "8px", marginBottom: "30px" }}>
-                  <h3 style={{ color: "#1565c0" }}>Miksi minut?</h3>
+                  <h3 style={{ color: "var(--color-primary-strong)" }}>Miksi minut?</h3>
                   {profileSummary.whyMe.length > 0 ? (
                     <ul style={{ paddingLeft: "20px", lineHeight: "1.8", color: "#1a237e" }}>
                       {profileSummary.whyMe.map((item, idx) => (
@@ -1003,8 +1003,8 @@ export default function Portfolio() {
         )}
 
         {/* Call to Action */}
-        <section style={{ marginTop: "50px", paddingTop: "30px", borderTop: "2px solid #eee", textAlign: "center", backgroundColor: "#f0f7ff", padding: "30px", borderRadius: "8px", color: "#1f2937" }}>
-          <h2 style={{ color: "#1f2937" }}>Kiinnostunut Yhteistyöstä?</h2>
+        <section style={{ marginTop: "50px", paddingTop: "30px", borderTop: "2px solid var(--border-soft)", textAlign: "center", backgroundColor: "rgba(40, 61, 168, 0.08)", padding: "30px", borderRadius: "8px", color: "var(--text-primary)" }}>
+          <h2 style={{ color: "var(--text-primary)" }}>Kiinnostunut Yhteistyöstä?</h2>
           <p style={{ fontSize: "16px", color: "#555", marginBottom: "25px" }}>
             Ota minuun yhteyttä uusista mahdollisuuksista tai kyselyistä!
           </p>
@@ -1013,7 +1013,7 @@ export default function Portfolio() {
               href={profile.email ? `mailto:${profile.email}` : "#"}
               style={{
                 padding: "12px 30px",
-                backgroundColor: "#0066cc",
+                backgroundColor: "var(--color-primary)",
                 color: "white",
                 textDecoration: "none",
                 borderRadius: "6px",
@@ -1047,7 +1047,7 @@ export default function Portfolio() {
               rel="noopener noreferrer"
               style={{
                 padding: "12px 30px",
-                backgroundColor: "#333",
+                backgroundColor: "var(--text-primary)",
                 color: "white",
                 textDecoration: "none",
                 borderRadius: "6px",

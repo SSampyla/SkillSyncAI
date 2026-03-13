@@ -2,8 +2,8 @@
 .portfolio-page {
   width: 100%;
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-  color: #e2e8f0;
+  background: linear-gradient(160deg, var(--surface-page-a) 0%, var(--surface-page-b) 100%);
+  color: var(--text-primary);
   padding-bottom: 60px;
 }
 
@@ -16,7 +16,7 @@
 .divider {
   border: none;
   height: 1px;
-  background: rgba(148, 163, 184, 0.2);
+  background: var(--border-soft);
   margin: 0;
 }
 
@@ -36,7 +36,7 @@
   font-size: 40px;
   font-weight: 400;
   margin-bottom: 10px;
-  color: #f1f5f9;
+  color: var(--text-primary);
 }
 
 .size-24 {
@@ -49,5 +49,5 @@
 
 .font-sample p {
   margin: 4px 0;
-  color: #cbd5e1;
+  color: var(--text-secondary);
 }

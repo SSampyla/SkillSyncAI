@@ -44,12 +44,12 @@ export default function Jobs() {
         <hr className="divider" />
         <div className="portfolio-page">
           <div className="portfolio-container" style={{ textAlign: "center" }}>
-            <h1 style={{ color: "#f1f5f9", fontSize: "2.5rem", marginBottom: "20px" }}>Työhaut</h1>
-            <p style={{ color: "#cbd5e1", marginBottom: "30px", fontSize: "1.1rem" }}>
+            <h1 style={{ color: "var(--text-primary)", fontSize: "2.5rem", marginBottom: "20px" }}>Työhaut</h1>
+            <p style={{ color: "var(--text-secondary)", marginBottom: "30px", fontSize: "1.1rem" }}>
               Et ole vielä hakenut yhtään työpaikkaa.
             </p>
-            <p style={{ color: "#94a3b8" }}>
-              Siirry <a href="/avoimet-tyopaikat" style={{ color: "#7dd3fc", textDecoration: "none", borderBottom: "1px solid #7dd3fc" }}>Avoimet Työpaikat</a> -sivulle ja hae työpaikkoja.
+            <p style={{ color: "var(--text-muted)" }}>
+              Siirry <a href="/avoimet-tyopaikat" style={{ color: "var(--color-primary)", textDecoration: "none", borderBottom: "1px solid var(--color-primary)" }}>Avoimet Työpaikat</a> -sivulle ja hae työpaikkoja.
             </p>
           </div>
         </div>
@@ -69,12 +69,12 @@ export default function Jobs() {
     const x2 = 125 + 100 * Math.cos((angle * Math.PI) / 180);
     const y2 = 125 + 100 * Math.sin((angle * Math.PI) / 180);
 
-    const color = compatibility >= 80 ? "#4CAF50" : compatibility >= 70 ? "#FFC107" : "#FF6B6B";
+    const color = compatibility >= 80 ? "var(--color-success)" : compatibility >= 70 ? "#FFC107" : "#FF6B6B";
 
     return (
       <svg width="250" height="250" viewBox="0 0 250 250" style={{ filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.1))" }}>
         {/* Taustakehä */}
-        <circle cx="125" cy="125" r="100" fill="#e0e0e0" opacity="0.3" />
+        <circle cx="125" cy="125" r="100" fill="var(--border-soft-72)" opacity="0.3" />
 
         {/* Yhteensopivuuskehä */}
         <path
@@ -84,11 +84,11 @@ export default function Jobs() {
         />
 
         {/* Keskellä oleva teksti */}
-        <circle cx="125" cy="125" r="70" fill="white" />
+        <circle cx="125" cy="125" r="70" fill="var(--surface-card)" />
         <text x="125" y="120" fontSize="48" fontWeight="bold" textAnchor="middle" fill={color}>
           {compatibility}%
         </text>
-        <text x="125" y="145" fontSize="14" textAnchor="middle" fill="#666">
+        <text x="125" y="145" fontSize="14" textAnchor="middle" fill="var(--text-muted)">
           Yhteensopivuus
         </text>
       </svg>
@@ -103,25 +103,25 @@ export default function Jobs() {
       <div className="portfolio-page">
       <div className="portfolio-container">
         {/* Header */}
-        <h1 style={{ marginBottom: "10px", color: "#f1f5f9", fontSize: "2.5rem" }}>Työhaut</h1>
-        <p style={{ color: "#cbd5e1", marginBottom: "30px", fontSize: "1.1rem" }}>
+        <h1 style={{ marginBottom: "10px", color: "var(--text-primary)", fontSize: "2.5rem" }}>Työhaut</h1>
+        <p style={{ color: "var(--text-secondary)", marginBottom: "30px", fontSize: "1.1rem" }}>
           Haettujen työpaikkojen yhteensopivuus
         </p>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "30px" }}>
           {/* Vasemman puolen: Työpaikkalista */}
           <div>
-            <h3 style={{ marginTop: 0, color: "#f1f5f9", fontSize: "1.3rem" }}>Haetut Työpaikat</h3>
+            <h3 style={{ marginTop: 0, color: "var(--text-primary)", fontSize: "1.3rem" }}>Haetut Työpaikat</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {jobs.map((job, index) => (
                 <div
                   key={job.id}
                   style={{
                     padding: "15px",
-                    backgroundColor: selectedJob === index ? "rgba(76, 99, 255, 0.3)" : "rgba(30, 41, 59, 0.6)",
-                    color: "#e2e8f0",
+                    backgroundColor: selectedJob === index ? "rgba(40, 61, 168, 0.24)" : "var(--surface-glass)",
+                    color: "var(--text-primary)",
                     borderRadius: "12px",
-                    border: selectedJob === index ? "2px solid rgba(76, 99, 255, 0.5)" : "1px solid rgba(148, 163, 184, 0.2)",
+                    border: selectedJob === index ? "2px solid rgba(40, 61, 168, 0.42)" : "1px solid var(--border-soft-72)",
                     transition: "all 0.3s",
                     position: "relative",
                     backdropFilter: "blur(10px)",
@@ -131,15 +131,15 @@ export default function Jobs() {
                     onClick={() => setSelectedJob(index)}
                     style={{ cursor: "pointer", paddingRight: "40px" }}
                   >
-                    <h4 style={{ margin: "0 0 5px 0", fontSize: "16px", color: "#f1f5f9" }}>{job.title}</h4>
-                    <p style={{ margin: "0 0 5px 0", fontSize: "13px", opacity: 0.9, color: "#cbd5e1" }}>
+                    <h4 style={{ margin: "0 0 5px 0", fontSize: "16px", color: "var(--text-primary)" }}>{job.title}</h4>
+                    <p style={{ margin: "0 0 5px 0", fontSize: "13px", opacity: 0.9, color: "var(--text-secondary)" }}>
                       {job.company} • {job.location}
                     </p>
-                    <div style={{ fontSize: "12px", fontWeight: "bold", color: "#7dd3fc" }}>
+                    <div style={{ fontSize: "12px", fontWeight: "bold", color: "var(--color-primary)" }}>
                       Yhteensopivuus: {job.compatibility}%
                     </div>
                     {job.recommended && (
-                      <div style={{ fontSize: "12px", marginTop: "5px", color: "#4CAF50" }}>
+                      <div style={{ fontSize: "12px", marginTop: "5px", color: "var(--color-success)" }}>
                         Suositeltu
                       </div>
                     )}
@@ -175,10 +175,10 @@ export default function Jobs() {
 
           {/* Oikean puolen: Yksityiskohdat ja ympyräkaavio */}
           <div>
-            <div style={{ backgroundColor: "rgba(30, 41, 59, 0.6)", border: "1px solid rgba(148, 163, 184, 0.2)", backdropFilter: "blur(10px)", padding: "30px", borderRadius: "16px", boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}>
+            <div style={{ backgroundColor: "var(--surface-glass)", border: "1px solid var(--border-soft-72)", backdropFilter: "blur(10px)", padding: "30px", borderRadius: "16px", boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}>
               {/* Otsikko */}
-              <h2 style={{ margin: "0 0 10px 0", color: "#7dd3fc", fontSize: "1.8rem" }}>{currentJob.title}</h2>
-              <p style={{ margin: "0 0 20px 0", fontSize: "16px", color: "#cbd5e1" }}>
+              <h2 style={{ margin: "0 0 10px 0", color: "var(--color-primary)", fontSize: "1.8rem" }}>{currentJob.title}</h2>
+              <p style={{ margin: "0 0 20px 0", fontSize: "16px", color: "var(--text-secondary)" }}>
                 <strong>{currentJob.company}</strong> • {currentJob.location}
               </p>
 
@@ -188,13 +188,13 @@ export default function Jobs() {
               </div>
 
               {/* Kuvaus */}
-              <p style={{ color: "#cbd5e1", lineHeight: "1.6", marginBottom: "25px" }}>
+              <p style={{ color: "var(--text-secondary)", lineHeight: "1.6", marginBottom: "25px" }}>
                 {currentJob.description}
               </p>
 
               {/* Taidot */}
               <div style={{ marginBottom: "25px" }}>
-                <h4 style={{ marginTop: 0, marginBottom: "10px", color: "#f1f5f9" }}>Vaaditut Taidot:</h4>
+                <h4 style={{ marginTop: 0, marginBottom: "10px", color: "var(--text-primary)" }}>Vaaditut Taidot:</h4>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                   {currentJob.requiredSkills.map((skill) => {
                     const isMatched = currentJob.matchedSkills.includes(skill);
@@ -204,7 +204,7 @@ export default function Jobs() {
                         style={{
                           padding: "8px 14px",
                           backgroundColor: isMatched ? "rgba(76, 185, 68, 0.2)" : "rgba(239, 68, 68, 0.2)",
-                          color: isMatched ? "#4CAF50" : "#ef4444",
+                          color: isMatched ? "var(--color-success)" : "#ef4444",
                           border: `1px solid ${isMatched ? "rgba(76, 185, 68, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
                           borderRadius: "10px",
                           fontSize: "13px",
@@ -253,10 +253,10 @@ export default function Jobs() {
               {/* Suositeltu työpaikka */}
               {currentJob.recommended && (
                 <div style={{ backgroundColor: "rgba(76, 185, 68, 0.15)", padding: "20px", borderRadius: "12px", border: "1px solid rgba(76, 185, 68, 0.3)" }}>
-                  <h4 style={{ margin: "0 0 10px 0", color: "#4CAF50" }}>Suositeltu työpaikka sinulle</h4>
-                  <p style={{ margin: 0, color: "#cbd5e1" }}>
+                  <h4 style={{ margin: "0 0 10px 0", color: "var(--color-success)" }}>Suositeltu työpaikka sinulle</h4>
+                  <p style={{ margin: 0, color: "var(--text-secondary)" }}>
                     Tämä paikkaisteeltosi on paras vastine sinun taidoillesi. Henkilökohtainen yhteensopivuus on{" "}
-                    <strong style={{ color: "#4CAF50" }}>{currentJob.compatibility}%</strong>.
+                    <strong style={{ color: "var(--color-success)" }}>{currentJob.compatibility}%</strong>.
                   </p>
                 </div>
               )}

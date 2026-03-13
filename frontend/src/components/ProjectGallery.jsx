@@ -372,9 +372,9 @@ export default function ProjectGallery() {
                   onClick={() => startEdit(selectedProject)}
                   style={{
                     padding: "10px 18px",
-                    backgroundColor: "rgba(124, 211, 252, 0.2)",
-                    color: "#7dd3fc",
-                    border: "1px solid rgba(124, 211, 252, 0.3)",
+                    backgroundColor: "rgba(40, 61, 168, 0.16)",
+                    color: "var(--color-primary)",
+                    border: "1px solid rgba(40, 61, 168, 0.24)",
                     borderRadius: "8px",
                     cursor: "pointer",
                     fontSize: "14px",
@@ -422,10 +422,10 @@ export default function ProjectGallery() {
             </div>
 
             {isEditMode && (
-              <div style={{ padding: "20px", backgroundColor: "rgba(76, 99, 255, 0.1)", borderRadius: "12px", marginBottom: "20px" }}>
-                <h4 style={{ color: "#7dd3fc", marginTop: "0" }}>Lisää tai muokkaa kuvia</h4>
+              <div style={{ padding: "20px", backgroundColor: "rgba(40, 61, 168, 0.10)", borderRadius: "12px", marginBottom: "20px" }}>
+                <h4 style={{ color: "var(--color-primary)", marginTop: "0" }}>Lisää tai muokkaa kuvia</h4>
                 <div style={{ marginBottom: "15px" }}>
-                  <label style={{ display: "block", color: "#cbd5e1", marginBottom: "5px", fontSize: "0.9rem" }}>
+                  <label style={{ display: "block", color: "var(--text-secondary)", marginBottom: "5px", fontSize: "0.9rem" }}>
                     Kuvan URL:
                   </label>
                   <div style={{ display: "flex", gap: "10px" }}>
@@ -437,10 +437,10 @@ export default function ProjectGallery() {
                       style={{
                         flex: 1,
                         padding: "10px",
-                        backgroundColor: "rgba(30, 41, 59, 0.6)",
-                        border: "1px solid rgba(124, 211, 252, 0.3)",
+                        backgroundColor: "var(--surface-glass)",
+                        border: "1px solid rgba(40, 61, 168, 0.24)",
                         borderRadius: "8px",
-                        color: "#f1f5f9",
+                        color: "var(--text-primary)",
                         fontSize: "14px",
                         fontFamily: "monospace",
                       }}
@@ -450,7 +450,7 @@ export default function ProjectGallery() {
                       style={{
                         padding: "10px 20px",
                         backgroundColor: "rgba(76, 185, 68, 0.2)",
-                        color: "#4CAF50",
+                        color: "var(--color-success)",
                         border: "1px solid rgba(76, 185, 68, 0.3)",
                         borderRadius: "8px",
                         cursor: "pointer",
@@ -464,10 +464,10 @@ export default function ProjectGallery() {
                 </div>
 
                 <div style={{ marginBottom: "15px" }}>
-                  <label style={{ display: "block", color: "#cbd5e1", marginBottom: "10px", fontSize: "0.9rem" }}>
+                  <label style={{ display: "block", color: "var(--text-secondary)", marginBottom: "10px", fontSize: "0.9rem" }}>
                     Nykyiset kuvat ({editedProject.images.length}):
                   </label>
-                  <div style={{ maxHeight: "150px", overflowY: "auto", backgroundColor: "rgba(15, 23, 42, 0.5)", borderRadius: "6px", padding: "10px" }}>
+                  <div style={{ maxHeight: "150px", overflowY: "auto", backgroundColor: "var(--surface-input-soft)", borderRadius: "6px", padding: "10px" }}>
                     {editedProject.images.map((img, idx) => (
                       <div
                         key={idx}
@@ -476,11 +476,11 @@ export default function ProjectGallery() {
                           justifyContent: "space-between",
                           alignItems: "center",
                           padding: "8px",
-                          backgroundColor: "rgba(30, 41, 59, 0.6)",
+                          backgroundColor: "var(--surface-glass)",
                           borderRadius: "4px",
                           marginBottom: idx < editedProject.images.length - 1 ? "8px" : "0",
                           fontSize: "12px",
-                          color: "#94a3b8",
+                          color: "var(--text-muted)",
                           wordBreak: "break-all",
                         }}
                       >
@@ -523,10 +523,10 @@ export default function ProjectGallery() {
                       style={{
                         width: "100%",
                         padding: "10px",
-                        backgroundColor: "rgba(30, 41, 59, 0.6)",
-                        border: "1px solid rgba(124, 211, 252, 0.3)",
+                        backgroundColor: "var(--surface-glass)",
+                        border: "1px solid rgba(40, 61, 168, 0.24)",
                         borderRadius: "8px",
-                        color: "#f1f5f9",
+                        color: "var(--text-primary)",
                         fontSize: "20px",
                         fontWeight: "700",
                       }}
@@ -542,10 +542,10 @@ export default function ProjectGallery() {
                         style={{
                           width: "100%",
                           padding: "10px",
-                          backgroundColor: "rgba(30, 41, 59, 0.6)",
-                          border: "1px solid rgba(124, 211, 252, 0.3)",
+                          backgroundColor: "var(--surface-glass)",
+                          border: "1px solid rgba(40, 61, 168, 0.24)",
                           borderRadius: "8px",
-                          color: "#f1f5f9",
+                          color: "var(--text-primary)",
                           fontSize: "14px",
                         }}
                       />
@@ -559,10 +559,10 @@ export default function ProjectGallery() {
                         style={{
                           width: "100%",
                           padding: "10px",
-                          backgroundColor: "rgba(30, 41, 59, 0.6)",
-                          border: "1px solid rgba(124, 211, 252, 0.3)",
+                          backgroundColor: "var(--surface-glass)",
+                          border: "1px solid rgba(40, 61, 168, 0.24)",
                           borderRadius: "8px",
-                          color: "#f1f5f9",
+                          color: "var(--text-primary)",
                           fontSize: "14px",
                         }}
                       />
@@ -588,10 +588,10 @@ export default function ProjectGallery() {
                       width: "100%",
                       minHeight: "72px",
                       padding: "10px",
-                      backgroundColor: "rgba(30, 41, 59, 0.6)",
-                      border: "1px solid rgba(124, 211, 252, 0.3)",
+                      backgroundColor: "var(--surface-glass)",
+                      border: "1px solid rgba(40, 61, 168, 0.24)",
                       borderRadius: "8px",
-                      color: "#f1f5f9",
+                      color: "var(--text-primary)",
                       fontSize: "14px",
                       lineHeight: "1.4",
                     }}
@@ -606,10 +606,10 @@ export default function ProjectGallery() {
                       width: "100%",
                       minHeight: "120px",
                       padding: "10px",
-                      backgroundColor: "rgba(30, 41, 59, 0.6)",
-                      border: "1px solid rgba(124, 211, 252, 0.3)",
+                      backgroundColor: "var(--surface-glass)",
+                      border: "1px solid rgba(40, 61, 168, 0.24)",
                       borderRadius: "8px",
-                      color: "#f1f5f9",
+                      color: "var(--text-primary)",
                       fontSize: "14px",
                       lineHeight: "1.5",
                     }}
@@ -634,10 +634,10 @@ export default function ProjectGallery() {
                       style={{
                         width: "100%",
                         padding: "10px",
-                        backgroundColor: "rgba(30, 41, 59, 0.6)",
-                        border: "1px solid rgba(124, 211, 252, 0.3)",
+                        backgroundColor: "var(--surface-glass)",
+                        border: "1px solid rgba(40, 61, 168, 0.24)",
                         borderRadius: "8px",
-                        color: "#f1f5f9",
+                        color: "var(--text-primary)",
                         fontSize: "14px",
                         fontFamily: "monospace",
                       }}
@@ -652,7 +652,7 @@ export default function ProjectGallery() {
                     ></iframe>
                   </div>
                 ) : (
-                  <p style={{ color: "#94a3b8" }}>Ei videota lisätty</p>
+                  <p style={{ color: "var(--text-muted)" }}>Ei videota lisätty</p>
                 )}
               </div>
 
@@ -671,10 +671,10 @@ export default function ProjectGallery() {
                       style={{
                         width: "100%",
                         padding: "10px",
-                        backgroundColor: "rgba(30, 41, 59, 0.6)",
-                        border: "1px solid rgba(124, 211, 252, 0.3)",
+                        backgroundColor: "var(--surface-glass)",
+                        border: "1px solid rgba(40, 61, 168, 0.24)",
                         borderRadius: "8px",
-                        color: "#f1f5f9",
+                        color: "var(--text-primary)",
                         fontSize: "14px",
                         fontFamily: "monospace",
                       }}
@@ -687,11 +687,11 @@ export default function ProjectGallery() {
                     rel="noopener noreferrer"
                     style={{
                       display: "inline-block",
-                      color: "#7dd3fc",
+                      color: "var(--color-primary)",
                       textDecoration: "none",
                       padding: "8px 16px",
-                      backgroundColor: "rgba(124, 211, 252, 0.1)",
-                      border: "1px solid rgba(124, 211, 252, 0.3)",
+                      backgroundColor: "rgba(40, 61, 168, 0.1)",
+                      border: "1px solid rgba(40, 61, 168, 0.24)",
                       borderRadius: "8px",
                       fontSize: "14px",
                       fontWeight: "500",
@@ -700,7 +700,7 @@ export default function ProjectGallery() {
                     Avaa linkki →
                   </a>
                 ) : (
-                  <p style={{ color: "#94a3b8" }}>Ei live demoa</p>
+                  <p style={{ color: "var(--text-muted)" }}>Ei live demoa</p>
                 )}
               </div>
 
@@ -721,10 +721,10 @@ export default function ProjectGallery() {
                     style={{
                       width: "100%",
                       padding: "10px",
-                      backgroundColor: "rgba(30, 41, 59, 0.6)",
-                      border: "1px solid rgba(124, 211, 252, 0.3)",
+                      backgroundColor: "var(--surface-glass)",
+                      border: "1px solid rgba(40, 61, 168, 0.24)",
                       borderRadius: "8px",
-                      color: "#f1f5f9",
+                      color: "var(--text-primary)",
                       fontSize: "14px",
                     }}
                   />
@@ -753,10 +753,10 @@ export default function ProjectGallery() {
                       width: "100%",
                       minHeight: "72px",
                       padding: "10px",
-                      backgroundColor: "rgba(30, 41, 59, 0.6)",
-                      border: "1px solid rgba(124, 211, 252, 0.3)",
+                      backgroundColor: "var(--surface-glass)",
+                      border: "1px solid rgba(40, 61, 168, 0.24)",
                       borderRadius: "8px",
-                      color: "#f1f5f9",
+                      color: "var(--text-primary)",
                       fontSize: "14px",
                       lineHeight: "1.4",
                     }}
@@ -781,10 +781,10 @@ export default function ProjectGallery() {
                       style={{
                         width: "100%",
                         padding: "10px",
-                        backgroundColor: "rgba(30, 41, 59, 0.6)",
-                        border: "1px solid rgba(124, 211, 252, 0.3)",
+                        backgroundColor: "var(--surface-glass)",
+                        border: "1px solid rgba(40, 61, 168, 0.24)",
                         borderRadius: "8px",
-                        color: "#f1f5f9",
+                        color: "var(--text-primary)",
                         fontSize: "14px",
                         fontFamily: "monospace",
                       }}
@@ -797,11 +797,11 @@ export default function ProjectGallery() {
                     rel="noopener noreferrer"
                     style={{
                       display: "inline-block",
-                      color: "#7dd3fc",
+                      color: "var(--color-primary)",
                       textDecoration: "none",
                       padding: "8px 16px",
-                      backgroundColor: "rgba(124, 211, 252, 0.1)",
-                      border: "1px solid rgba(124, 211, 252, 0.3)",
+                      backgroundColor: "rgba(40, 61, 168, 0.1)",
+                      border: "1px solid rgba(40, 61, 168, 0.24)",
                       borderRadius: "8px",
                       fontSize: "14px",
                       fontWeight: "500",
@@ -810,7 +810,7 @@ export default function ProjectGallery() {
                     Avaa GitHub →
                   </a>
                 ) : (
-                  <p style={{ color: "#94a3b8" }}>Ei GitHub-linkkiä</p>
+                  <p style={{ color: "var(--text-muted)" }}>Ei GitHub-linkkiä</p>
                 )}
               </div>
 
@@ -830,7 +830,7 @@ export default function ProjectGallery() {
                       flex: 1,
                       padding: "12px",
                       backgroundColor: "rgba(76, 185, 68, 0.2)",
-                      color: "#4CAF50",
+                      color: "var(--color-success)",
                       border: "1px solid rgba(76, 185, 68, 0.3)",
                       borderRadius: "8px",
                       cursor: "pointer",
