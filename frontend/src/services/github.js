@@ -1,21 +1,26 @@
-export async function fetchRepos(username) {
+export async function analyzeGithub(username) {
 
-    const response = await fetch(
+    const reposRes = await fetch(
         `https://api.github.com/users/${username}/repos`
     );
 
-    if (!response.ok) {
-        throw new Error("GitHub user not found");
+    const repos = await reposRes.json();
+
+    const technologies = new Set();
+
+    for (const repo of repos) {
+
+        const langRes = await fetch(
+            `https://api.github.com/repos/${username}/${repo.name}/languages`
+        );
+
+        const languages = await langRes.json();
+
+        Object.keys(languages).forEach(lang => {
+            technologies.add(lang);
+        });
+
     }
 
-    const repos = await response.json();
-
-    return repos.map(repo => ({
-        name: repo.name,
-        description: repo.description,
-        url: repo.html_url,
-        stars: repo.stargazers_count,
-        language: repo.language
-    }));
-
+    return Array.from(technologies);
 }

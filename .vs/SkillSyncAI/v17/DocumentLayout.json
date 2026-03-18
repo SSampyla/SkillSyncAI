@@ -1,0 +1,304 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\pages\\Portfolio.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:frontend\\src\\pages\\Portfolio.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\data\\portfolioTemplate.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:frontend\\src\\data\\portfolioTemplate.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\services\\jobSearchService.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:backend\\services\\jobSearchService.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\services\\jobScraper.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:backend\\services\\jobScraper.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\routes\\portfolioLLM.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:backend\\routes\\portfolioLLM.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\routes\\interviewLLM.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:backend\\routes\\interviewLLM.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\routes\\jobs.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:backend\\routes\\jobs.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\LLM\\cvEdit.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:backend\\LLM\\cvEdit.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\LLM\\jobSummary.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:backend\\LLM\\jobSummary.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\LLM\\portfolioAnalysis.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:backend\\LLM\\portfolioAnalysis.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\pages\\Home.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:frontend\\src\\pages\\Home.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\config\\synonyms.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:backend\\config\\synonyms.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\LLM\\portfolioRecommendations.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:backend\\LLM\\portfolioRecommendations.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\LLM\\jobCoverLetter.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:backend\\LLM\\jobCoverLetter.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\LLM\\client.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:backend\\LLM\\client.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\data\\promptTestData.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:backend\\data\\promptTestData.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\services\\github.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:frontend\\src\\services\\github.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 11,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "cvEdit.js",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\LLM\\cvEdit.js",
+              "RelativeDocumentMoniker": "backend\\LLM\\cvEdit.js",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\LLM\\cvEdit.js",
+              "RelativeToolTip": "backend\\LLM\\cvEdit.js",
+              "ViewState": "AgIAAFkAAAAA8bUvZk8XwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-15T13:47:05.65Z",
+              "IsPinned": true
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "Home.jsx",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\pages\\Home.jsx",
+              "RelativeDocumentMoniker": "frontend\\src\\pages\\Home.jsx",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\pages\\Home.jsx",
+              "RelativeToolTip": "frontend\\src\\pages\\Home.jsx",
+              "ViewState": "AgIAACEAAAAAAAAAAAAQwDYAAAAtAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2026-03-15T13:22:18.297Z",
+              "IsPinned": true
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "portfolioTemplate.js",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\data\\portfolioTemplate.js",
+              "RelativeDocumentMoniker": "frontend\\src\\data\\portfolioTemplate.js",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\data\\portfolioTemplate.js",
+              "RelativeToolTip": "frontend\\src\\data\\portfolioTemplate.js",
+              "ViewState": "AgIAAB0AAAAAAAAAAAAgwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-15T14:33:32.965Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "jobSearchService.js",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\services\\jobSearchService.js",
+              "RelativeDocumentMoniker": "backend\\services\\jobSearchService.js",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\services\\jobSearchService.js",
+              "RelativeToolTip": "backend\\services\\jobSearchService.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-15T14:32:51.764Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "jobScraper.js",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\services\\jobScraper.js",
+              "RelativeDocumentMoniker": "backend\\services\\jobScraper.js",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\services\\jobScraper.js",
+              "RelativeToolTip": "backend\\services\\jobScraper.js",
+              "ViewState": "AgIAADABAAAAAAAAAAAgwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-15T14:32:48.227Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "portfolioLLM.js",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\routes\\portfolioLLM.js",
+              "RelativeDocumentMoniker": "backend\\routes\\portfolioLLM.js",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\routes\\portfolioLLM.js",
+              "RelativeToolTip": "backend\\routes\\portfolioLLM.js",
+              "ViewState": "AgIAAIgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-15T14:32:41.582Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "interviewLLM.js",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\routes\\interviewLLM.js",
+              "RelativeDocumentMoniker": "backend\\routes\\interviewLLM.js",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\routes\\interviewLLM.js",
+              "RelativeToolTip": "backend\\routes\\interviewLLM.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-15T14:32:39.175Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "portfolioAnalysis.js",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\LLM\\portfolioAnalysis.js",
+              "RelativeDocumentMoniker": "backend\\LLM\\portfolioAnalysis.js",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\LLM\\portfolioAnalysis.js",
+              "RelativeToolTip": "backend\\LLM\\portfolioAnalysis.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-15T14:32:25.607Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "jobs.js",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\routes\\jobs.js",
+              "RelativeDocumentMoniker": "backend\\routes\\jobs.js",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\routes\\jobs.js",
+              "RelativeToolTip": "backend\\routes\\jobs.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAABNAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-15T14:30:25.86Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Portfolio.jsx",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\pages\\Portfolio.jsx",
+              "RelativeDocumentMoniker": "frontend\\src\\pages\\Portfolio.jsx",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\pages\\Portfolio.jsx",
+              "RelativeToolTip": "frontend\\src\\pages\\Portfolio.jsx",
+              "ViewState": "AgIAANQBAAAAAAAAAAAhwPUBAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2026-03-15T14:26:41.136Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "synonyms.js",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\config\\synonyms.js",
+              "RelativeDocumentMoniker": "backend\\config\\synonyms.js",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\config\\synonyms.js",
+              "RelativeToolTip": "backend\\config\\synonyms.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABsAAAApAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-15T13:51:32.457Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "portfolioRecommendations.js",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\LLM\\portfolioRecommendations.js",
+              "RelativeDocumentMoniker": "backend\\LLM\\portfolioRecommendations.js",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\LLM\\portfolioRecommendations.js",
+              "RelativeToolTip": "backend\\LLM\\portfolioRecommendations.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-15T13:47:20.534Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "jobSummary.js",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\LLM\\jobSummary.js",
+              "RelativeDocumentMoniker": "backend\\LLM\\jobSummary.js",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\LLM\\jobSummary.js",
+              "RelativeToolTip": "backend\\LLM\\jobSummary.js",
+              "ViewState": "AgIAADsAAAAAAAAAAAAgwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-15T13:47:15.45Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "jobCoverLetter.js",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\LLM\\jobCoverLetter.js",
+              "RelativeDocumentMoniker": "backend\\LLM\\jobCoverLetter.js",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\LLM\\jobCoverLetter.js",
+              "RelativeToolTip": "backend\\LLM\\jobCoverLetter.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-15T13:47:11.784Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "client.js",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\LLM\\client.js",
+              "RelativeDocumentMoniker": "backend\\LLM\\client.js",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\LLM\\client.js",
+              "RelativeToolTip": "backend\\LLM\\client.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-15T13:47:06.922Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "promptTestData.js",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\data\\promptTestData.js",
+              "RelativeDocumentMoniker": "backend\\data\\promptTestData.js",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\data\\promptTestData.js",
+              "RelativeToolTip": "backend\\data\\promptTestData.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAUAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-15T13:46:39.608Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "github.js",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\services\\github.js",
+              "RelativeDocumentMoniker": "frontend\\src\\services\\github.js",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\services\\github.js",
+              "RelativeToolTip": "frontend\\src\\services\\github.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABkAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-15T13:25:38.041Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

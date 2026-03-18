@@ -78,8 +78,144 @@ export default function Portfolio() {
     const [education, setEducation] = useState(profile.education || []);
     const [certifications, setCertifications] = useState(profile.certifications || []);
     const [profileSummary, setProfileSummary] = useState(
-      profile.profileSummary || createEmptyPortfolio().profileSummary
+        profile.profileSummary || createEmptyPortfolio().profileSummary
     );
+
+    const [detectedSkills, setDetectedSkills] = useState(null);
+    const [showSkillModal, setShowSkillModal] = useState(false); 
+
+       
+
+    
+
+            const mapGithubTechToSkills = (techList) => {
+
+                const mapped = {
+                    frontend: [],
+                    backend: [],
+                    tools: [],
+                    other: []
+                };
+
+                techList.forEach((tech) => {
+
+                    const normalized = tech.toLowerCase();
+
+                    let foundCategory = null;
+
+                    for (const [category, skills] of Object.entries(availableSkills)) {
+
+                        const match = skills.find(
+                            skill => skill.toLowerCase() === normalized
+                        );
+
+                        if (match) {
+                            mapped[category].push(match);
+                            foundCategory = category;
+                            break;
+                        }
+
+                    }
+
+                    if (!foundCategory) {
+                        mapped.other.push(tech);
+                    }
+
+                });
+
+                return mapped;
+    };
+
+    const handleGithubAnalyze = async () => {
+
+        if (!profile.github) {
+            alert("GitHub username puuttuu");
+            return;
+        }
+
+        try {
+
+            const reposRes = await fetch(
+                `https://api.github.com/users/${profile.github}/repos`
+            );
+
+            const repos = await reposRes.json();
+
+            const techSet = new Set();
+
+            for (const repo of repos.slice(0, 5)) {
+
+                const langRes = await fetch(
+                    `https://api.github.com/repos/${profile.github}/${repo.name}/languages`
+                );
+
+                const languages = await langRes.json();
+
+                Object.keys(languages).forEach(lang => techSet.add(lang));
+            }
+
+            const detected = Array.from(techSet);
+            const mappedSkills = mapGithubTechToSkills(detected);
+
+            setDetectedSkills(mappedSkills);
+            setShowSkillModal(true);
+
+        } catch (err) {
+            console.error(err);
+            alert("GitHub analyysi epäonnistui");
+        }
+    };
+
+    const handleConfirmSkills = () => {
+
+        if (!detectedSkills) return;
+
+                setSelectedSkills((prev) => ({
+                    frontend: [...new Set([...prev.frontend, ...detectedSkills.frontend])],
+                    backend: [...new Set([...prev.backend, ...detectedSkills.backend])],
+                    tools: [...new Set([...prev.tools, ...detectedSkills.tools])],
+                    other: [...new Set([...prev.other, ...detectedSkills.other])]
+                }));
+
+        alert("Taidot lisätty profiiliin!");
+
+                setShowSkillModal(false);
+    };
+
+    const [githubProjects, setGithubProjects] = useState([]);
+
+    const handleFetchRepos = async () => {
+
+        if (!profile.github) {
+            alert("GitHub username puuttuu");
+            return;
+        }
+
+        try {
+            const res = await fetch(
+                `https://api.github.com/users/${profile.github}/repos`
+            );
+
+            const repos = await res.json();
+
+            const projects = repos.slice(0, 6).map(repo => ({
+                name: repo.name,
+                description: repo.description,
+                url: repo.html_url,
+                stars: repo.stargazers_count
+            }));
+
+            setGithubProjects(projects);
+
+            alert("Projektit tuotu!");
+        } catch (err) {
+            console.error(err);
+            alert("Repojen haku epäonnistui");
+        }
+    };
+
+       
+          
 
     useEffect(() => {
         const updatedProfile = {
@@ -261,8 +397,9 @@ export default function Portfolio() {
                                               linkedin.com/in/{profile.linkedin}
                                           </a>
                 </div>
-                <div style={{ gridColumn: "1 / -1" }}>
-                                          <strong>GitHub:</strong>{" "}
+                                      <div style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: "10px" }}>
+                                          <strong>GitHub:</strong>
+
                                           <a
                                               href={`https://github.com/${profile.github}`}
                                               target="_blank"
@@ -270,11 +407,47 @@ export default function Portfolio() {
                                           >
                                               github.com/{profile.github}
                                           </a>
-                </div>
-              </div>
-            </>
-          )}
-        </section>
+
+                                      {profile.github && (
+                                          <div style={{ display: "flex", gap: "10px" }}>
+                                              <button
+                                                  onClick={handleGithubAnalyze}
+                                                  style={{
+                                                      padding: "4px 10px",
+                                                      fontSize: "12px",
+                                                      backgroundColor: "var(--color-primary)",
+                                                      color: "white",
+                                                      border: "none",
+                                                      borderRadius: "4px",
+                                                      cursor: "pointer"
+                                                  }}
+                                              >
+                                                  Analysoi GitHub
+                                              </button>
+
+                                              <button
+                                                  onClick={handleFetchRepos}
+                                                  style={{
+                                                      padding: "4px 10px",
+                                                      fontSize: "12px",
+                                                      backgroundColor: "#6cd757",
+                                                      color: "white",
+                                                      border: "none",
+                                                      borderRadius: "4px",
+                                                      cursor: "pointer"
+                                                  }}
+                                              >
+                                                  Tuo projektit
+                                              </button>
+                                          </div>
+                                      )}
+
+                                  </div>
+                              </div>
+                          </>
+                      )}
+                  </section>
+        
 
         {/* Edit Button */}
         <div style={{ textAlign: "right", marginBottom: "20px" }}>
@@ -297,7 +470,7 @@ export default function Portfolio() {
 
         {/* Navigation Tabs */}
         <div style={{ display: "flex", gap: "10px", marginBottom: "30px", flexWrap: "wrap" }}>
-          {["profile", "skills", "experience", "education"].map((section) => (
+          {["profile", "skills", "experience", "education", "projects"].map((section) => (
             <button
               key={section}
               onClick={() => setActiveSection(section)}
@@ -313,13 +486,18 @@ export default function Portfolio() {
                 transition: "all 0.3s",
               }}
             >
-              {section === "profile"
-                ? "Profiili"
-                : section === "skills"
-                ? "Taidot"
-                : section === "experience"
-                ? "Kokemus"
-                : "Koulutus"}
+                  {section === "profile"
+                      ? "Profiili"
+                      : section === "skills"
+                          ? "Taidot"
+                          : section === "experience"
+                              ? "Kokemus"
+                              : section === "education"
+                                  ? "Koulutus"
+                                  : section === "projects"
+                                      ? "Projektit"
+                                      : ""
+                  }
             </button>
           ))}
         </div>
@@ -443,7 +621,23 @@ export default function Portfolio() {
               </div>
             )}
           </section>
-        )}
+                      )}
+
+                      {activeSection === "projects" && githubProjects.length > 0 && (
+                          <section style={{ marginTop: "30px" }}>
+                              <h3>GitHub projektit</h3>
+
+                              {githubProjects.map((project, i) => (
+                                  <div key={i} style={{ marginBottom: "15px" }}>
+                                      <strong>{project.name}</strong>
+                                      <p>{project.description}</p>
+                                      <a href={project.url} target="_blank">
+                                          Avaa GitHubissa
+                                      </a>
+                                  </div>
+                              ))}
+                          </section>
+                      )}
 
         {/* Experience Section */}
         {activeSection === "experience" && (
@@ -1061,7 +1255,73 @@ export default function Portfolio() {
           </div>
         </section>
       </div>
-      </div>
+          </div>
+
+          {showSkillModal && detectedSkills && (
+              <div style={{
+                  position: "fixed",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                  backgroundColor: "rgba(0,0,0,0.5)",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  zIndex: 1000
+              }}>
+                  <div style={{
+                      background: "white",
+                      padding: "30px",
+                      borderRadius: "10px",
+                      maxWidth: "400px",
+                      width: "90%"
+                  }}>
+                      <h3>GitHubista löytyi taidot</h3>
+
+                      <div style={{ marginBottom: "20px" }}>
+                          {[...detectedSkills.frontend,
+                          ...detectedSkills.backend,
+                          ...detectedSkills.tools,
+                          ...detectedSkills.other
+                          ].map((skill, i) => (
+                              <div key={i}>{skill}</div>
+                          ))}
+                      </div>
+
+                      <div style={{ display: "flex", gap: "10px" }}>
+                          <button
+                              onClick={handleConfirmSkills}
+                              style={{
+                                  backgroundColor: "var(--color-primary)",
+                                  color: "white",
+                                  border: "none",
+                                  padding: "10px",
+                                  borderRadius: "5px",
+                                  cursor: "pointer"
+                              }}
+                          >
+                              Lisää taidot
+                              
+                          </button>
+
+
+                          <button
+                              onClick={() => setShowSkillModal(false)}
+                              style={{
+                                  backgroundColor: "#ccc",
+                                  border: "none",
+                                  padding: "10px",
+                                  borderRadius: "5px",
+                                  cursor: "pointer"
+                              }}
+                          >
+                              Peruuta
+                          </button>
+                      </div>
+                  </div>
+              </div>
+          )}
     </>
   );
 }
