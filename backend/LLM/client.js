@@ -22,16 +22,13 @@ import OpenAI from "openai";
 
 dotenv.config();
 
-export const AZURE_MODEL = process.env.AZURE_OPENAI_DEPLOYMENT;
+export const AZURE_MODEL = process.env.AZURE_OPENAI_BASE;
+export const AZURE_MODEL_FASTER = process.env.AZURE_OPENAI_FASTER;
 
 // Luodaan client AZURE OpenAI:lle
 const client = new OpenAI({
-  apiKey: process.env.AZURE_OPENAI_KEY, 
-  baseURL: `${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/${process.env.AZURE_OPENAI_DEPLOYMENT}`,
-  defaultHeaders: {
-    "api-key": process.env.AZURE_OPENAI_KEY 
-  },
-  defaultQuery: { "api-version": "2024-02-15-preview" } 
+  apiKey: process.env.AZURE_OPENAI_KEY,
+  baseURL: `${process.env.AZURE_OPENAI_ENDPOINT}`
 });
 
 export default client;

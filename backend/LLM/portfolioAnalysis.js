@@ -41,8 +41,16 @@
 
 import client, { AZURE_MODEL } from "./client.js";
 import { getAiNamingInstructions } from "../config/synonyms.js";
+import { getCache, setCache, createCacheKey } from "../utils/apiCoreLLM.js";
 
 export async function analyzeGithubPortfolio(portfolioText) {
+
+  const cacheKey = createCacheKey("portfolio-analysis", {
+    portfolioText
+  });
+
+  const cached = getCache(cacheKey);
+  if (cached) return cached;
 
   const response = await client.chat.completions.create({
     model: AZURE_MODEL,
@@ -145,9 +153,7 @@ RULES:
   try {
     const content = JSON.parse(response.choices[0].message.content);
 
-    // console.log(response.choices[0].message.content);
-
-    return {
+    const result = {
       githubSkills: content.githubSkills || [],
       projects: content.projects || [],
       activity: {
@@ -157,6 +163,10 @@ RULES:
         bestPractices: content.activity?.bestPractices || []
       }
     };
+
+    setCache(cacheKey, result);
+
+    return result;
 
   } catch (e) {
     console.warn(
@@ -169,7 +179,7 @@ RULES:
       projects: [],
       activity: {
         consistency: null,
-        recency: null,  
+        recency: null,
         score: 0,
         bestPractices: []
       }

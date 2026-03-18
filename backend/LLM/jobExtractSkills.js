@@ -20,13 +20,21 @@
  * Käytettävissä suoraan frontissa tai backissa ilman erillistä parsea.
  */
 
-import client, { AZURE_MODEL } from "./client.js";
+import client, { AZURE_MODEL_FASTER } from "./client.js";
 import { getAiNamingInstructions } from "../config/synonyms.js";
+import { getCache, setCache, createCacheKey } from "../utils/apiCoreLLM.js";
 
 export async function extractJobSkills(jobText) {
 
+  const cacheKey = createCacheKey("extractJobSkills", {
+    jobText
+  });
+
+  const cached = getCache(cacheKey);
+  if (cached) return cached;
+
   const response = await client.chat.completions.create({
-    model: AZURE_MODEL,
+    model: AZURE_MODEL_FASTER,
     response_format: { type: "json_object" },
     temperature: 0.075,
     max_tokens: 1000,
@@ -68,12 +76,17 @@ ${getAiNamingInstructions}
 
   try {
     const content = JSON.parse(response.choices[0].message.content);
-    return {
+
+    const result = {
       hardSkillsRequired: content.hardSkillsRequired || [],
       hardSkillsOptional: content.hardSkillsOptional || [],
       softSkillsRequired: content.softSkillsRequired || [],
       softSkillsOptional: content.softSkillsOptional || []
     };
+
+    setCache(cacheKey, result);
+    return result;
+
   } catch (e) {
     console.warn("LLM returned invalid JSON for extractJobSkills:", response.choices[0].message.content);
     return {
@@ -87,8 +100,15 @@ ${getAiNamingInstructions}
 
 export async function extractCandidateSkills(applicantText) {
 
+  const cacheKey = createCacheKey("candidateSkills", {
+    applicantText
+  });
+
+  const cached = getCache(cacheKey);
+  if (cached) return cached;
+
   const response = await client.chat.completions.create({
-    model: AZURE_MODEL,
+    model: AZURE_MODEL_FASTER,
     response_format: { type: "json_object" },
     temperature: 0.075,
     max_tokens: 1000,
@@ -134,12 +154,17 @@ IMPORTANT:
 
   try {
     const content = JSON.parse(response.choices[0].message.content);
-    return {
+
+    const result = {
       hardSkillsProficient: content.hardSkillsProficient || [],
       hardSkillsBasics: content.hardSkillsBasics || [],
       softSkillsProficient: content.softSkillsProficient || [],
       softSkillsBasics: content.softSkillsBasics || []
     };
+
+    setCache(cacheKey, result);
+    return result;
+
   } catch (e) {
     console.warn("LLM returned invalid JSON:", response.choices[0].message.content);
     return {

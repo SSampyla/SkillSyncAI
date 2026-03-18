@@ -27,8 +27,17 @@
  */
 
 import client, { AZURE_MODEL } from "../LLM/client.js";
+import { getCache, setCache, createCacheKey } from "../utils/apiCoreLLM.js";
 
 export async function summarizeJob(jobText) {
+
+  const cacheKey = createCacheKey("summarizeJob", {
+    jobText
+  });
+
+  const cached = getCache(cacheKey);
+  if (cached) return cached;
+
   const response = await client.chat.completions.create({
     model: AZURE_MODEL,
     response_format: { type: "json_object" },
@@ -73,8 +82,10 @@ RULES:
   });
 
   try {
+
     const content = JSON.parse(response.choices[0].message.content);
-    return {
+
+    const result = {
       summary: content.summary || "",
       technologies: content.technologies || [],
       hardSkills: content.hardSkills || [],
@@ -86,6 +97,10 @@ RULES:
         employmentType: content.otherRelevantInfo?.employmentType ?? null
       }
     };
+
+    setCache(cacheKey, result);
+    return result;
+
   } catch (e) {
     console.warn("LLM returned invalid JSON for summarizeJob:", response.choices[0].message.content);
     return {

@@ -1,320 +1,160 @@
-/**
- * ------------------------------------------------------------------
- * Routes - Jobs API
- * ------------------------------------------------------------------
- *
- * Määrittelee backendin API-endpointit työpaikkailmoituksille ja hakijaprofiilin AI-analyysille.
- * Huom! Nämä endpointit on todella hitaita. Voi hyvinkin kestää 0.5-10s ennenkuin vastaus saapuu.
- * Jos tarvitaan lisää vauhtia, pitää vaihtaa LLM azuren päästä vaikkapa GPT 4 miniin.
- *
- * Endpointit:
- *
- * 1. POST /api/jobs/summary
- * ------------------------------------------------
- * - Odottaa JSON: { jobText: "..." }
- * - Palauttaa: { summary: { ... }, responseTimeMs: number }
- *
- * 2. POST /api/jobs/skills/job
- * ------------------------------------------------
- * - Odottaa JSON: { jobText: "..." }
- * - Palauttaa työpaikan vaaditut ja toivotut taidot:
- *   {
- *     hardSkillsRequired: string[],
- *     hardSkillsOptional: string[],
- *     softSkillsRequired: string[],
- *     softSkillsOptional: string[]
- *   }
- * - Lisäksi vasteaika: responseTimeMs
- *
- * 3. POST /api/jobs/letter
- * ------------------------------------------------
- * - Odottaa JSON:
- *   {
- *     jobText,
- *     applicantText,
- *     language,
- *     matchData
- *   }
- *
- * - matchData voidaan tuottaa funktiolla:
- *   prepareSkillsForPrompt(jobData, candidateData)
- *
- * - language voi olla null → oletus suomi
- * - matchData voi olla null, mutta tod näk output on huonompi
- *
- * - Palauttaa:
- *   { coverLetter: "...", responseTimeMs: number }
- *
- * 4. POST /api/jobs/skills/applicant
- * ------------------------------------------------
- * - Odottaa JSON:
- *   { applicantText: "..." }
- *
- * - Palauttaa hakijan osaamisen luokiteltuna:
- *   {
- *     hardSkillsProficient: string[],
- *     hardSkillsBasics: string[],
- *     softSkillsProficient: string[],
- *     softSkillsBasics: string[]
- *   }
- *
- * - Lisäksi vasteaika: responseTimeMs
- *
- * Tätä dataa käytetään:
- * - calculateMatch()-funktiossa osaamisprosentin laskemiseen
- * - Gap Analysis -näkymässä
- * - Saatekirjeen personoinnissa
- */
-
 import express from "express";
+import { asyncHandler, getCache, setCache, createCacheKey } from "../utils/apiCoreLLM.js";
+import { createValidator, validateJobText, validateCoverLetter, validateApplicantText } from "../utils/routeValidatorsLLM.js";
 import { summarizeJob } from "../LLM/jobSummary.js";
-import { extractJobSkills } from "../LLM/jobExtractSkills.js";
-import { extractCandidateSkills } from "../LLM/jobExtractSkills.js";
+import { extractJobSkills, extractCandidateSkills } from "../LLM/jobExtractSkills.js";
 import { generateCoverLetter } from "../LLM/jobCoverLetter.js";
-import { searchJobsFromAllSources } from "../services/jobScraper.js";
+
+/*
+# Job & Cover Letter API
+Tämä reititin käsittelee työpaikkailmoitusten analysointia ja työhakemusten (Cover Letter) generointia LLM:n avulla.
+
+## Caching
+`/letter` -reitissä on sisäänrakennettu versionhallinta:
+
+1. **Uuden luonti:** Kun kutsut reittiä ilman `versionId` -kenttää, backend generoi uuden kirjeen ja palauttaa sen mukana uniikin ID:n (esim. `versionId: "cv_123xyz"`).
+2. **Vanhan haku:** Jos käyttäjä haluaa palata tähän tiettyyn versioon (esim. peruuttaa muutoksen tai vaihtaa näkymää), lähetä pyynnön bodyssä saamasi `versionId`. Backend palauttaa välimuistista kyseisen version nopeasti.
+3. Jos versio ID on väärä, generoidaan uusi kirje ja uusi ID.
+
+## Reitit
+
+### `POST /summary` | `POST /skills/job` | `POST /skills/applicant`
+Perusanalyysireitit. Palauttavat yhteenvedon tai taidot.
+* **Välimuisti:** Automaattinen. Sama payload palauttaa aina saman tuloksen (1 tunnin ajan).
+
+### `POST /letter`
+Generoi työhakemuksen (Cover letter).
+* **Body:** `{ jobText, applicantText, language, matchData, versionId? }`
+* **Paluuarvo:** `{ coverLetter: "...", versionId: "cv_1710..." }`
+*/
 
 const router = express.Router();
-const MAX_TEXT_LENGTH = 20000; // Body json max 20k merkkiä (~3000-4000 sanaa). Voi muokata, jos ei riitä
 
-// =============================
-// ----- Virheen käsittely -----
-// =============================
+router.post(
+  "/summary",
+  createValidator(validateJobText),
 
-// Tarkista body tekstin pituus.
-const validateJobText = (req, res, next) => {
-  const { jobText } = req.body;
+  asyncHandler(async (req) => {
+    console.log("[LLM route: Job summary called]");
 
-  if (!jobText?.trim()) {
-    return res.status(400).json({ error: "Työpaikkailmoituksen teksti puuttuu." });
-  }
+    const cacheKey = createCacheKey("job_summary", req.body);
+    const cached = getCache(cacheKey);
+    if (cached) return cached;
 
-  if (jobText.length > MAX_TEXT_LENGTH) {
-    return res.status(413).json({ 
-      error: `Teksti on liian pitkä. Maksimipituus on ${MAX_TEXT_LENGTH} merkkiä.` 
-    });
-  }
-
-  next(); // Tarkistus ok, siirrytään varsinaisen reitin suoritukseen
-};
-
-const validateLetterInput = (req, res, next) => {
-  const { applicantText, jobText } = req.body;
-
-  if (!applicantText?.trim()) {
-    return res.status(400).json({ error: "Hakijan yhteenveto puuttuu." });
-  }
-
-  if (!jobText?.trim()) {
-    return res.status(400).json({ error: "Työpaikkailmoituksen teksti puuttuu." });
-  }
-
-  if (jobText.length > MAX_TEXT_LENGTH) {
-    return res.status(413).json({ 
-      error: `Työpaikkailmoitus on liian pitkä. Maksimipituus on ${MAX_TEXT_LENGTH} merkkiä.` 
-    });
-  }
-
-  next();
-};
-
-const validateApplicantText = (req, res, next) => {
-  const { applicantText } = req.body;
-
-  if (!applicantText?.trim()) {
-    return res.status(400).json({ error: "Hakijan teksti puuttuu." });
-  }
-
-  if (applicantText.length > MAX_TEXT_LENGTH) {
-    return res.status(413).json({ 
-      error: `Hakijan teksti on liian pitkä. Maksimi ${MAX_TEXT_LENGTH} merkkiä.` 
-    });
-  }
-
-  next();
-};
-
-const validateSearchInput = (req, res, next) => {
-  const { jobTitle, location, keywords, experience } = req.body;
-
-  if (!jobTitle?.trim()) {
-    return res.status(400).json({ error: "Tehtavan nimi puuttuu." });
-  }
-
-  if (jobTitle.length > 120) {
-    return res.status(413).json({ error: "Tehtavan nimi on liian pitka." });
-  }
-
-  if (location && location.length > 120) {
-    return res.status(413).json({ error: "Sijainti on liian pitka." });
-  }
-
-  if (keywords && !Array.isArray(keywords)) {
-    return res.status(400).json({ error: "keywords-kentan tulee olla taulukko." });
-  }
-
-  if (
-    experience &&
-    !["junior", "mid", "senior"].includes(experience)
-  ) {
-    return res.status(400).json({ error: "experience-kenta ei ole sallittu arvo." });
-  }
-
-  next();
-};
-
-const handleRouteError = (res, err, startTime, context) => {
-  const duration = Date.now() - startTime;
-  console.error(`${context} failed (${duration} ms)`);
-
-  const upstreamStatus = err?.status || err?.statusCode || err?.error?.status;
-  const upstreamMessage = err?.message || err?.error?.message;
-  const upstreamCode = err?.code || err?.error?.code;
-
-  if (upstreamStatus) {
-    console.error("Azure OpenAI error:", {
-      status: upstreamStatus,
-      message: upstreamMessage,
-      code: upstreamCode
-    });
-    return res.status(502).json({
-      error: upstreamMessage || "Tekoaly-palvelu ei vastannut oikein.",
-    });
-  }
-
-  console.error("Backend error:", err);
-  res.status(500).json({ error: `Palvelinvirhe ${context.toLowerCase()}.` });
-};
-
-
-// ============================
-// ----- /api/jobs/search -----
-// ============================
-
-router.post("/search", validateSearchInput, async (req, res) => {
-  console.log("POST /api/jobs/search called");
-  const startTime = Date.now();
-
-  try {
-    const {
-      jobTitle,
-      location = "",
-      keywords = [],
-      experience = "",
-    } = req.body;
-
-    const cleanedKeywords = keywords
-      .map((k) => `${k}`.trim())
-      .filter(Boolean)
-      .slice(0, 15);
-
-    const jobs = await searchJobsFromAllSources(
-      jobTitle.trim(),
-      location?.trim() ?? "",
-      cleanedKeywords,
-      experience
-    );
-    const sources = [...new Set(jobs.map((job) => job.source).filter(Boolean))];
-
-    const duration = Date.now() - startTime;
-
-    console.log(`POST /api/jobs/search success (${duration} ms)`);
-    res.json({
-      jobs,
-      sources,
-      responseTimeMs: duration,
-    });
-  } catch (err) {
-    handleRouteError(res, err, startTime, "Tyopaikkahaussa");
-  }
-});
-
-
-// =============================
-// ----- /api/jobs/summary -----
-// =============================
-
-router.post("/summary", validateJobText, async (req, res) => {
-  console.log("POST /api/jobs/summary called");
-  const startTime = Date.now();
-
-  try {
     const summary = await summarizeJob(req.body.jobText);
-    const duration = Date.now() - startTime;
-    
-    console.log(`POST /api/jobs/summary success (${duration} ms)`);
-    res.json({ summary, responseTimeMs: duration });
 
-  } catch (err) {
-    handleRouteError(res, err, startTime, "Ilmoituksen analysoinnissa");
-  }
-});
+    const response = { summary };
 
-// ============================
-// ----- /api/jobs/skills/job -----
-// ============================
+    setCache(cacheKey, response, 1000 * 60 * 60); // 1h
 
-router.post("/skills/job", validateJobText, async (req, res) => {
-  console.log("POST /api/jobs/skills/job called");
-  const startTime = Date.now();
+    return response;
 
-  try {
+  }, "Ilmoituksen analysointi")
+);
+
+router.post(
+  "/skills/job",
+  createValidator(validateJobText),
+
+  asyncHandler(async (req) => {
+
+    console.log("[Extract job skills called]");
+
+    const cacheKey = createCacheKey("job_skills", req.body);
+
+    const cached = getCache(cacheKey);
+    if (cached) return cached;
+
     const skills = await extractJobSkills(req.body.jobText);
-    const duration = Date.now() - startTime;
 
-    console.log(`POST /api/jobs/skills/job success (${duration} ms)`);
-    res.json({ skills, responseTimeMs: duration });
+    const response = { skills };
 
-  } catch (err) {
-    handleRouteError(res, err, startTime, "Taitojen analysoinnissa");
-  }
-});
+    setCache(cacheKey, response, 1000 * 60 * 60);
 
-// ============================
-// ----- /api/jobs/letter -----
-// ============================
+    return response;
 
-router.post("/letter", validateLetterInput, async (req, res) => {
-  console.log("POST /api/jobs/letter called");
-  const startTime = Date.now();
+  }, "Taitojen analysointi")
+);
 
-  try {
+router.post(
+  "/skills/applicant",
+  createValidator(validateApplicantText),
 
-    const { applicantText, jobText, language, matchData } = req.body;
-    const letterData = await generateCoverLetter(jobText, applicantText, language, matchData);
+  asyncHandler(async (req) => {
+    console.log("[Extract applicant skills called]");
 
-    const duration = Date.now() - startTime;
-    console.log(`POST /api/jobs/letter success (${duration} ms)`);
+    const { applicantText } = req.body;
 
-    res.json({ coverLetter: letterData, responseTimeMs: duration });
+    const cacheKey = createCacheKey("applicant_skills", { applicantText });
 
-  } catch (err) {
-    handleRouteError(res, err, startTime, "Saatekirjeen generoinnissa");
-  }
-});
+    const cached = getCache(cacheKey);
+    if (cached) return cached;
 
-// ======================================
-// ----- /api/jobs/skills/applicant -----
-// ======================================
+    const skills = await extractCandidateSkills(applicantText);
 
-router.post("/skills/applicant", validateApplicantText, async (req, res) => {
-  console.log("POST /api/jobs/skills/applicant called");
-  const startTime = Date.now();
+    const response = { skills };
 
-  try {
+    setCache(cacheKey, response, 1000 * 60 * 60); // 1h
 
-    const skills = await extractCandidateSkills(req.body.applicantText);
-    const duration = Date.now() - startTime;
+    return response;
 
-    console.log(`POST /api/jobs/skills/applicant success (${duration} ms)`);
+  }, "Hakijan taitojen analysointi")
+);
 
-    res.json({ 
-      skills,
-      responseTimeMs: duration 
-    });
+router.post(
+  "/letter",
+  createValidator(validateCoverLetter),
 
-  } catch (err) {
-    handleRouteError(res, err, startTime, "Hakijan taitojen analysoinnissa");
-  }
-});
+  asyncHandler(async (req) => {
+    console.log("[LLM route: Cover letter called]");
+
+    const { jobText, applicantText, language, matchData, versionId } = req.body;
+
+    // 1. Jos versionId on annettu, yritetään hakea se suoraan cachesta
+    if (versionId) {
+      const cachedVersion = getCache(versionId);
+      if (cachedVersion) {
+        console.log(`[Cache Hit] Haetaan versio: ${versionId}`);
+        return cachedVersion;
+      }
+      console.log(`[Cache Miss] Versiota ${versionId} ei löytynyt, generoidaan uusi.`);
+    }
+
+    // 2. Generoidaan uusi kirje (oletusarvo, jos ID:tä ei ole tai se on vanha)
+    const coverLetter = await generateCoverLetter(
+      jobText,
+      applicantText,
+      language,
+      matchData
+    );
+
+    // 3. Luodaan uniikki ID tälle uudelle versiolle
+    // Käytetään yksinkertaista koostetta: cv_ + aikaleima + lyhyt random-pätkä
+    const newVersionId = `cv_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
+    const response = { 
+      coverLetter, 
+      versionId: newVersionId 
+    };
+
+    // 4. Validointi ja tallennus cacheen uniikilla ID:llä
+    if (
+      typeof coverLetter === "string" &&
+      coverLetter.trim().length > 50 &&
+      !coverLetter.includes("LLM did not")
+    ) {
+      // Tallennetaan ID:llä, jotta frontend voi hakea tämän uudestaan tarvittaessa
+      setCache(newVersionId, response, 1000 * 60 * 60); // 1h
+      
+      // Tallennetaan lisäksi input-perusteisella avaimella
+      const inputCacheKey = createCacheKey("cover_letter", { jobText, applicantText, language, matchData });
+      setCache(inputCacheKey, response, 1000 * 60 * 60);
+    } else {
+      console.warn("[Cover Letter] Skipped caching invalid/fallback output.");
+    }
+
+    return response;
+  }, "Hakemuksen generointi")
+);
 
 export default router;

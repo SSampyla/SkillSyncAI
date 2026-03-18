@@ -1,112 +1,71 @@
 import express from "express";
+import { asyncHandler, getCache, setCache, createCacheKey } from "../utils/apiCoreLLM.js";
+import { createValidator, validateCV } from "../utils/routeValidatorsLLM.js";
 import { generateEditedCV } from "../LLM/cvEdit.js";
 
+/*
+# CV Edit API
+Tämä reititin vastaa ansioluettelon (CV) räätälöinnistä tiettyä työpaikkailmoitusta varten LLM:n avulla.
+
+## Cache
+Backend tukee eri "versioiden" tallentamista välimuistiin. 
+Kun haet muokatun CV:n ensimmäistä kertaa, saat vastauksena `versionId`:n. Voit käyttää tätä ID:tä myöhemmin hakemaan tismalleen saman tekstin uudelleen nopeasti ilman uutta tekoälykutsua.
+
+* **Jätä `versionId` pois:** Generoi uuden ehdotuksen.
+* **Lähetä `versionId`:** Hakee olemassa olevan ehdotuksen välittömästi muistista tai palauttaa uuden jos id ei ole olemassa.
+
+## Reitit
+
+### `POST /edit`
+Palauttaa muokatun CV-tekstin.
+* **Body:** `{ jobText, cvText, language, versionId? }`
+* **Paluuarvo:** `{ editedCV: "...", versionId: "cv_edit_1710..." }`
+*/
+
 const router = express.Router();
-const MAX_TEXT_LENGTH = 30000;
 
+router.post(
+  "/edit",
+  createValidator(validateCV),
 
-// =============================
-// ----- Validointi -----
-// =============================
+  asyncHandler(async (req) => {
 
-const validateCvEditInput = (req, res, next) => {
-    const { jobText, cvText } = req.body;
+    console.log("[LLM route: CV Edit Request called]");
 
-    if (!jobText?.trim()) {
-        return res.status(400).json({
-            error: "Työpaikkailmoituksen teksti puuttuu."
-        });
+    // 1. Tarkistetaan, onko pyydetty tiettyä versiota välimuistista
+    if (versionId) {
+      const cachedVersion = getCache(versionId);
+      if (cachedVersion) {
+        console.log(`[Cache Hit] Palautetaan CV-versio: ${versionId}`);
+        return cachedVersion;
+      }
+      console.log(`[Cache Miss] Versiota ${versionId} ei löytynyt, luodaan uusi.`);
     }
 
-    if (!cvText?.trim()) {
-        return res.status(400).json({
-            error: "CV teksti puuttuu."
-        });
+    // 2. Generoidaan uusi muokattu CV
+    const result = await generateEditedCV(jobText, cvText, language);
+
+    // 3. Luodaan uniikki ID tälle versiolle
+    const newVersionId = `cv_edit_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
+    const response = {
+      editedCV: result.editedCV,
+      versionId: newVersionId
+    };
+
+    // 4. Tallennetaan uusi versio välimuistiin
+    // Käytetään 1 tunnin elinaikaa
+    if (result.editedCV && result.editedCV.length > 100) {
+      setCache(newVersionId, response, 1000 * 60 * 60);
+
+      // Tallennetaan myös input-perusteisella avaimella
+      const inputCacheKey = createCacheKey("cv_edit", { jobText, cvText, language });
+      setCache(inputCacheKey, response, 1000 * 60 * 60);
     }
 
-    if (jobText.length > MAX_TEXT_LENGTH) {
-        return res.status(413).json({
-            error: `Työpaikkailmoitus on liian pitkä. Maksimi ${MAX_TEXT_LENGTH} merkkiä.`
-        });
-    }
+    return response;
 
-    if (cvText.length > MAX_TEXT_LENGTH) {
-        return res.status(413).json({
-            error: `CV teksti on liian pitkä. Maksimi ${MAX_TEXT_LENGTH} merkkiä.`
-        });
-    }
-
-    next();
-};
-
-
-// =============================
-// ----- Error handler -----
-// =============================
-
-const handleRouteError = (res, err, startTime, context) => {
-    const duration = Date.now() - startTime;
-    console.error(`${context} failed (${duration} ms)`);
-
-    const upstreamStatus = err?.status || err?.statusCode || err?.error?.status;
-    const upstreamMessage = err?.message || err?.error?.message;
-    const upstreamCode = err?.code || err?.error?.code;
-
-    if (upstreamStatus) {
-        console.error("Azure OpenAI error:", {
-            status: upstreamStatus,
-            message: upstreamMessage,
-            code: upstreamCode
-        });
-
-        return res.status(502).json({
-            error: upstreamMessage || "Tekoaly-palvelu ei vastannut oikein."
-        });
-    }
-
-    console.error("Backend error:", err);
-
-    res.status(500).json({
-        error: `Palvelinvirhe ${context.toLowerCase()}.`
-    });
-};
-
-
-// =====================================
-// ----- POST /api/cv/edit -----
-// =====================================
-
-router.post("/edit", validateCvEditInput, async (req, res) => {
-    console.log("POST /api/cv/edit called");
-
-    const startTime = Date.now();
-
-    try {
-        const { jobText, cvText, language } = req.body;
-
-        const result = await generateEditedCV(
-            jobText,
-            cvText,
-            language
-        );
-
-        const duration = Date.now() - startTime;
-
-        console.log(`POST /api/cv/edit success (${duration} ms)`);
-
-        res.json({
-            editedCV: result.editedCV,
-            responseTimeMs: duration
-        });
-
-    } catch (err) {
-        handleRouteError(
-            res,
-            err,
-            startTime,
-            "CV:n muokkauksessa"
-        );
-    }
-});
+  }, "CV:n muokkaus")
+);
 
 export default router;

@@ -1,4 +1,5 @@
-import client from "./client.js";
+import client, { AZURE_MODEL } from "../LLM/client.js";
+import { getCache, setCache, createCacheKey } from "../utils/apiCoreLLM.js";
 
 export async function generateInterviewReply(
     chatHistory,
@@ -6,8 +7,15 @@ export async function generateInterviewReply(
     phase = "technical",
     language = "Finnish"
 ) {
+    // 1. Luo avain syötteiden perusteella
+    const cacheKey = createCacheKey("interview_reply", { chatHistory, jobText, phase, language });
+
+    // 2. Palauta välimuistista jos löytyy
+    const cached = getCache(cacheKey);
+    if (cached) return cached;
 
     const response = await client.chat.completions.create({
+        model: AZURE_MODEL,
         response_format: { type: "json_object" },
         temperature: 0.35,
         max_tokens: 900,
@@ -147,7 +155,7 @@ ${jobText}
 
         const parsed = JSON.parse(response.choices[0].message.content);
 
-        return {
+        const result = {
             nextQuestion: parsed.nextQuestion ?? null,
             followUp: parsed.followUp ?? false,
             answerEvaluation: {
@@ -156,6 +164,9 @@ ${jobText}
                 communication: parsed.answerEvaluation?.communication ?? 0
             }
         };
+
+        setCache(cacheKey, result, 1000 * 60 * 60 * 2); // 2h
+        return result;
 
     } catch (e) {
 

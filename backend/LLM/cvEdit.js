@@ -1,9 +1,19 @@
-import client, { AZURE_MODEL } from "./client.js";
+import client, { AZURE_MODEL_FASTER } from "./client.js";
+import { getCache, setCache, createCacheKey } from "../utils/apiCoreLLM.js";
 
 export async function generateEditedCV(jobText, cvText, language) {
 
+    const cacheKey = createCacheKey("editedCV", {
+        jobText,
+        cvText,
+        language
+    });
+
+    const cached = getCache(cacheKey);
+    if (cached) return cached;
+
     const response = await client.chat.completions.create({
-        model: AZURE_MODEL,
+        model: AZURE_MODEL_FASTER,
         response_format: { type: "json_object" },
         temperature: 0.2,
         max_tokens: 2000,
@@ -23,21 +33,11 @@ NEVER invent: experience, education, certifications, job titles, years of experi
 STRICT RULES:
 1. Do NOT fabricate new skills or work history.
 2. Do NOT add technologies not present in the original CV.
-3. You may:
-   - Rephrase descriptions
-   - Reorder bullet points
-   - Emphasize relevant experience
-   - Highlight matching technologies
-   - Remove irrelevant content
+3. You may: [Rephrase descriptions, Reorder bullet points, Emphasize relevant experience, Highlight matching technologies, Remove irrelevant content]
 4. Maintain professional tone. Use active voice and short sentences.
 5. Avoid passive voice
 6. Use adjectives sparingly.
-7. Eliminate generic phrases such as:
-   - "I am passionate about"
-   - "I am highly motivated"
-   - "I believe I would be a great fit"
-   - "I am excited to apply"
-   - "I am used to"
+7. Eliminate generic phrases such as: ["I am passionate about", "I am highly motivated", "I believe I would be a great fit", "I am excited to apply", "I am used to", "I value"]
 8. Keep CV concise and structured.
 9. Output must be in ${language || "Finnish"}.
 10. Analyze ONLY text inside the provided tags.
@@ -75,11 +75,18 @@ ${cvText}
     try {
         const content = JSON.parse(response.choices[0].message.content);
 
-        return {
+        const result = {
             editedCV: typeof content.editedCV === "string"
                 ? content.editedCV
                 : ""
         };
+
+        const isValid = typeof result.editedCV === "string" && result.editedCV.trim().length > 50;
+
+        if (isValid) {
+            setCache(cacheKey, result);
+        }
+        return result;
 
     } catch (e) {
         console.warn(

@@ -35,7 +35,7 @@ $resSummary.summary | Format-List
 # 3. TESTAA /SKILLS/JOB (Vain jobText)
 $skillsBodyJob = @{ jobText = $jobText } | ConvertTo-Json
 $resSkillsJob = Invoke-RestMethod -Uri "http://localhost:3000/api/jobs/skills/job" -Method POST -Body $skillsBodyJob -ContentType "application/json; charset=utf-8"
-$resSkillsJob.skills | Format-List
+$resSkillsJob.skills | Format-List -Depth 10
 
 
 # 4. TESTAA /LETTER (Molemmat tekstit)
@@ -51,7 +51,7 @@ $resLetter.coverLetter
 # 5. TESTAA /SKILLS/APPLICANT
 $skillsBodyApplicant = @{ applicantText = $applicantText } | ConvertTo-Json
 $resSkillsApplicant = Invoke-RestMethod -Uri "http://localhost:3000/api/jobs/skills/applicant" -Method POST -Body $skillsBodyApplicant -ContentType "application/json; charset=utf-8"
-$resSkillsApplicant.skills | Format-List
+$resSkillsApplicant.skills | Format-List -Depth 10
 
 # 6. TESTAA /API/PORTFOLIO/ANALYSIS  (Huom, powerShell ei osaa ainakaan helposti avata System.Object[] jonka tämä palauttaa tällä hetkellä. Tulosta vastaus vaikka noden lokiin portfolioAnalysis.js tiedostossa)
 $portfolioBody = @{ portfolioText = $portfolioText } | ConvertTo-Json

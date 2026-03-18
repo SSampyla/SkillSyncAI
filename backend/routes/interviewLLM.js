@@ -1,115 +1,31 @@
 import express from "express";
+import { asyncHandler } from "../utils/apiCoreLLM.js";
+import { createValidator, validateInterview } from "../utils/routeValidatorsLLM.js";
 import { generateInterviewReply } from "../LLM/interviewPractice.js";
 
+/*
+# Interview Practice API
+
+Tämä reitti hoitaa haastattelusimulaation tilanhallinnan. Frontendin ei tarvitse säilöä chat-historiaa, vaan ainoastaan kantaa mukanaan `interviewId`-tunnistetta.
+
+## Toimintalogiikka
+
+1. **Aloitus:** Lähetä `jobText` ja `language`. Jätä `interviewId` ja `userMessage` tyhjäksi.
+   * *Paluuarvo:* Ensimmäinen kysymys ja `interviewId`.
+2. **Keskustelu:** Lähetä seuraavissa kutsuissa saamasi `interviewId` ja käyttäjän vastaus kentässä `userMessage`.
+3. **Välimuisti:** Keskustelu säilyy palvelimen muistissa 2 tuntia viimeisimmän viestin jälkeen.
+
+## Esimerkki (Request)
+```json
+{
+  "interviewId": "int_1710758400_abc12",
+  "userMessage": "Olen työskennellyt Reactin parissa kolme vuotta.",
+  "jobText": "...",
+  "language": "Finnish"
+}
+*/
+
 const router = express.Router();
-
-const MAX_TEXT_LENGTH = 25000;
-const MAX_CHAT_MESSAGES = 30;
-
-const ALLOWED_PHASES = [
-    "intro",
-    "technical",
-    "behavioral",
-    "closing",
-    "feedback"
-];
-
-
-// =============================
-// ----- Validointi -----
-// =============================
-
-const validateInterviewInput = (req, res, next) => {
-
-    const { jobText, chatHistory, phase } = req.body;
-
-    if (!jobText?.trim()) {
-        return res.status(400).json({
-            error: "Työpaikkailmoituksen teksti puuttuu."
-        });
-    }
-
-    if (!Array.isArray(chatHistory)) {
-        return res.status(400).json({
-            error: "chatHistory pitää olla taulukko."
-        });
-    }
-
-    if (phase && !ALLOWED_PHASES.includes(phase)) {
-        return res.status(400).json({
-            error: "Virheellinen interview phase."
-        });
-    }
-
-    if (jobText.length > MAX_TEXT_LENGTH) {
-        return res.status(413).json({
-            error: `Työpaikkailmoitus on liian pitkä. Maksimi ${MAX_TEXT_LENGTH} merkkiä.`
-        });
-    }
-
-    if (chatHistory.length > MAX_CHAT_MESSAGES) {
-        return res.status(413).json({
-            error: `Chat history liian pitkä. Maksimi ${MAX_CHAT_MESSAGES} viestiä.`
-        });
-    }
-
-    for (const msg of chatHistory) {
-
-        if (!msg.role || !msg.content) {
-            return res.status(400).json({
-                error: "Chat viesteissä pitää olla role ja content."
-            });
-        }
-
-        if (msg.role !== "user" && msg.role !== "assistant") {
-            return res.status(400).json({
-                error: "role pitää olla 'user' tai 'assistant'."
-            });
-        }
-
-        if (msg.content.length > MAX_TEXT_LENGTH) {
-            return res.status(413).json({
-                error: "Chat viesti liian pitkä."
-            });
-        }
-    }
-
-    next();
-};
-
-
-// =============================
-// ----- Error handler -----
-// =============================
-
-const handleRouteError = (res, err, startTime, context) => {
-
-    const duration = Date.now() - startTime;
-
-    console.error(`${context} failed (${duration} ms)`);
-
-    if (err.status) {
-        console.error("Azure OpenAI error:", {
-            status: err.status,
-            message: err.message,
-            code: err.code
-        });
-
-        return res.status(502).json({
-            error: "Tekoälypalvelu ei vastannut oikein."
-        });
-    }
-
-    console.error("Backend error:", err);
-
-    res.status(500).json({
-        error: `Palvelinvirhe ${context.toLowerCase()}.`
-    });
-};
-
-// =====================================
-// ------------ Apufunktiot ------------
-// =====================================
 
 function deriveInterviewState(chatHistory) {
 
@@ -119,7 +35,9 @@ function deriveInterviewState(chatHistory) {
 
     const lastAssistant = assistantMessages.at(-1);
 
-    const lastPhase = lastAssistant?.phase ?? "derive from chat history";
+    const lastPhase = lastAssistant?.phase || nextPhase(questionCount);
+
+    console.log(`[LLM Interview State] interview state derived: ${lastPhase}, question count: ${questionCount}` );
 
     return {
         questionCount,
@@ -140,76 +58,84 @@ function nextPhase(questionCount) {
     return "feedback";
 }
 
-// =====================================
-// ---- POST /api/interview/practice ---
-// =====================================
 
-router.post("/practice", validateInterviewInput, async (req, res) => {
+router.post(
+  "/practice",
+  createValidator(validateInterview),
 
-    console.log("POST /api/interview/practice called");
+  asyncHandler(async (req) => {
+    console.log("[LLM route: Interview practice called]");
 
-    const startTime = Date.now();
+    const { jobText, userMessage, language, interviewId } = req.body;
 
-    try {
+    let history = [];
+    let currentId = interviewId;
 
-        const { jobText, chatHistory, language } = req.body;
+    if (currentId) {
+      const cachedHistory = getCache(currentId);
+      if (cachedHistory) {
+        history = cachedHistory;
+      } else {
+        currentId = null; // Luodaan uusi ID alempana
+      }
+    }
 
-        const { questionCount, lastPhase } = deriveInterviewState(chatHistory);
+    // Lisätään käyttäjän viesti historiaan
+    if (userMessage) {
+      history.push({ role: "user", content: userMessage });
+    }
 
-        const computedPhase = nextPhase(questionCount);
+    // Johdetaan tila historiasta
+    const { questionCount, lastPhase } = deriveInterviewState(history);
+    const computedPhase = nextPhase(questionCount);
+    const questionIndex = questionCount + 1;
 
-        const questionIndex = questionCount + 1;
+    // Tämä kutsuu nyt funktiota, joka osaa sisäisesti käyttää cachea (testit kiittää)
+    const result = await generateInterviewReply(
+      history,
+      jobText,
+      computedPhase,
+      language
+    );
 
-        console.log(`phase: ${computedPhase} | questionCount: ${questionCount}`);
+    const finalPhase = result.followUp ? lastPhase : computedPhase;
 
-        const result = await generateInterviewReply(
-            chatHistory,
-            jobText,
-            computedPhase,
-            language
-        );
+    // Päivitetään historia assistantin vastauksella ja tallennetaan
+    history.push({ 
+      role: "assistant", 
+      content: result.nextQuestion,
+      phase: finalPhase
+    });
 
-        let finalPhase = computedPhase;
+    if (!currentId) {
+      currentId = `int_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    }
 
-        // Jos AI pyytää follow-up kysymystä, pysytään samassa phasessa
-        if (result.followUp) {
-            finalPhase = lastPhase;
-        }
+    // Tallennetaan päivitetty historia 2h ajaksi
+    setCache(currentId, history, 1000 * 60 * 60 * 2);
 
-        const duration = Date.now() - startTime;
-
-        console.log(`POST /api/interview/practice success (${duration} ms)`);
-        console.log(`
+    console.log(`
 =========================================
 [Interview Reply Generated]
+Answer Evaluation:        
+${JSON.stringify(result.answerEvaluation, null, 2)}
 Phase:              ${finalPhase || "N/A"}
 Question Index:     ${questionIndex || "N/A"}
 Follow Up:          ${result.followUp}
 Next Question:      ${result.nextQuestion || "N/A"}
-Answer Evaluation:        
-${JSON.stringify(result.answerEvaluation, null, 2)}
 =========================================
         `.trim());
 
-        res.json({
-            phase: finalPhase,
-            questionIndex,
-            nextQuestion: result.nextQuestion,
-            followUp: result.followUp,
-            answerEvaluation: result.answerEvaluation,
-            responseTimeMs: duration
-        });
+    return {
+      interviewId: currentId,
+      phase: finalPhase,
+      questionIndex,
+      nextQuestion: result.nextQuestion,
+      followUp: result.followUp,
+      answerEvaluation: result.answerEvaluation
+    };
 
-    } catch (err) {
-
-        handleRouteError(
-            res,
-            err,
-            startTime,
-            "Haastatteluharjoittelussa"
-        );
-
-    }
-});
+  }, "Haastatteluharjoittelu")
+);
 
 export default router;

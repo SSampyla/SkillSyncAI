@@ -25,23 +25,24 @@ import client, { AZURE_MODEL } from "../LLM/client.js";
 
 export async function generateCoverLetter(jobText, applicantText, language, matchData) {
 
-    // Muotoillaan matchData merkkijonoksi promptia varten
-    const matchesArray = Array.isArray(matchData?.matchedKeywords) ? matchData.matchedKeywords : [];
-    const matchesString = matchesArray.length
-        ? `KEY MATCHES FROM SYSTEM: ${matchesArray.join(', ')}`
-        : "No pre-calculated matches provided.";
+  // Muotoillaan matchData merkkijonoksi promptia varten
+  const matchesArray = Array.isArray(matchData?.matchedKeywords) ? matchData.matchedKeywords : [];
+  const matchesString = matchesArray.length
+    ? `KEY MATCHES FROM SYSTEM: ${matchesArray.join(', ')}`
+    : "No pre-calculated matches provided.";
 
-    const response = await client.chat.completions.create({
-      model: AZURE_MODEL,
-        response_format: { type: "json_object" },
-        temperature: 0.225,
-        max_tokens: 4250,
-        messages: [
-  {
-    role: "system",
-    content: `
+  const response = await client.chat.completions.create({
+    model: AZURE_MODEL,
+    response_format: { type: "json_object" },
+    temperature: 0.375,
+    max_tokens: 5000,
+    messages: [
+      {
+        role: "system",
+        content: `
 You are an expert Career Coach. Write a professional cover letter in ${language || "Finnish"}.
 Your task is to generate a realistic, down-to-earth, honest, evidence-based cover letter.
+Soft sell applicant to recruiter by connecting applicant's background to the job needs. Do not praise the recruiter.
 
 INPUT DATA:
 - Job Description: inside <JOB_TEXT>
@@ -69,46 +70,25 @@ STEP 2 — DETERMINE WRITING STYLE
 2.1 Detect job domain and adapt tone automatically:
 Examples:
 2.1.1 If job is technical / engineering / IT:
-- Focus on concrete solutions, tools, systems, results
-- Minimal emotional language
+- Focus on [concrete solutions, tools, systems, results]
+- Less emotionally charded language
 - Short, direct sentences
 2.1.2 If job is healthcare / education / social work:
-- Focus on responsibility, real interactions, outcomes
+- Focus on [responsibility, real interactions, outcomes]
 - Professional empathy without exaggeration
 - Still concrete and practical
 2.1.3 If job is business / management:
-- Focus on impact, collaboration, efficiency, leadership
+- Focus on [impact, collaboration, efficiency, leadership]
 
 
 STEP 3 — STRICT CONTENT RULES
 3.1 Prioritize skills listed in <SYSTEM_ANALYSIS>. Mention them clearly.
-3.2 NEVER invent:
-- experience
-- education
-- certifications
-- job titles
-- years of experience
-- domain knowledge
-- communication skills
-- teamwork skills
-- feedback received
-- learning
+3.2 NEVER invent: [experience, education, certifications, job titles, years of experience, domain knowledge, communication skills, teamwork skills, feedback received, learning] 
 3.3 If a skill or attribute or importance is not explicitly in <APPLICANT_TEXT>, do NOT include it.
-3.4 If applicant lacks a required skill:
-   - acknowledge briefly
-   - connect to related experience or learning ability
-   - do not exaggerate
-3.5 Use concrete examples from <APPLICANT_TEXT>:
-   - tasks completed
-   - problems solved
-   - measurable outcomes if available
+3.4 If applicant lacks a required skill: [acknowledge briefly, connect to related experience or learning ability, do not exaggerate]
+3.5 Use concrete examples from <APPLICANT_TEXT>: [tasks completed, problems solved, measurable outcomes if available]
 3.6 If <APPLICANT_TEXT> mentions a problem the applicant solved, include it briefly.
-3.7 Eliminate generic phrases such as:
-   - "I am passionate about"
-   - "I am highly motivated"
-   - "I believe I would be a great fit"
-   - "I am excited to apply"
-   - "I am used to"
+3.7 Eliminate generic phrases such as: ["I am passionate about", "I am highly motivated", "I believe I would be a great fit", "I am excited to apply", "I am used to", "I value"]
 3.8 Prefer active voice and short sentences.
 3.9 Avoid passive voide.
 3.10 Use adjectives sparingly.
@@ -117,6 +97,9 @@ STEP 3 — STRICT CONTENT RULES
 3.12 Do not forcefully fullfill the wishes of the letter receiver
 3.13 Make paragraphs distinctive
 - Avoid starting with I am, I or I have done something if possible
+3.14 — EMPHASIZE VALUE FOR EMPLOYER
+- Frame skills and experience in terms of benefit to the employer.
+- Do not invent skills or achievements.
 
 STEP 4 — STRUCTURE
 
@@ -131,10 +114,10 @@ STEP 4 — STRUCTURE
 OUTPUT (JSON):
 { "coverLetter": "..." }
 `
-  },
-  {
-    role: "user",
-    content: `
+      },
+      {
+        role: "user",
+        content: `
 <JOB_TEXT>
 ${jobText}
 </JOB_TEXT>
@@ -147,15 +130,15 @@ ${applicantText}
 ${matchesString}
 </SYSTEM_ANALYSIS>
 `
-  }
-]
-    });
+      }
+    ]
+  });
 
-    try {
-        const content = JSON.parse(response.choices[0].message.content);
-        return content.coverLetter || "LLM did not return a cover letter.";
-    } catch (e) {
-        console.warn("LLM returned invalid JSON:", response.choices[0].message.content);
-        return "LLM did not return a valid cover letter.";
-    }
+  try {
+    const content = JSON.parse(response.choices[0].message.content);
+    return content.coverLetter || "LLM did not return a cover letter.";
+  } catch (e) {
+    console.warn("LLM returned invalid JSON:", response.choices[0].message.content);
+    return "LLM did not return a valid cover letter.";
+  }
 }
