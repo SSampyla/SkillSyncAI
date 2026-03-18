@@ -29,6 +29,7 @@ router.post(
   createValidator(validateCV),
 
   asyncHandler(async (req) => {
+    const { jobText, cvText, language, versionId } = req.body;
 
     console.log("[LLM route: CV Edit Request called]");
 
