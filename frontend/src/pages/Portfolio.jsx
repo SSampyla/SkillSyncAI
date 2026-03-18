@@ -1,5 +1,4 @@
 import Navbar from "../components/Navbar";
-import ProjectGallery from "../components/ProjectGallery";
 import { useState, useEffect } from "react";
 import "../styles/portfolio.css";
 import {
@@ -207,7 +206,7 @@ export default function Portfolio() {
 
             setGithubProjects(projects);
 
-            alert("Projektit tuotu!");
+            alert("GitHub-projektit tuotu!");
         } catch (err) {
             console.error(err);
             alert("Repojen haku epäonnistui");
@@ -425,7 +424,7 @@ export default function Portfolio() {
                                                   Analysoi GitHub
                                               </button>
 
-                                              <button
+                                                <button
                                                   onClick={handleFetchRepos}
                                                   style={{
                                                       padding: "4px 10px",
@@ -437,7 +436,7 @@ export default function Portfolio() {
                                                       cursor: "pointer"
                                                   }}
                                               >
-                                                  Tuo projektit
+                                                  Tuo GitHub-projektit
                                               </button>
                                           </div>
                                       )}
@@ -470,7 +469,7 @@ export default function Portfolio() {
 
         {/* Navigation Tabs */}
         <div style={{ display: "flex", gap: "10px", marginBottom: "30px", flexWrap: "wrap" }}>
-          {["profile", "skills", "experience", "education", "projects"].map((section) => (
+          {["profile", "skills", "experience", "education", "githubProjects"].map((section) => (
             <button
               key={section}
               onClick={() => setActiveSection(section)}
@@ -494,8 +493,8 @@ export default function Portfolio() {
                               ? "Kokemus"
                               : section === "education"
                                   ? "Koulutus"
-                                  : section === "projects"
-                                      ? "Projektit"
+                                  : section === "githubProjects"
+                                      ? "GitHub-projektit"
                                       : ""
                   }
             </button>
@@ -623,9 +622,9 @@ export default function Portfolio() {
           </section>
                       )}
 
-                      {activeSection === "projects" && githubProjects.length > 0 && (
+                        {activeSection === "githubProjects" && githubProjects.length > 0 && (
                           <section style={{ marginTop: "30px" }}>
-                              <h3>GitHub projektit</h3>
+                            <h3>GitHub-projektit</h3>
 
                               {githubProjects.map((project, i) => (
                                   <div key={i} style={{ marginBottom: "15px" }}>
@@ -1189,11 +1188,6 @@ export default function Portfolio() {
               </>
             )}
           </section>
-        )}
-
-        {/* Projects Gallery */}
-        {activeSection === "projects" && (
-          <ProjectGallery />
         )}
 
         {/* Call to Action */}
