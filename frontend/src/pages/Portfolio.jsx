@@ -2,7 +2,7 @@ import Navbar from "../components/Navbar";
 import { useState, useEffect } from "react";
 import "../styles/portfolio.css";
 import {
-  availableSkills,
+  availableSkills_depracated,
   createEmptyEducation,
   createEmptyExperience,
   createEmptyPortfolio,
@@ -102,7 +102,7 @@ export default function Portfolio() {
 
                     let foundCategory = null;
 
-                    for (const [category, skills] of Object.entries(availableSkills)) {
+                    for (const [category, skills] of Object.entries(availableSkills_depracated)) {
 
                         const match = skills.find(
                             skill => skill.toLowerCase() === normalized
@@ -507,7 +507,7 @@ export default function Portfolio() {
             <h2>Tekniset Taidot</h2>
             {isEditing ? (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "30px" }}>
-                {Object.entries(availableSkills).map(([category, skillsList]) => (
+                {Object.entries(availableSkills_depracated).map(([category, skillsList]) => (
                   <div key={category}>
                     <h3 style={{ textTransform: "capitalize" }}>{category === "frontend" ? "Frontend" : category === "backend" ? "Backend" : category === "tools" ? "Työkalut" : "Muut Taidot"}</h3>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "10px" }}>

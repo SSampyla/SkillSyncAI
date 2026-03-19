@@ -2,7 +2,7 @@ import Navbar from "../components/Navbar";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/home.css";
 import { useState } from "react";
-import { availableSkills, createEmptyPortfolio } from "../data/portfolioTemplate";
+import { availableSkills_depracated, createEmptyPortfolio } from "../data/portfolioTemplate";
 
 
 /*Lisätty kotisivulle profiilin luonti ja taitovalinnat.
@@ -283,7 +283,7 @@ function Home() {
 
                                 <h3>Valitse teknologiat</h3>
 
-                                {Object.entries(availableSkills).map(([category, skills]) => (
+                                {Object.entries(availableSkills_depracated).map(([category, skills]) => (
 
                                     <div key={category} style={{ marginBottom: "15px" }}>
 

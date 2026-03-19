@@ -1,6 +1,9 @@
 # Created by https://www.toptal.com/developers/gitignore/api/react,node,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=react,node,visualstudiocode
 
+# Paikallinen tietokanta
+backend/data/db.json
+
 ### Node ###
 # Logs
 logs

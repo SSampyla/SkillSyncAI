@@ -21,6 +21,7 @@ import jobsRoutes from "./routes/jobs.js";
 import portfolioRoutes from "./routes/portfolioLLM.js";
 import cvRoutes from "./routes/cvLLM.js";
 import interviewRoutes from "./routes/interviewLLM.js";
+import databaseRoutes from "./routes/database.js";
 
 
 dotenv.config();
@@ -38,6 +39,7 @@ app.use("/api/jobs", jobsRoutes);
 app.use("/api/portfolio", portfolioRoutes);
 app.use("/api/cv", cvRoutes);
 app.use("/api/interview", interviewRoutes);
+app.use("/api/database", databaseRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
