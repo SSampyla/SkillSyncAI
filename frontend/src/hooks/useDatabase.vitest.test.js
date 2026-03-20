@@ -20,7 +20,7 @@ vi.mock("../utils/skillUtils", () => ({
       return acc;
     }, {});
     [...(profile.hardSkillsProficient ?? []), ...(profile.hardSkillsBasics ?? []),
-     ...(profile.softSkillsProficient ?? []), ...(profile.softSkillsBasics ?? [])
+    ...(profile.softSkillsProficient ?? []), ...(profile.softSkillsBasics ?? [])
     ].forEach(skill => {
       const cat = map[skill.toLowerCase()] ?? "other";
       if (!result[cat].includes(skill)) result[cat].push(skill);
@@ -80,8 +80,8 @@ const MOCK_CANDIDATE_PROFILE = {
 describe("useDatabase hooks", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(console, "warn").mockImplementation(() => {});
-    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "warn").mockImplementation(() => { });
+    vi.spyOn(console, "error").mockImplementation(() => { });
   });
 
   afterEach(() => {
@@ -157,247 +157,577 @@ describe("useDatabase hooks", () => {
       expect(result.current.selectedSkills).toEqual({ frontend: [], backend: [], tools: [], other: [] });
       expect(isLoadingFromDB.current).toBe(false);
     });
+
+    test("asettaa error-tilan kun haku epäonnistuu", async () => {
+      global.fetch = mockFetchFail(500);
+      const { result } = renderHook(() =>
+        useCandidateProfile(MOCK_AVAILABLE_SKILLS, { current: false })
+      );
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      expect(result.current.error).not.toBeNull();
+      expect(result.current.selectedSkills).toEqual({ frontend: [], backend: [], tools: [], other: [] });
+    });
+  });
+});
+
+// =========================================================================
+describe("useSynchronizeCandidateSkills", () => {
+  beforeEach(() => {
+    // shouldAdvanceTime: true — waitFor toimii fake-timereiden kanssa
+    vi.useFakeTimers({ shouldAdvanceTime: true });
   });
 
-  // =========================================================================
-  describe("useSynchronizeCandidateSkills", () => {
-    beforeEach(() => {
-      // shouldAdvanceTime: true — waitFor toimii fake-timereiden kanssa
-      vi.useFakeTimers({ shouldAdvanceTime: true });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  test("ei synkronoi heti mountissa", () => {
+    global.fetch = mockFetchOk({ skills: MOCK_CANDIDATE_PROFILE });
+    renderHook(() =>
+      useSynchronizeCandidateSkills(
+        { frontend: ["React.js"], backend: [], tools: [], other: [] },
+        vi.fn(),
+        { current: false }
+      )
+    );
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  test("ohittaa synkronoinnin kun isLoadingFromDB on true", async () => {
+    global.fetch = mockFetchOk({ skills: MOCK_CANDIDATE_PROFILE });
+    const onStatusChange = vi.fn();
+    const isLoadingFromDB = { current: true };
+
+    renderHook(() =>
+      useSynchronizeCandidateSkills(
+        { frontend: ["React.js"], backend: [], tools: [], other: [] },
+        onStatusChange,
+        isLoadingFromDB
+      )
+    );
+
+    await act(async () => { await vi.runAllTimersAsync(); });
+
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(isLoadingFromDB.current).toBe(false);
+  });
+
+  test("kutsuu LLM:ää ja tallentaa profiilin debounce-viiveen jälkeen", async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ skills: MOCK_CANDIDATE_PROFILE }) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ success: true }) });
+
+    const onStatusChange = vi.fn();
+    const isLoadingFromDB = { current: false };
+
+    const { rerender } = renderHook(
+      ({ skills }) => useSynchronizeCandidateSkills(skills, onStatusChange, isLoadingFromDB),
+      { initialProps: { skills: { frontend: [], backend: [], tools: [], other: [] } } }
+    );
+
+    rerender({ skills: { frontend: ["React.js"], backend: [], tools: [], other: [] } });
+    await act(async () => { await vi.runAllTimersAsync(); });
+
+    expect(onStatusChange).toHaveBeenCalledWith("saved");
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    expect(global.fetch).toHaveBeenNthCalledWith(1,
+      expect.stringContaining("/api/jobs/skills/applicant"),
+      expect.objectContaining({ method: "POST" })
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(2,
+      expect.stringContaining("/api/database/candidate-profile"),
+      expect.objectContaining({ method: "PUT" })
+    );
+  });
+
+  test("asettaa error-tilan jos LLM-kutsu epäonnistuu", async () => {
+    global.fetch = mockFetchFail(502);
+    const onStatusChange = vi.fn();
+    const isLoadingFromDB = { current: false };
+
+    const { rerender } = renderHook(
+      ({ skills }) => useSynchronizeCandidateSkills(skills, onStatusChange, isLoadingFromDB),
+      { initialProps: { skills: { frontend: [], backend: [], tools: [], other: [] } } }
+    );
+
+    rerender({ skills: { frontend: ["React.js"], backend: [], tools: [], other: [] } });
+    await act(async () => { await vi.runAllTimersAsync(); });
+
+    expect(onStatusChange).toHaveBeenCalledWith("error");
+  });
+
+  test("ei synkronoi jos taidot ovat tyhjät", async () => {
+    global.fetch = mockFetchOk({});
+    const onStatusChange = vi.fn();
+    const isLoadingFromDB = { current: false };
+
+    const { rerender } = renderHook(
+      ({ skills }) => useSynchronizeCandidateSkills(skills, onStatusChange, isLoadingFromDB),
+      { initialProps: { skills: { frontend: [], backend: [], tools: [], other: [] } } }
+    );
+
+    rerender({ skills: { frontend: [], backend: [], tools: [], other: [] } });
+    await act(async () => { await vi.runAllTimersAsync(); });
+
+    expect(onStatusChange).toHaveBeenCalledWith("pending");
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+});
+
+// =========================================================================
+describe("usePortfolio", () => {
+  test("hakee portfolion mountissa", async () => {
+    global.fetch = mockFetchOk({ ...EMPTY_PORTFOLIO, name: "Testi" });
+    const { result } = renderHook(() => usePortfolio());
+    expect(result.current.loading).toBe(true);
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.portfolio.name).toBe("Testi");
+  });
+
+  test("updatePortfolio lähettää PUT ja päivittää tilan", async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(EMPTY_PORTFOLIO) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ success: true }) });
+
+    const { result } = renderHook(() => usePortfolio());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await act(async () => { await result.current.updatePortfolio({ ...EMPTY_PORTFOLIO, name: "Uusi Nimi" }); });
+
+    expect(result.current.portfolio.name).toBe("Uusi Nimi");
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/database/portfolio"),
+      expect.objectContaining({ method: "PUT" })
+    );
+  });
+
+  test("resetPortfolio lähettää DELETE ja hakee tyhjän pohjan", async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ ...EMPTY_PORTFOLIO, name: "Vanha" }) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ success: true }) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(EMPTY_PORTFOLIO) });
+
+    const { result } = renderHook(() => usePortfolio());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await act(async () => { await result.current.resetPortfolio(); });
+
+    expect(result.current.portfolio.name).toBe("");
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/database/portfolio"),
+      expect.objectContaining({ method: "DELETE" })
+    );
+  });
+
+  test("updatePortfolio heittää virheen epäonnistuessa", async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(EMPTY_PORTFOLIO) })
+      .mockResolvedValueOnce({ ok: false, status: 500, json: () => Promise.resolve({}) });
+
+    const { result } = renderHook(() => usePortfolio());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await expect(act(async () => { await result.current.updatePortfolio({ name: "X" }); })).rejects.toThrow();
+  });
+
+  test("asettaa error-tilan kun alkuhaku epäonnistuu", async () => {
+    global.fetch = mockFetchFail(503);
+    const { result } = renderHook(() => useAppliedJobs());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.error).not.toBeNull();
+    expect(result.current.jobs).toEqual([]);
+  });
+
+  test("updatePortfolio asettaa error-tilan ja heittää virheen", async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(EMPTY_PORTFOLIO) })
+      .mockResolvedValueOnce({ ok: false, status: 500, json: () => Promise.resolve({}) });
+
+    const { result } = renderHook(() => usePortfolio());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    // Napata virhe act-lohkon sisällä — React flushaa tilan ennen kuin act resolvoituu
+    let caughtError;
+    await act(async () => {
+      try { await result.current.updatePortfolio({ name: "X" }); }
+      catch (err) { caughtError = err; }
     });
 
+    expect(caughtError).toBeDefined();
+    expect(result.current.error).not.toBeNull();
+  });
+
+  test("resetPortfolio asettaa error-tilan ja heittää virheen", async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(EMPTY_PORTFOLIO) })
+      .mockResolvedValueOnce({ ok: false, status: 500, json: () => Promise.resolve({}) });
+
+    const { result } = renderHook(() => usePortfolio());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let caughtError;
+    await act(async () => {
+      try { await result.current.resetPortfolio(); }
+      catch (err) { caughtError = err; }
+    });
+
+    expect(caughtError).toBeDefined();
+    expect(result.current.error).not.toBeNull();
+  });
+
+  test("error nollataan ennen uutta updatePortfolio-yritystä", async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(EMPTY_PORTFOLIO) })
+      .mockResolvedValueOnce({ ok: false, status: 500, json: () => Promise.resolve({}) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ success: true }) });
+
+    const { result } = renderHook(() => usePortfolio());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    // Epäonnistunut yritys — virhe asettuu
+    await act(async () => {
+      try { await result.current.updatePortfolio({ name: "X" }); }
+      catch { /* odotettu */ }
+    });
+    expect(result.current.error).not.toBeNull();
+
+    // Onnistunut yritys — error nollautuu
+    await act(async () => { await result.current.updatePortfolio({ name: "Y" }); });
+    expect(result.current.error).toBeNull();
+  });
+});
+
+// =========================================================================
+describe("useAppliedJobs", () => {
+  const mockJobs = [
+    { id: "1", title: "Dev", compatibility: 80, recommended: true, matchedSkills: [], missingSkills: [] },
+    { id: "2", title: "Lead", compatibility: 60, recommended: false, matchedSkills: [], missingSkills: [] },
+  ];
+
+  test("hakee työpaikat mountissa", async () => {
+    global.fetch = mockFetchOk(mockJobs);
+    const { result } = renderHook(() => useAppliedJobs());
+    expect(result.current.loading).toBe(true);
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.jobs).toHaveLength(2);
+    expect(result.current.jobs[0].title).toBe("Dev");
+  });
+
+  test("saveJob luo uuden työpaikan", async () => {
+    const newJob = { id: "3", title: "Uusi", compatibility: 75, recommended: true, matchedSkills: [], missingSkills: [] };
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ success: true, job: newJob }) });
+
+    const { result } = renderHook(() => useAppliedJobs());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await act(async () => { await result.current.saveJob("3", { title: "Uusi" }); });
+
+    expect(result.current.jobs).toHaveLength(1);
+    expect(result.current.jobs[0].title).toBe("Uusi");
+  });
+
+  test("saveJob päivittää olemassaolevan työpaikan", async () => {
+    const updatedJob = { ...mockJobs[0], title: "Päivitetty Dev" };
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockJobs) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ success: true, job: updatedJob }) });
+
+    const { result } = renderHook(() => useAppliedJobs());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await act(async () => { await result.current.saveJob("1", { title: "Päivitetty Dev" }); });
+
+    expect(result.current.jobs[0].title).toBe("Päivitetty Dev");
+    expect(result.current.jobs).toHaveLength(2);
+  });
+
+  test("deleteJob poistaa työpaikan", async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockJobs) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ success: true }) });
+
+    const { result } = renderHook(() => useAppliedJobs());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await act(async () => { await result.current.deleteJob("1"); });
+
+    expect(result.current.jobs).toHaveLength(1);
+    expect(result.current.jobs.find(j => j.id === "1")).toBeUndefined();
+  });
+
+  test("getJob hakee yksittäisen työpaikan", async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockJobs) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockJobs[0]) });
+
+    const { result } = renderHook(() => useAppliedJobs());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let job;
+    await act(async () => { job = await result.current.getJob("1"); });
+
+    expect(job.id).toBe("1");
+    expect(job.title).toBe("Dev");
+  });
+
+  test("deleteJob heittää virheen epäonnistuessa eikä muuta listaa", async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockJobs) })
+      .mockResolvedValueOnce({ ok: false, status: 500, json: () => Promise.resolve({}) });
+
+    const { result } = renderHook(() => useAppliedJobs());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await expect(act(async () => { await result.current.deleteJob("1"); })).rejects.toThrow();
+    expect(result.current.jobs).toHaveLength(2);
+  });
+
+  test("asettaa error-tilan kun alkuhaku epäonnistuu", async () => {
+  global.fetch = mockFetchFail(503);
+  const { result } = renderHook(() => useAppliedJobs());
+  await waitFor(() => expect(result.current.loading).toBe(false));
+  expect(result.current.error).not.toBeNull();
+  expect(result.current.jobs).toEqual([]);
+});
+
+test("saveJob asettaa error-tilan ja heittää virheen", async () => {
+  global.fetch = vi.fn()
+    .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockJobs) }) // ← näkyvissä nyt
+    .mockResolvedValueOnce({ ok: false, status: 422, json: () => Promise.resolve({}) });
+
+  const { result } = renderHook(() => useAppliedJobs());
+  await waitFor(() => expect(result.current.loading).toBe(false));
+
+  let caughtError;
+  await act(async () => {
+    try { await result.current.saveJob("99", { title: "Fail" }); }
+    catch (err) { caughtError = err; }
+  });
+
+  expect(caughtError).toBeDefined();
+  expect(result.current.error).not.toBeNull();
+  expect(result.current.jobs).toHaveLength(2);
+});
+
+test("error nollataan ennen uutta operaatiota", async () => {
+  const newJob = { id: "3", title: "Uusi", compatibility: 75, recommended: true, matchedSkills: [], missingSkills: [] };
+  global.fetch = vi.fn()
+    .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockJobs) })
+    .mockResolvedValueOnce({ ok: false, status: 500, json: () => Promise.resolve({}) })
+    .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ success: true, job: newJob }) });
+
+  const { result } = renderHook(() => useAppliedJobs());
+  await waitFor(() => expect(result.current.loading).toBe(false));
+
+  await act(async () => {
+    try { await result.current.deleteJob("1"); }
+    catch { /* odotettu */ }
+  });
+  expect(result.current.error).not.toBeNull();
+
+  await act(async () => { await result.current.saveJob("3", { title: "Uusi" }); });
+  expect(result.current.error).toBeNull();
+});
+
+});
+
+// =========================================================================
+describe("AbortController", () => {
+  // --- useAvailableSkills ---
+  describe("useAvailableSkills", () => {
+    test("keskeyttää haun unmountissa eikä päivitä tilaa", async () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => { }); // ← oma spy
+
+      let rejectFetch;
+      global.fetch = vi.fn().mockReturnValue(
+        new Promise((_, reject) => { rejectFetch = reject; })
+      );
+
+      const { result, unmount } = renderHook(() => useAvailableSkills());
+      expect(result.current.loading).toBe(true);
+
+      unmount();
+
+      const abortError = new DOMException("Aborted", "AbortError");
+      await act(async () => {
+        rejectFetch(abortError);
+        await Promise.resolve();
+      });
+
+      expect(result.current.error).toBeNull();
+      expect(warnSpy).not.toHaveBeenCalled();
+
+      warnSpy.mockRestore(); // ← siivotaan oma spy
+    });
+
+    test("abort-signaali välitetään fetch-kutsulle", async () => {
+      global.fetch = mockFetchOk(MOCK_AVAILABLE_SKILLS);
+      const { unmount } = renderHook(() => useAvailableSkills());
+      unmount();
+
+      const [, options] = global.fetch.mock.calls[0];
+      expect(options.signal).toBeInstanceOf(AbortSignal);
+      expect(options.signal.aborted).toBe(true); // signal on jo peruttu
+    });
+  });
+
+  describe("useCandidateProfile", () => {
+    test("abort-signaali välitetään fetch-kutsulle", async () => {
+      global.fetch = mockFetchOk(MOCK_CANDIDATE_PROFILE);
+      const { unmount } = renderHook(() =>
+        useCandidateProfile(MOCK_AVAILABLE_SKILLS, { current: false })
+      );
+      unmount();
+
+      const [, options] = global.fetch.mock.calls[0];
+      expect(options.signal).toBeInstanceOf(AbortSignal);
+      expect(options.signal.aborted).toBe(true);
+    });
+
+    test("keskeyttää haun unmountissa eikä aseta error-tilaa", async () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => { });
+      let rejectFetch;
+      global.fetch = vi.fn().mockReturnValue(
+        new Promise((_, reject) => { rejectFetch = reject; })
+      );
+
+      const { result, unmount } = renderHook(() =>
+        useCandidateProfile(MOCK_AVAILABLE_SKILLS, { current: false })
+      );
+
+      unmount();
+      const abortError = new DOMException("Aborted", "AbortError");
+      await act(async () => {
+        rejectFetch(abortError);
+        await Promise.resolve();
+      });
+
+      expect(result.current.error).toBeNull();
+      expect(warnSpy).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+  });
+
+  // --- useSynchronizeCandidateSkills ---
+  describe("useSynchronizeCandidateSkills", () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+    });
     afterEach(() => {
       vi.useRealTimers();
     });
 
-    test("ei synkronoi heti mountissa", () => {
-      global.fetch = mockFetchOk({ skills: MOCK_CANDIDATE_PROFILE });
-      renderHook(() =>
-        useSynchronizeCandidateSkills(
-          { frontend: ["React.js"], backend: [], tools: [], other: [] },
-          vi.fn(),
-          { current: false }
-        )
-      );
-      expect(global.fetch).not.toHaveBeenCalled();
-    });
-
-    test("ohittaa synkronoinnin kun isLoadingFromDB on true", async () => {
-      global.fetch = mockFetchOk({ skills: MOCK_CANDIDATE_PROFILE });
+    test("unmount keskeyttää lennossa olevan LLM-kutsun", async () => {
       const onStatusChange = vi.fn();
-      const isLoadingFromDB = { current: true };
+      let rejectFetch;
 
-      renderHook(() =>
-        useSynchronizeCandidateSkills(
-          { frontend: ["React.js"], backend: [], tools: [], other: [] },
-          onStatusChange,
-          isLoadingFromDB
-        )
+      global.fetch = vi.fn().mockReturnValue(
+        new Promise((_, reject) => { rejectFetch = reject; })
       );
 
-      await act(async () => { await vi.runAllTimersAsync(); });
-
-      expect(global.fetch).not.toHaveBeenCalled();
-      expect(isLoadingFromDB.current).toBe(false);
-    });
-
-    test("kutsuu LLM:ää ja tallentaa profiilin debounce-viiveen jälkeen", async () => {
-      global.fetch = vi.fn()
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ skills: MOCK_CANDIDATE_PROFILE }) })
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ success: true }) });
-
-      const onStatusChange = vi.fn();
-      const isLoadingFromDB = { current: false };
-
-      const { rerender } = renderHook(
-        ({ skills }) => useSynchronizeCandidateSkills(skills, onStatusChange, isLoadingFromDB),
+      const { rerender, unmount } = renderHook(
+        ({ skills }) => useSynchronizeCandidateSkills(skills, onStatusChange, { current: false }),
         { initialProps: { skills: { frontend: [], backend: [], tools: [], other: [] } } }
       );
 
+      // Käynnistetään debounce
       rerender({ skills: { frontend: ["React.js"], backend: [], tools: [], other: [] } });
       await act(async () => { await vi.runAllTimersAsync(); });
 
-      expect(onStatusChange).toHaveBeenCalledWith("saved");
-      expect(global.fetch).toHaveBeenCalledTimes(2);
-      expect(global.fetch).toHaveBeenNthCalledWith(1,
-        expect.stringContaining("/api/jobs/skills/applicant"),
-        expect.objectContaining({ method: "POST" })
-      );
-      expect(global.fetch).toHaveBeenNthCalledWith(2,
-        expect.stringContaining("/api/database/candidate-profile"),
-        expect.objectContaining({ method: "PUT" })
-      );
+      // Unmount keskeyttää — heitetään AbortError
+      unmount();
+      const abortError = new DOMException("Aborted", "AbortError");
+      rejectFetch(abortError);
+
+      await act(async () => { await Promise.resolve(); });
+
+      // "error"-tilaa ei pidä tulla AbortErrorista
+      expect(onStatusChange).not.toHaveBeenCalledWith("error");
+      expect(onStatusChange).not.toHaveBeenCalledWith("saved");
     });
 
-    test("asettaa error-tilan jos LLM-kutsu epäonnistuu", async () => {
-      global.fetch = mockFetchFail(502);
+    test("uusi sync keskeyttää edellisen race conditionissa", async () => {
       const onStatusChange = vi.fn();
-      const isLoadingFromDB = { current: false };
+      let firstFetchResolve;
+      let callCount = 0;
+
+      global.fetch = vi.fn().mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) {
+          // Ensimmäinen LLM-kutsu jumittaa — ei valmistu ennen abort
+          return new Promise((resolve) => { firstFetchResolve = resolve; });
+        }
+        // Toisen synkin kutsut vastaavat normaalisti
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(
+            callCount === 2
+              ? { skills: MOCK_CANDIDATE_PROFILE }
+              : { success: true }
+          ),
+        });
+      });
 
       const { rerender } = renderHook(
-        ({ skills }) => useSynchronizeCandidateSkills(skills, onStatusChange, isLoadingFromDB),
+        ({ skills }) => useSynchronizeCandidateSkills(skills, onStatusChange, { current: false }),
         { initialProps: { skills: { frontend: [], backend: [], tools: [], other: [] } } }
       );
 
+      // 1. Ensimmäinen muutos → debounce + LLM-kutsu jumiin
       rerender({ skills: { frontend: ["React.js"], backend: [], tools: [], other: [] } });
       await act(async () => { await vi.runAllTimersAsync(); });
 
-      expect(onStatusChange).toHaveBeenCalledWith("error");
+      // 2. Toinen muutos kesken ensimmäisen → pitää aborttia edellinen
+      rerender({ skills: { frontend: ["React.js", "Vue.js"], backend: [], tools: [], other: [] } });
+      await act(async () => { await vi.runAllTimersAsync(); });
+
+      // Vapautetaan ensimmäinen fetch — pitäisi olla jo abortattu eikä johtaa "saved"-tilaan
+      const abortError = new DOMException("Aborted", "AbortError");
+      firstFetchResolve({ ok: false }); // ei merkitse koska signal on abortattu
+      await act(async () => { await Promise.resolve(); });
+
+      // Vain jälkimmäinen sync saa johtaa "saved"-tilaan
+      const savedCalls = onStatusChange.mock.calls.filter(([s]) => s === "saved");
+      expect(savedCalls).toHaveLength(1);
     });
 
-    test("ei synkronoi jos taidot ovat tyhjät", async () => {
-      global.fetch = mockFetchOk({});
+    test("isSyncing nollataan vain onnistuneen tai virheellisen syncin jälkeen, ei abort-tilanteessa", async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
       const onStatusChange = vi.fn();
-      const isLoadingFromDB = { current: false };
+      let firstFetchResolve;
+      let callCount = 0;
+
+      global.fetch = vi.fn().mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) {
+          return new Promise((resolve) => { firstFetchResolve = resolve; });
+        }
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(
+            callCount === 2 ? { skills: MOCK_CANDIDATE_PROFILE } : { success: true }
+          ),
+        });
+      });
 
       const { rerender } = renderHook(
-        ({ skills }) => useSynchronizeCandidateSkills(skills, onStatusChange, isLoadingFromDB),
+        ({ skills }) => useSynchronizeCandidateSkills(skills, onStatusChange, { current: false }),
         { initialProps: { skills: { frontend: [], backend: [], tools: [], other: [] } } }
       );
 
-      rerender({ skills: { frontend: [], backend: [], tools: [], other: [] } });
+      // Ensimmäinen sync käynnistyy ja jää jumiin
+      rerender({ skills: { frontend: ["React.js"], backend: [], tools: [], other: [] } });
       await act(async () => { await vi.runAllTimersAsync(); });
 
-      expect(onStatusChange).toHaveBeenCalledWith("pending");
-      expect(global.fetch).not.toHaveBeenCalled();
-    });
-  });
+      // Toinen sync abortoi ensimmäisen ja käy läpi kokonaan
+      rerender({ skills: { frontend: ["React.js", "Vue.js"], backend: [], tools: [], other: [] } });
+      await act(async () => {
+        firstFetchResolve({ ok: true, json: () => Promise.resolve({}) }); // vapautetaan jumissa oleva
+        await vi.runAllTimersAsync();
+      });
 
-  // =========================================================================
-  describe("usePortfolio", () => {
-    test("hakee portfolion mountissa", async () => {
-      global.fetch = mockFetchOk({ ...EMPTY_PORTFOLIO, name: "Testi" });
-      const { result } = renderHook(() => usePortfolio());
-      expect(result.current.loading).toBe(true);
-      await waitFor(() => expect(result.current.loading).toBe(false));
-      expect(result.current.portfolio.name).toBe("Testi");
-    });
+      // Kolmas sync pitää onnistua — jos isSyncing jäi true:ksi virheellisesti, se skippaisi
+      rerender({ skills: { frontend: ["React.js", "Vue.js", "Node.js"], backend: [], tools: [], other: [] } });
+      await act(async () => { await vi.runAllTimersAsync(); });
 
-    test("updatePortfolio lähettää PUT ja päivittää tilan", async () => {
-      global.fetch = vi.fn()
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(EMPTY_PORTFOLIO) })
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ success: true }) });
-
-      const { result } = renderHook(() => usePortfolio());
-      await waitFor(() => expect(result.current.loading).toBe(false));
-      await act(async () => { await result.current.updatePortfolio({ ...EMPTY_PORTFOLIO, name: "Uusi Nimi" }); });
-
-      expect(result.current.portfolio.name).toBe("Uusi Nimi");
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining("/api/database/portfolio"),
-        expect.objectContaining({ method: "PUT" })
-      );
-    });
-
-    test("resetPortfolio lähettää DELETE ja hakee tyhjän pohjan", async () => {
-      global.fetch = vi.fn()
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ ...EMPTY_PORTFOLIO, name: "Vanha" }) })
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ success: true }) })
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(EMPTY_PORTFOLIO) });
-
-      const { result } = renderHook(() => usePortfolio());
-      await waitFor(() => expect(result.current.loading).toBe(false));
-      await act(async () => { await result.current.resetPortfolio(); });
-
-      expect(result.current.portfolio.name).toBe("");
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining("/api/database/portfolio"),
-        expect.objectContaining({ method: "DELETE" })
-      );
-    });
-
-    test("updatePortfolio heittää virheen epäonnistuessa", async () => {
-      global.fetch = vi.fn()
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(EMPTY_PORTFOLIO) })
-        .mockResolvedValueOnce({ ok: false, status: 500, json: () => Promise.resolve({}) });
-
-      const { result } = renderHook(() => usePortfolio());
-      await waitFor(() => expect(result.current.loading).toBe(false));
-      await expect(act(async () => { await result.current.updatePortfolio({ name: "X" }); })).rejects.toThrow();
-    });
-  });
-
-  // =========================================================================
-  describe("useAppliedJobs", () => {
-    const mockJobs = [
-      { id: "1", title: "Dev", compatibility: 80, recommended: true, matchedSkills: [], missingSkills: [] },
-      { id: "2", title: "Lead", compatibility: 60, recommended: false, matchedSkills: [], missingSkills: [] },
-    ];
-
-    test("hakee työpaikat mountissa", async () => {
-      global.fetch = mockFetchOk(mockJobs);
-      const { result } = renderHook(() => useAppliedJobs());
-      expect(result.current.loading).toBe(true);
-      await waitFor(() => expect(result.current.loading).toBe(false));
-      expect(result.current.jobs).toHaveLength(2);
-      expect(result.current.jobs[0].title).toBe("Dev");
-    });
-
-    test("saveJob luo uuden työpaikan", async () => {
-      const newJob = { id: "3", title: "Uusi", compatibility: 75, recommended: true, matchedSkills: [], missingSkills: [] };
-      global.fetch = vi.fn()
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) })
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ success: true, job: newJob }) });
-
-      const { result } = renderHook(() => useAppliedJobs());
-      await waitFor(() => expect(result.current.loading).toBe(false));
-      await act(async () => { await result.current.saveJob("3", { title: "Uusi" }); });
-
-      expect(result.current.jobs).toHaveLength(1);
-      expect(result.current.jobs[0].title).toBe("Uusi");
-    });
-
-    test("saveJob päivittää olemassaolevan työpaikan", async () => {
-      const updatedJob = { ...mockJobs[0], title: "Päivitetty Dev" };
-      global.fetch = vi.fn()
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockJobs) })
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ success: true, job: updatedJob }) });
-
-      const { result } = renderHook(() => useAppliedJobs());
-      await waitFor(() => expect(result.current.loading).toBe(false));
-      await act(async () => { await result.current.saveJob("1", { title: "Päivitetty Dev" }); });
-
-      expect(result.current.jobs[0].title).toBe("Päivitetty Dev");
-      expect(result.current.jobs).toHaveLength(2);
-    });
-
-    test("deleteJob poistaa työpaikan", async () => {
-      global.fetch = vi.fn()
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockJobs) })
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ success: true }) });
-
-      const { result } = renderHook(() => useAppliedJobs());
-      await waitFor(() => expect(result.current.loading).toBe(false));
-      await act(async () => { await result.current.deleteJob("1"); });
-
-      expect(result.current.jobs).toHaveLength(1);
-      expect(result.current.jobs.find(j => j.id === "1")).toBeUndefined();
-    });
-
-    test("getJob hakee yksittäisen työpaikan", async () => {
-      global.fetch = vi.fn()
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockJobs) })
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockJobs[0]) });
-
-      const { result } = renderHook(() => useAppliedJobs());
-      await waitFor(() => expect(result.current.loading).toBe(false));
-
-      let job;
-      await act(async () => { job = await result.current.getJob("1"); });
-
-      expect(job.id).toBe("1");
-      expect(job.title).toBe("Dev");
-    });
-
-    test("deleteJob heittää virheen epäonnistuessa eikä muuta listaa", async () => {
-      global.fetch = vi.fn()
-        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockJobs) })
-        .mockResolvedValueOnce({ ok: false, status: 500, json: () => Promise.resolve({}) });
-
-      const { result } = renderHook(() => useAppliedJobs());
-      await waitFor(() => expect(result.current.loading).toBe(false));
-      await expect(act(async () => { await result.current.deleteJob("1"); })).rejects.toThrow();
-      expect(result.current.jobs).toHaveLength(2);
+      const savedCalls = onStatusChange.mock.calls.filter(([s]) => s === "saved");
+      expect(savedCalls.length).toBeGreaterThanOrEqual(1); // synct pääsevät läpi
+      vi.useRealTimers();
     });
   });
 });

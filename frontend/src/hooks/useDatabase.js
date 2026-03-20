@@ -20,7 +20,7 @@
  *   Taidot tallennetaan DB:ssä kandidaatin osaamistason mukaan
  *   (hardSkillsProficient / softSkillsBasics jne.) koska match-algoritmi tarvitsee sen.
  *   Frontend näyttää taidot teknologiakategorioittain (frontend/backend/tools/other).
- *   Muunnos tehdään dbProfileToFrontendSkills-funktiolla (skillTransformer.js).
+ *   Muunnos tehdään dbProfileToFrontendSkills-funktiolla (frontend\src\utils\skillUtils.js).
  * 
  * testejä varten: npm install --save-dev vitest @testing-library/react @testing-library/jest-dom jsdom
  * 
@@ -74,51 +74,61 @@ async function apiFetch(path, options = {}) {
 export function useSynchronizeCandidateSkills(skills, onStatusChange, isLoadingFromDB) {
   const debounceTimer = useRef(null);
   const isSyncing = useRef(false);
+  const abortController = useRef(null);
 
   const runSync = useCallback(async (currentSkills) => {
-    if (isSyncing.current) return;
+    if (isSyncing.current) {
+      abortController.current?.abort();
+    }
 
     const applicantText = frontendSkillsToApplicantText(currentSkills);
     if (!applicantText) return;
+
+    abortController.current = new AbortController();
+    const { signal } = abortController.current;
 
     isSyncing.current = true;
     onStatusChange?.("syncing");
 
     try {
-      // 1. LLM luokittelee taidot proficient/basics-muotoon
       const llmData = await apiFetch("/api/jobs/skills/applicant", {
         method: "POST",
         body: JSON.stringify({ applicantText }),
+        signal,
       });
 
-      // 2. Tallennetaan DB:n candidateProfile-kenttään
       await apiFetch("/api/database/candidate-profile", {
         method: "PUT",
         body: JSON.stringify(llmData.skills),
+        signal,
       });
 
       onStatusChange?.("saved");
     } catch (err) {
+      if (err.name === "AbortError") return; // isSyncing jää true — seuraava runSync hoitaa nollauksen
       console.error("[useSynchronizeCandidateSkills]", err);
       onStatusChange?.("error");
     } finally {
-      isSyncing.current = false;
+      // Nollataan vain jos tämä on vielä aktiivinen sync (ei abortattu)
+      if (!signal.aborted) isSyncing.current = false;
     }
   }, [onStatusChange]);
 
   useEffect(() => {
-    // Ohitetaan jos data tuli juuri DB:stä — ei lähetetä sitä takaisin
     if (isLoadingFromDB?.current) {
       isLoadingFromDB.current = false;
       return;
     }
-
     if (!skills) return;
 
     onStatusChange?.("pending");
     clearTimeout(debounceTimer.current);
     debounceTimer.current = setTimeout(() => runSync(skills), DEBOUNCE_MS);
-    return () => clearTimeout(debounceTimer.current);
+
+    return () => {
+      clearTimeout(debounceTimer.current);
+      abortController.current?.abort();
+    };
   }, [skills, runSync]);
 }
 
@@ -141,13 +151,18 @@ export function useAvailableSkills() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    apiFetch("/api/database/available-skills")
+    const controller = new AbortController();
+
+    apiFetch("/api/database/available-skills", { signal: controller.signal })
       .then(setAvailableSkills)
       .catch(err => {
-        console.warn("[useAvailableSkills] Haku epäonnistui:", err);
+        if (err.name === "AbortError") return;
+        console.warn("[useAvailableSkills]", err);
         setError(err.message);
       })
       .finally(() => setLoading(false));
+
+    return () => controller.abort();
   }, []);
 
   return { availableSkills, loading, error };
@@ -178,13 +193,16 @@ export function useCandidateProfile(availableSkills, isLoadingFromDB) {
     frontend: [], backend: [], tools: [], other: []
   });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null); // ← uusi
 
   useEffect(() => {
-    // Odotetaan että availableSkills on ladattu — tarvitaan muunnokseen
     if (availableSkills.frontend.length === 0) return;
 
+    const controller = new AbortController(); // ← uusi
     setLoading(true);
-    apiFetch("/api/database/candidate-profile")
+    setError(null);
+
+    apiFetch("/api/database/candidate-profile", { signal: controller.signal }) // ← signal mukaan
       .then(dbProfile => {
         const hasData = Object.values(dbProfile).some(
           v => Array.isArray(v) && v.length > 0
@@ -194,11 +212,17 @@ export function useCandidateProfile(availableSkills, isLoadingFromDB) {
           setSelectedSkills(dbProfileToFrontendSkills(dbProfile, availableSkills));
         }
       })
-      .catch(err => console.warn("[useCandidateProfile] Haku epäonnistui:", err))
+      .catch(err => {
+        if (err.name === "AbortError") return; // ← abort ei ole virhe
+        console.warn("[useCandidateProfile]", err);
+        setError(err.message); // ← virhe näkyviin
+      })
       .finally(() => setLoading(false));
+
+    return () => controller.abort(); // ← cleanup
   }, [availableSkills]);
 
-  return { selectedSkills, setSelectedSkills, loading };
+  return { selectedSkills, setSelectedSkills, loading, error }; // ← error mukaan
 }
 
 // ---------------------------------------------------------------------------
@@ -226,16 +250,27 @@ export function usePortfolio() {
   const [portfolio, setPortfolio] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null); // ← uusi
 
   useEffect(() => {
-    apiFetch("/api/database/portfolio")
+    const controller = new AbortController(); // ← uusi
+    setError(null);
+
+    apiFetch("/api/database/portfolio", { signal: controller.signal }) // ← signal mukaan
       .then(setPortfolio)
-      .catch(err => console.warn("[usePortfolio] Haku epäonnistui:", err))
+      .catch(err => {
+        if (err.name === "AbortError") return; // ← abort ei ole virhe
+        console.warn("[usePortfolio]", err);
+        setError(err.message); // ← virhe näkyviin
+      })
       .finally(() => setLoading(false));
+
+    return () => controller.abort(); // ← cleanup
   }, []);
 
   const updatePortfolio = useCallback(async (portfolioData) => {
     setSaving(true);
+    setError(null); // ← nollataan edellinen virhe ennen yritystä
     try {
       await apiFetch("/api/database/portfolio", {
         method: "PUT",
@@ -244,7 +279,8 @@ export function usePortfolio() {
       setPortfolio(prev => ({ ...prev, ...portfolioData }));
     } catch (err) {
       console.error("[usePortfolio] Tallennus epäonnistui:", err);
-      throw err; // annetaan komponentin käsitellä
+      setError(err.message); // ← virhe tilaan ennen heittoa
+      throw err;
     } finally {
       setSaving(false);
     }
@@ -252,20 +288,21 @@ export function usePortfolio() {
 
   const resetPortfolio = useCallback(async () => {
     setSaving(true);
+    setError(null); // ← nollataan edellinen virhe ennen yritystä
     try {
       await apiFetch("/api/database/portfolio", { method: "DELETE" });
-      // Haetaan tyhjä pohja uudelleen
       const fresh = await apiFetch("/api/database/portfolio");
       setPortfolio(fresh);
     } catch (err) {
       console.error("[usePortfolio] Nollaus epäonnistui:", err);
+      setError(err.message); // ← virhe tilaan ennen heittoa
       throw err;
     } finally {
       setSaving(false);
     }
   }, []);
 
-  return { portfolio, loading, saving, updatePortfolio, resetPortfolio };
+  return { portfolio, loading, saving, error, updatePortfolio, resetPortfolio }; // ← error mukaan
 }
 
 // ---------------------------------------------------------------------------
@@ -294,25 +331,33 @@ export function useAppliedJobs() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null); // ← uusi
 
-  const fetchJobs = useCallback(() => {
-    return apiFetch("/api/database/applied-jobs")
+  const fetchJobs = useCallback((signal) => { // ← signal parametrina
+    setError(null);
+    return apiFetch("/api/database/applied-jobs", { signal })
       .then(setJobs)
-      .catch(err => console.warn("[useAppliedJobs] Haku epäonnistui:", err));
+      .catch(err => {
+        if (err.name === "AbortError") return; // ← abort ei ole virhe
+        console.warn("[useAppliedJobs]", err);
+        setError(err.message); // ← virhe näkyviin
+      });
   }, []);
 
   useEffect(() => {
-    fetchJobs().finally(() => setLoading(false));
+    const controller = new AbortController(); // ← uusi
+    fetchJobs(controller.signal).finally(() => setLoading(false));
+    return () => controller.abort(); // ← cleanup
   }, [fetchJobs]);
 
   const saveJob = useCallback(async (id, jobData) => {
     setSaving(true);
+    setError(null); // ← nollataan edellinen virhe ennen yritystä
     try {
       const result = await apiFetch(`/api/database/applied-jobs/${id}`, {
         method: "PUT",
         body: JSON.stringify(jobData),
       });
-      // Päivitetään paikallinen tila hakematta koko listaa uudelleen
       setJobs(prev => {
         const idx = prev.findIndex(j => j.id === id);
         if (idx !== -1) {
@@ -325,6 +370,7 @@ export function useAppliedJobs() {
       return result.job;
     } catch (err) {
       console.error("[useAppliedJobs] Tallennus epäonnistui:", err);
+      setError(err.message); // ← virhe tilaan ennen heittoa
       throw err;
     } finally {
       setSaving(false);
@@ -333,11 +379,13 @@ export function useAppliedJobs() {
 
   const deleteJob = useCallback(async (id) => {
     setSaving(true);
+    setError(null); // ← nollataan edellinen virhe ennen yritystä
     try {
       await apiFetch(`/api/database/applied-jobs/${id}`, { method: "DELETE" });
       setJobs(prev => prev.filter(j => j.id !== id));
     } catch (err) {
       console.error("[useAppliedJobs] Poisto epäonnistui:", err);
+      setError(err.message); // ← virhe tilaan ennen heittoa
       throw err;
     } finally {
       setSaving(false);
@@ -348,5 +396,5 @@ export function useAppliedJobs() {
     return apiFetch(`/api/database/applied-jobs/${id}`);
   }, []);
 
-  return { jobs, loading, saving, saveJob, deleteJob, getJob };
+  return { jobs, loading, saving, error, saveJob, deleteJob, getJob }; // ← error mukaan
 }
