@@ -2,14 +2,15 @@
   "ExpandedNodes": [
     "",
     "\\backend",
-    "\\backend\\config",
-    "\\backend\\services",
-    "\\backend\\utils",
+    "\\backend\\data",
+    "\\backend\\LLM",
+    "\\backend\\routes",
     "\\frontend",
     "\\frontend\\src",
-    "\\frontend\\src\\assets",
-    "\\frontend\\src\\components",
-    "\\frontend\\src\\data"
+    "\\frontend\\src\\data",
+    "\\frontend\\src\\hooks",
+    "\\frontend\\src\\pages"
   ],
+  "SelectedNode": "\\frontend\\src\\pages\\Portfolio.jsx",
   "PreviewInSolutionExplorer": false
 }

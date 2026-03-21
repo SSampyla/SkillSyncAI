@@ -2,22 +2,29 @@ import Navbar from "../components/Navbar";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/home.css";
 import { useState } from "react";
-import { availableSkills_depracated, createEmptyPortfolio } from "../data/portfolioTemplate";
-
+import { useAvailableSkills } from "../hooks/useDatabase";
+import { usePortfolio } from "../hooks/useDatabase";
+import { createEmptyPortfolio } from "../data/portfolioTemplate";
 
 /*Lisätty kotisivulle profiilin luonti ja taitovalinnat.
 
 Tiedot siirtyvät portofolio-sivulle, jossa ne ovat vielä muokattavissa
 */
 
+// nyt backendin database.json:ista haetaan "availableSkills" ja "portfolio" dataa. Näitä käsitellään custom hookeilla, jotka on määritelty frontend/src/hooks/useDatabase.js:ssä. Näin varmistetaan, että data on synkronoitu backendin kanssa eikä käytetä kovakoodattua dataa frontendissä.
+
+
 function Home() {
+
+    const { availableSkills } = useAvailableSkills();
+    const { updatePortfolio } = usePortfolio();
+
+    const [loading, setLoading] = useState(false);
+    const [showForm, setShowForm] = useState(false);
 
     const navigate = useNavigate();
 
-    const [showForm, setShowForm] = useState(false);
-
     const [profile, setProfile] = useState(() => createEmptyPortfolio());
-
     const [selectedSkills, setSelectedSkills] = useState(() =>
         createEmptyPortfolio().skills
     );
@@ -49,6 +56,11 @@ function Home() {
 
     const hasAnyValue = (values) => values.some((value) => value.trim() !== "");
 
+
+    function openCreateForm() {
+        setShowForm(true);
+    }
+
     function resetForm() {
         const emptyProfile = createEmptyPortfolio();
         setProfile(emptyProfile);
@@ -70,64 +82,72 @@ function Home() {
         setWhyMeText("");
         setLookingForText("");
     }
+ 
 
-    function openCreateForm() {
-        localStorage.removeItem("profile");
-        resetForm();
-        setShowForm(true);
-    }
-
-    function createProfile(e) {
-
+    async function createProfile(e) {
         e.preventDefault();
 
-        const includeExperience = hasAnyValue([
-            experienceDraft.title,
-            experienceDraft.company,
-            experienceDraft.period,
-            experienceDraft.description,
-            experienceDraft.achievements
-        ]);
+        if (loading) return;
 
-        const includeEducation = hasAnyValue([
-            educationDraft.degree,
-            educationDraft.institution,
-            educationDraft.year,
-            educationDraft.relevant
-        ]);
+        setLoading(true);
 
-        const fullProfile = {
-            ...profile,
-            skills: selectedSkills,
-            experience: includeExperience
-                ? [{
-                    title: experienceDraft.title,
-                    company: experienceDraft.company,
-                    period: experienceDraft.period,
-                    description: experienceDraft.description,
-                    achievements: splitLines(experienceDraft.achievements)
-                }]
-                : [],
-            education: includeEducation
-                ? [{
-                    degree: educationDraft.degree,
-                    institution: educationDraft.institution,
-                    year: educationDraft.year,
-                    relevant: splitLines(educationDraft.relevant)
-                }]
-                : [],
-            certifications: splitLines(certificationsText),
-            profileSummary: {
-                whyMe: splitLines(whyMeText),
-                lookingFor: splitLines(lookingForText)
-            }
-        };
+        try {
 
-        localStorage.setItem("profile", JSON.stringify(fullProfile));
+            const includeExperience = hasAnyValue([
+                experienceDraft.title,
+                experienceDraft.company,
+                experienceDraft.period,
+                experienceDraft.description,
+                experienceDraft.achievements
+            ]);
 
-        setShowForm(false);
-        navigate("/portfolio");
+            const includeEducation = hasAnyValue([
+                educationDraft.degree,
+                educationDraft.institution,
+                educationDraft.year,
+                educationDraft.relevant
+            ]);
+
+            const fullProfile = {
+                ...profile,
+                skills: selectedSkills,
+                experience: includeExperience
+                    ? [{
+                        title: experienceDraft.title,
+                        company: experienceDraft.company,
+                        period: experienceDraft.period,
+                        description: experienceDraft.description,
+                        achievements: splitLines(experienceDraft.achievements)
+                    }]
+                    : [],
+                education: includeEducation
+                    ? [{
+                        degree: educationDraft.degree,
+                        institution: educationDraft.institution,
+                        year: educationDraft.year,
+                        relevant: splitLines(educationDraft.relevant)
+                    }]
+                    : [],
+                certifications: splitLines(certificationsText),
+                profileSummary: {
+                    whyMe: splitLines(whyMeText),
+                    lookingFor: splitLines(lookingForText)
+                }
+            };
+
+            await updatePortfolio(fullProfile);
+
+            setShowForm(false);
+            navigate("/portfolio");
+
+        } catch (err) {
+            console.error(err);
+            alert("Tallennus epäonnistui");
+        } finally {
+            setLoading(false);
+        }
     }
+   
 
     function toggleSkill(category, skill) {
 
@@ -283,7 +303,7 @@ function Home() {
 
                                 <h3>Valitse teknologiat</h3>
 
-                                {Object.entries(availableSkills_depracated).map(([category, skills]) => (
+                                {Object.entries(availableSkills || {}).map(([category, skills]) => (
 
                                     <div key={category} style={{ marginBottom: "15px" }}>
 
@@ -298,7 +318,7 @@ function Home() {
                                             marginTop: "8px"
                                         }}>
 
-                                            {skills.map(skill => (
+                                            {Array.isArray(skills) && skills.map(skill => (
 
                                                 <span
                                                     key={skill}
@@ -412,8 +432,8 @@ function Home() {
                                     onChange={(e) => setLookingForText(e.target.value)}
                                 />
 
-                                <button type="submit" className="btn btn-primary">
-                                    Luo Portfolio
+                                <button type="submit" className="btn btn-primary" disabled={loading}>
+                                    {loading ? "Luodaan..." : "Luo Portfolio"}
                                 </button>
 
                             </form>

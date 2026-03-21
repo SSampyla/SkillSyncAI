@@ -1,84 +1,79 @@
 import Navbar from "../components/Navbar";
-import { useState, useEffect } from "react";
-import "../styles/portfolio.css";
+import { useState, useEffect, useRef } from "react";
 import {
-  availableSkills_depracated,
-  createEmptyEducation,
-  createEmptyExperience,
-  createEmptyPortfolio,
+    useAvailableSkills,
+    useCandidateProfile,
+    usePortfolio,
+    useSynchronizeCandidateSkills
+} from "../hooks/useDatabase";
+import "../styles/portfolio.css";
+
+import {
+    createEmptyPortfolio,
+    createEmptyExperience,
+    createEmptyEducation
 } from "../data/portfolioTemplate";
 
+
 export default function Portfolio() {
-    const normalizeProfile = (rawProfile) => {
-      const emptyProfile = createEmptyPortfolio();
-
-      if (!rawProfile || typeof rawProfile !== "object") {
-        return emptyProfile;
-      }
-
-      return {
-        ...emptyProfile,
-        ...rawProfile,
-        skills: {
-          ...emptyProfile.skills,
-          ...(rawProfile.skills || {}),
-        },
-        experience: Array.isArray(rawProfile.experience)
-          ? rawProfile.experience.map((item) => ({
-              ...createEmptyExperience(),
-              ...item,
-              achievements: Array.isArray(item?.achievements)
-                ? item.achievements
-                : [""],
-            }))
-          : [],
-        education: Array.isArray(rawProfile.education)
-          ? rawProfile.education.map((item) => ({
-              ...createEmptyEducation(),
-              ...item,
-              relevant: Array.isArray(item?.relevant) ? item.relevant : [""],
-            }))
-          : [],
-        certifications: Array.isArray(rawProfile.certifications)
-          ? rawProfile.certifications
-          : [],
-        profileSummary: {
-          ...emptyProfile.profileSummary,
-          ...(rawProfile.profileSummary || {}),
-          whyMe: Array.isArray(rawProfile.profileSummary?.whyMe)
-            ? rawProfile.profileSummary.whyMe
-            : [],
-          lookingFor: Array.isArray(rawProfile.profileSummary?.lookingFor)
-            ? rawProfile.profileSummary.lookingFor
-            : [],
-        },
-      };
-    };
 
     const [activeSection, setActiveSection] = useState("profile");
     const [isEditing, setIsEditing] = useState(false);
+ 
+const isLoadingFromDB = useRef(false);
 
-    const [profile, setProfile] = useState(() => {
-        const storedProfile = localStorage.getItem("profile");
+const { availableSkills } = useAvailableSkills();
 
-        if (!storedProfile) {
-            return createEmptyPortfolio();
+const {
+    selectedSkills,
+    setSelectedSkills
+} = useCandidateProfile(availableSkills, isLoadingFromDB);
+
+const {
+    portfolio,
+    updatePortfolio,
+    loading: portfolioLoading
+} = usePortfolio();
+
+const [profile, setProfile] = useState(createEmptyPortfolio());
+
+    useEffect(() => {
+        if (portfolio) {
+            setProfile(prev => ({
+                ...prev,
+                ...portfolio
+            }));
+        }
+    }, [portfolio]);
+
+    const isInitialLoad = useRef(true);
+
+    const DEBOUNCE_MS = 250;
+
+    useEffect(() => {
+        if (isInitialLoad.current) {
+            isInitialLoad.current = false;
+            return;
         }
 
-        try {
-            return normalizeProfile(JSON.parse(storedProfile));
-        } catch {
-            return createEmptyPortfolio();
-        };
-    });
+        const timeout = setTimeout(() => {
+            console.log("Lähetetään backendiin:", profile);
 
-    const [selectedSkills, setSelectedSkills] = useState(profile.skills);
-    const [experience, setExperience] = useState(profile.experience || []);
-    const [education, setEducation] = useState(profile.education || []);
-    const [certifications, setCertifications] = useState(profile.certifications || []);
-    const [profileSummary, setProfileSummary] = useState(
-        profile.profileSummary || createEmptyPortfolio().profileSummary
-    );
+            updatePortfolio(profile).catch(() => {
+                console.error("Tallennus epäonnistui");
+            });
+        }, DEBOUNCE_MS);
+
+        return () => clearTimeout(timeout);
+    }, [profile]);
+
+const [syncStatus, setSyncStatus] = useState("idle");
+
+useSynchronizeCandidateSkills(
+    selectedSkills,
+    setSyncStatus,
+    isLoadingFromDB
+);
 
     const [detectedSkills, setDetectedSkills] = useState(null);
     const [showSkillModal, setShowSkillModal] = useState(false); 
@@ -102,7 +97,7 @@ export default function Portfolio() {
 
                     let foundCategory = null;
 
-                    for (const [category, skills] of Object.entries(availableSkills_depracated)) {
+                    for (const [category, skills] of Object.entries(availableSkills)) {
 
                         const match = skills.find(
                             skill => skill.toLowerCase() === normalized
@@ -183,6 +178,16 @@ export default function Portfolio() {
 
     const [githubProjects, setGithubProjects] = useState([]);
 
+    const updateArrayItem = (key, index, field, value) => {
+        const updated = [...(profile[key] || [])];
+        updated[index][field] = value;
+
+        setProfile({
+            ...profile,
+            [key]: updated
+        });
+    };
+
     const handleFetchRepos = async () => {
 
         if (!profile.github) {
@@ -213,22 +218,27 @@ export default function Portfolio() {
         }
     };
 
-       
-          
+    const updateNestedArrayItem = (key, index, field, subIndex, value) => {
+        const updated = [...(profile[key] || [])];
 
-    useEffect(() => {
-        const updatedProfile = {
+        if (!updated[index][field]) {
+            updated[index][field] = [];
+        }
+
+        updated[index][field][subIndex] = value;
+
+        setProfile({
             ...profile,
-            skills: selectedSkills,
-            experience,
-            education,
-            certifications,
-            profileSummary,
-        };
+            [key]: updated
+        });
+    };
+ 
 
-        localStorage.setItem("profile", JSON.stringify(updatedProfile));
-    }, [profile, selectedSkills, experience, education, certifications, profileSummary]);
 
+
+
+
+    
     const parseLines = (value) =>
       value
       .split("\n")
@@ -239,7 +249,13 @@ export default function Portfolio() {
 
   return (
     <>
-      <Navbar />
+          <Navbar />
+          {portfolioLoading && (
+              <div style={{ padding: "10px", color: "gray" }}>
+                  Ladataan profiilia...
+              </div>
+          )}
+
       <hr className="divider" />
 
       <div className="portfolio-page">
@@ -507,7 +523,7 @@ export default function Portfolio() {
             <h2>Tekniset Taidot</h2>
             {isEditing ? (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "30px" }}>
-                {Object.entries(availableSkills_depracated).map(([category, skillsList]) => (
+                                  {Object.entries(availableSkills).map(([category, skillsList]) => (
                   <div key={category}>
                     <h3 style={{ textTransform: "capitalize" }}>{category === "frontend" ? "Frontend" : category === "backend" ? "Backend" : category === "tools" ? "Työkalut" : "Muut Taidot"}</h3>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "10px" }}>
@@ -642,7 +658,7 @@ export default function Portfolio() {
         {activeSection === "experience" && (
           <section style={{ marginBottom: "50px" }}>
             <h2>Työkokemus & Projektit</h2>
-            {experience.map((exp, index) => (
+            {(profile.experience || []).map((exp, index) => (
               <div
                 key={index}
                 style={{
@@ -662,11 +678,9 @@ export default function Portfolio() {
                         <input
                           type="text"
                           value={exp.title}
-                          onChange={(e) => {
-                            const updatedExp = [...experience];
-                            updatedExp[index].title = e.target.value;
-                            setExperience(updatedExp);
-                          }}
+                          onChange={(e) =>
+                          updateArrayItem("experience", index, "title", e.target.value)
+                          }
                           style={{
                             fontSize: "18px",
                             fontWeight: "bold",
@@ -680,11 +694,10 @@ export default function Portfolio() {
                         <input
                           type="text"
                           value={exp.company}
-                          onChange={(e) => {
-                            const updatedExp = [...experience];
-                            updatedExp[index].company = e.target.value;
-                            setExperience(updatedExp);
-                          }}
+                                        onChange={(e) => {
+                                            updateArrayItem("experience", index, "company", e.target.value)
+                                        }}
+                            
                           style={{
                             fontSize: "16px",
                             color: "var(--color-primary)",
@@ -699,10 +712,8 @@ export default function Portfolio() {
                       <input
                         type="text"
                         value={exp.period}
-                        onChange={(e) => {
-                          const updatedExp = [...experience];
-                          updatedExp[index].period = e.target.value;
-                          setExperience(updatedExp);
+                                    onChange={(e) => {
+                                        updateArrayItem("experience", index, "period", e.target.value)
                         }}
                         style={{
                           color: "var(--text-muted)",
@@ -717,9 +728,7 @@ export default function Portfolio() {
                     <textarea
                       value={exp.description}
                       onChange={(e) => {
-                        const updatedExp = [...experience];
-                        updatedExp[index].description = e.target.value;
-                        setExperience(updatedExp);
+                          updateArrayItem("experience", index, "description", e.target.value)
                       }}
                       style={{
                         color: "var(--text-muted)",
@@ -736,11 +745,15 @@ export default function Portfolio() {
                       <div key={idx} style={{ display: "flex", alignItems: "center", marginBottom: "8px" }}>
                         <textarea
                           value={achievement}
-                          onChange={(e) => {
-                            const updatedExp = [...experience];
-                            updatedExp[index].achievements[idx] = e.target.value;
-                            setExperience(updatedExp);
-                          }}
+                                onChange={(e) => {
+                                    const updated = [...(profile.experience || [])];
+                                    updated[index].achievements[idx] = e.target.value;
+
+                                    setProfile({
+                                        ...profile,
+                                        experience: updated
+                                    });
+                                }}
                           style={{
                             flex: 1,
                             marginBottom: "8px",
@@ -752,10 +765,13 @@ export default function Portfolio() {
                           }}
                         />
                         <button
-                          onClick={() => {
-                            const updatedExp = [...experience];
-                            updatedExp[index].achievements.splice(idx, 1);
-                            setExperience(updatedExp);
+                                onClick={() => {
+                                    const updated = [...(profile.experience || [])];
+                                    updated[index].achievements.splice(idx, 1);
+                                    setProfile({
+                                        ...profile,
+                                        experience: updated
+                                    });                        
                           }}
                           style={{
                             marginLeft: "10px",
@@ -772,10 +788,13 @@ export default function Portfolio() {
                       </div>
                     ))}
                     <button
-                      onClick={() => {
-                        const updatedExp = [...experience];
-                        updatedExp[index].achievements.push("");
-                        setExperience(updatedExp);
+                                onClick={() => {
+                                    const updated = [...(profile.experience || [])];
+                                    updated[index].achievements.push("");
+                                    setProfile({
+                                        ...profile,
+                                        experience: updated
+                                    });
                       }}
                       style={{
                         backgroundColor: "#28a745",
@@ -815,7 +834,10 @@ export default function Portfolio() {
             {isEditing && (
               <button
                 onClick={() => {
-                  setExperience([...experience, createEmptyExperience()]);
+                                      setProfile({
+                                          ...profile,
+                                          experience: [...(profile.experience || []), createEmptyExperience()]
+                                      });
                 }}
                 style={{
                   backgroundColor: "#007bff",
@@ -837,7 +859,7 @@ export default function Portfolio() {
         {activeSection === "education" && (
           <section style={{ marginBottom: "50px" }}>
             <h2>Koulutus</h2>
-            {education.map((edu, index) => (
+           {(profile.education || []).map((edu, index) => (
               <div
                 key={index}
                 style={{
@@ -858,9 +880,7 @@ export default function Portfolio() {
                           type="text"
                           value={edu.degree}
                           onChange={(e) => {
-                            const updatedEdu = [...education];
-                            updatedEdu[index].degree = e.target.value;
-                            setEducation(updatedEdu);
+                              updateArrayItem("education", index, "degree", e.target.value)
                           }}
                           style={{
                             fontSize: "18px",
@@ -876,9 +896,7 @@ export default function Portfolio() {
                           type="text"
                           value={edu.institution}
                           onChange={(e) => {
-                            const updatedEdu = [...education];
-                            updatedEdu[index].institution = e.target.value;
-                            setEducation(updatedEdu);
+                              updateArrayItem("education", index, "institution", e.target.value)                
                           }}
                           style={{
                             fontSize: "16px",
@@ -893,10 +911,8 @@ export default function Portfolio() {
                       <input
                         type="text"
                         value={edu.year}
-                        onChange={(e) => {
-                          const updatedEdu = [...education];
-                          updatedEdu[index].year = e.target.value;
-                          setEducation(updatedEdu);
+                                   onChange={(e) => {
+                                       updateArrayItem("education", index, "year", e.target.value)                          
                         }}
                         style={{
                           color: "var(--text-muted)",
@@ -915,10 +931,8 @@ export default function Portfolio() {
                         <input
                           type="text"
                           value={course}
-                          onChange={(e) => {
-                            const updatedEdu = [...education];
-                            updatedEdu[index].relevant[idx] = e.target.value;
-                            setEducation(updatedEdu);
+                                onChange={(e) => {
+                                    updateNestedArrayItem("education", index, "relevant", idx, e.target.value)                           
                           }}
                           style={{
                             flex: 1,
@@ -932,11 +946,16 @@ export default function Portfolio() {
                           }}
                         />
                         <button
-                          onClick={() => {
-                            const updatedEdu = [...education];
-                            updatedEdu[index].relevant.splice(idx, 1);
-                            setEducation(updatedEdu);
-                          }}
+                                onClick={() => {
+                                    const updated = [...(profile.education || [])];
+                                    updated[index].relevant.splice(idx, 1);
+
+                                    setProfile({
+                                        ...profile,
+                                        education: updated
+                                    });
+                                }}
+                                    
                           style={{
                             backgroundColor: "#dc3545",
                             color: "white",
@@ -951,11 +970,15 @@ export default function Portfolio() {
                       </div>
                     ))}
                     <button
-                      onClick={() => {
-                        const updatedEdu = [...education];
-                        updatedEdu[index].relevant.push("");
-                        setEducation(updatedEdu);
-                      }}
+                               onClick={() => {
+                                   const updated = [...(profile.education || [])];
+                                   updated[index].relevant.push("");
+
+                                   setProfile({
+                                       ...profile,
+                                       education: updated
+                                   });
+                               }}
                       style={{
                         backgroundColor: "#28a745",
                         color: "white",
@@ -1002,7 +1025,10 @@ export default function Portfolio() {
             {isEditing && (
               <button
                 onClick={() => {
-                  setEducation([...education, createEmptyEducation()]);
+                                      setProfile({
+                                          ...profile,
+                                          education: [...(profile.education || []), createEmptyEducation()]
+                                      });
                 }}
                 style={{
                   backgroundColor: "#007bff",
@@ -1021,7 +1047,7 @@ export default function Portfolio() {
             <h2>Sertifikaatit & Koulutukset</h2>
             {isEditing ? (
               <div style={{ display: "flex", flexWrap: "wrap", gap: "15px" }}>
-                {certifications.map((cert, index) => (
+                                  {(profile.certifications || []).map((cert, index) => (
                   <div
                     key={index}
                     style={{
@@ -1036,9 +1062,12 @@ export default function Portfolio() {
                       type="text"
                       value={cert}
                       onChange={(e) => {
-                        const updatedCerts = [...certifications];
-                        updatedCerts[index] = e.target.value;
-                        setCertifications(updatedCerts);
+                          const updated = [...(profile.certifications || [])];
+                          updated[index] = e.target.value;
+                          setProfile({
+                              ...profile,
+                              certifications: updated
+                          });
                       }}
                       style={{
                         backgroundColor: "transparent",
@@ -1051,11 +1080,15 @@ export default function Portfolio() {
                       }}
                     />
                     <button
-                      onClick={() => {
-                        const updatedCerts = [...certifications];
-                        updatedCerts.splice(index, 1);
-                        setCertifications(updatedCerts);
-                      }}
+                                              onClick={() => {
+                                                  const updated = [...(profile.certifications || [])];
+                                                  updated.splice(index, 1);
+
+                                                  setProfile({
+                                                      ...profile,
+                                                      certifications: updated
+                                                  });
+                                              }}
                       style={{
                         marginTop: "10px",
                         backgroundColor: "#dc3545",
@@ -1072,7 +1105,10 @@ export default function Portfolio() {
                   </div>
                 ))}
                 <button
-                  onClick={() => setCertifications([...certifications, ""])}
+                                      onClick={() => setProfile({
+                                          ...profile,
+                                          certifications: [...(profile.certifications || []), ""]
+                                      })}
                   style={{
                     padding: "15px 20px",
                     backgroundColor: "#28a745",
@@ -1088,18 +1124,18 @@ export default function Portfolio() {
                 </button>
               </div>
             ) : (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "15px" }}>
-                {certifications.map((cert, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      padding: "15px 20px",
-                      backgroundColor: "var(--color-primary)",
-                      border: "1px solid var(--color-primary)",
-                      borderRadius: "6px",
-                      textAlign: "center",
-                    }}
-                  >
+                                  <div style={{ display: "flex", flexWrap: "wrap", gap: "15px" }}>
+                                      {(profile.certifications || []).map((cert, index) => (
+                                          <div
+                                              key={index}
+                                              style={{
+                                                  padding: "15px 20px",
+                                                  backgroundColor: "var(--color-primary)",
+                                                  border: "1px solid var(--color-primary)",
+                                                  borderRadius: "6px",
+                                                  textAlign: "center",
+                                              }}
+                                          >
                     <p style={{ margin: 0, fontWeight: "bold", color: "#ffffff" }}>{cert}</p>
                   </div>
                 ))}
@@ -1116,14 +1152,17 @@ export default function Portfolio() {
               <>
                 <div style={{ backgroundColor: "#e3f2fd", padding: "25px", borderRadius: "8px", marginBottom: "30px" }}>
                   <h3 style={{ color: "var(--color-primary-strong)", marginTop: 0 }}>Miksi minut?</h3>
-                  <textarea
-                    value={joinLines(profileSummary.whyMe)}
-                    onChange={(e) =>
-                      setProfileSummary({
-                        ...profileSummary,
-                        whyMe: parseLines(e.target.value),
-                      })
-                    }
+                                      <textarea
+                                          value={joinLines(profile.profileSummary?.whyMe || [])}
+                                          onChange={(e) =>
+                                              setProfile({
+                                                  ...profile,
+                                                  profileSummary: {
+                                                      ...profile.profileSummary,
+                                                      whyMe: parseLines(e.target.value)
+                                                  }
+                                              })
+                                          }
                     style={{
                       lineHeight: "1.8",
                       color: "#1a237e",
@@ -1139,11 +1178,14 @@ export default function Portfolio() {
                 <div style={{ backgroundColor: "#e8f5e9", padding: "25px", borderRadius: "8px" }}>
                   <h3 style={{ color: "#1b5e20", marginTop: 0 }}>Mitä etsin?</h3>
                   <textarea
-                    value={joinLines(profileSummary.lookingFor)}
+                                          value={joinLines(profile.profileSummary?.lookingFor || [])}
                     onChange={(e) =>
-                      setProfileSummary({
-                        ...profileSummary,
-                        lookingFor: parseLines(e.target.value),
+                      setProfile({
+                          ...profile,
+                          profileSummary: {
+                              ...profile.profileSummary,
+                              lookingFor: parseLines(e.target.value),
+                          }
                       })
                     }
                     style={{
@@ -1160,24 +1202,26 @@ export default function Portfolio() {
               </>
             ) : (
               <>
-                <div style={{ backgroundColor: "#e3f2fd", padding: "25px", borderRadius: "8px", marginBottom: "30px" }}>
-                  <h3 style={{ color: "var(--color-primary-strong)" }}>Miksi minut?</h3>
-                  {profileSummary.whyMe.length > 0 ? (
-                    <ul style={{ paddingLeft: "20px", lineHeight: "1.8", color: "#1a237e" }}>
-                      {profileSummary.whyMe.map((item, idx) => (
-                        <li key={idx}>{item}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p style={{ color: "#1a237e", margin: 0 }}>Ei lisattya sisaltoa viela.</p>
-                  )}
-                </div>
+                                      <div style={{ backgroundColor: "#e3f2fd", padding: "25px", borderRadius: "8px", marginBottom: "30px" }}>
+                                          <h3 style={{ color: "var(--color-primary-strong)" }}>Miksi minut?</h3>
+                                          {(profile.profileSummary?.whyMe || []).length > 0 ? (
+                                              <ul style={{ paddingLeft: "20px", lineHeight: "1.8", color: "#1a237e" }}>
+                                                  {(profile.profileSummary?.whyMe || []).map((item, idx) => (
+                                                      <li key={idx}>{item}</li>
+                                                  ))}
+                                              </ul>
+                                          ) : (
+                                              <p style={{ color: "#1a237e", margin: 0 }}>
+                                                  Ei lisättyä sisältöä vielä.
+                                              </p>
+                                          )}
+                                      </div>
 
                 <div style={{ backgroundColor: "#e8f5e9", padding: "25px", borderRadius: "8px" }}>
                   <h3 style={{ color: "#1b5e20" }}>Mitä etsin?</h3>
-                  {profileSummary.lookingFor.length > 0 ? (
-                    <ul style={{ paddingLeft: "20px", lineHeight: "1.8", color: "#1b5e20" }}>
-                      {profileSummary.lookingFor.map((item, idx) => (
+                  {(profile.profileSummary?.lookingFor || []).length > 0 ? (
+                                              <ul style={{ paddingLeft: "20px", lineHeight: "1.8", color: "#1b5e20" }}>
+                                                  {(profile.profileSummary?.lookingFor || []).map((item, idx) => (
                         <li key={idx}>{item}</li>
                       ))}
                     </ul>

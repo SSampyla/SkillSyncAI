@@ -27,8 +27,8 @@ export const AZURE_MODEL_FASTER = process.env.AZURE_OPENAI_FASTER;
 
 // Luodaan client AZURE OpenAI:lle
 const client = new OpenAI({
-  apiKey: process.env.AZURE_OPENAI_KEY,
-  baseURL: `${process.env.AZURE_OPENAI_ENDPOINT}`
-});
+    apiKey: process.env.AZURE_OPENAI_KEY,
+    baseURL: ${ process.env.AZURE_OPENAI_ENDPOINT }
+    });
 
 export default client;
