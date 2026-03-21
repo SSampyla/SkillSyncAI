@@ -13,6 +13,10 @@ Tiedot siirtyvät portofolio-sivulle, jossa ne ovat vielä muokattavissa
 
 // nyt backendin database.json:ista haetaan "availableSkills" ja "portfolio" dataa. Näitä käsitellään custom hookeilla, jotka on määritelty frontend/src/hooks/useDatabase.js:ssä. Näin varmistetaan, että data on synkronoitu backendin kanssa eikä käytetä kovakoodattua dataa frontendissä.
 
+// Käyttäjälle näytetään lomake, jossa hän voi syöttää perustiedot itsestään, valita taitonsa eri kategorioista, ja lisätä yhden kokemuksen ja koulutuksen. Lomakkeella on myös kentät sertifikaateille ja profiilin yhteenvetotekstille. Kun käyttäjä lähettää lomakkeen, tiedot tallennetaan backendin database.json:iin ja käyttäjä ohjataan portfolio-sivulle, jossa hän näkee luomansa profiilin.
+
+// Lomakkeella on myös "resetForm" funktio, joka nollaa kaikki lomakkeen tilat ja valinnat. Tämä varmistaa, että joka kerta kun käyttäjä avaa profiilin luontilomakkeen, hän näkee tyhjän lomakkeen eikä vanhat tiedot jää näkyviin.
+
 
 function Home() {
 
@@ -56,11 +60,14 @@ function Home() {
 
     const hasAnyValue = (values) => values.some((value) => value.trim() !== "");
 
+    // Avaa profiilin luontilomake
+
 
     function openCreateForm() {
         setShowForm(true);
     }
 
+    // Nollaa lomakkeen tilat ja valinnat, jotta käyttäjälle näytetään tyhjä lomake joka kerta, kun hän avaa profiilin luontilomakkeen. Tämä funktio voidaan kutsua aina, kun lomake avataan, varmistaen että vanhat tiedot eivät jää näkyviin.
     function resetForm() {
         const emptyProfile = createEmptyPortfolio();
         setProfile(emptyProfile);
@@ -82,7 +89,10 @@ function Home() {
         setWhyMeText("");
         setLookingForText("");
     }
- 
+
+    // Luo profiili ja tallenna se backendin database.json:iin. Tiedot haetaan lomakkeelta, ja jos kokemus tai koulutus on osittain täytetty, ne sisällytetään profiiliin. Taitovalinnat, sertifikaatit ja profiilin yhteenveto käsitellään myös lomakkeelta ja tallennetaan profiiliin. Lopuksi käyttäjä ohjataan portfolio-sivulle.
+
+
 
     async function createProfile(e) {
         e.preventDefault();
@@ -148,7 +158,7 @@ function Home() {
         }
     }
    
-
+    // Lisää tai poista taito valitusta kategoriasta. Jos taito on jo valittuna, se poistetaan, muuten se lisätään. Päivitetty taitolista tallennetaan tilaan.
     function toggleSkill(category, skill) {
 
         const updated = { ...selectedSkills };

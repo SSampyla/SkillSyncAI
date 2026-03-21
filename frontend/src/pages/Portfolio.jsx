@@ -14,7 +14,11 @@ import {
     createEmptyEducation
 } from "../data/portfolioTemplate";
 
+//hookit ja funktiot, jotka hakevat ja päivittävät portfolio-dataa backendistä, sekä synkronoivat taitoja. Tiedot tallennetaan paikalliseen tilaan, joka peilaa backendissä olevaa dataa. Käyttäjä voi muuttaa tietoja, ja muutokset lähetetään backendille debouncattuna, jotta ei tarvitse tallentaa joka ikistä näppäinpainallusta.
 
+//usedatabasesta haetaan käyttäjään liittyviä tietoja: saatavilla olevat taidot, käyttäjän valitsemat taidot, portfolio-data ja funktio portfolion päivittämiseen. Lisäksi on hook synkronoimaan taitoja backendin kanssa, joka ottaa selectedSkills-tilan ja syncStatus-tilan, jota voidaan käyttää näyttämään synkronoinnin tilaa UI:ssa.
+
+// Portfolio-sivu, jossa käyttäjä näkee ja muokkaa omaa profiiliaan. Tiedot haetaan backendistä ja tallennetaan sinne.
 export default function Portfolio() {
 
     const [activeSection, setActiveSection] = useState("profile");
@@ -29,11 +33,15 @@ const {
     setSelectedSkills
 } = useCandidateProfile(availableSkills, isLoadingFromDB);
 
+    // Portfolio data ja päivitysfunktio backendistä
+
 const {
     portfolio,
     updatePortfolio,
     loading: portfolioLoading
 } = usePortfolio();
+
+    // Paikallinen tila, joka peilaa backendistä haettua portfolioa
 
 const [profile, setProfile] = useState(createEmptyPortfolio());
 
@@ -67,6 +75,8 @@ const [profile, setProfile] = useState(createEmptyPortfolio());
         return () => clearTimeout(timeout);
     }, [profile]);
 
+    // Synkronointitila, joka kertoo onko taitojen synkronointi käynnissä, onnistui vai epäonnistui. Tämä tila voidaan näyttää UI:ssa käyttäjälle.
+
 const [syncStatus, setSyncStatus] = useState("idle");
 
 useSynchronizeCandidateSkills(
@@ -79,7 +89,7 @@ useSynchronizeCandidateSkills(
     const [showSkillModal, setShowSkillModal] = useState(false); 
 
        
-
+    // Funktio, joka mapataan GitHubista löydetyt teknologiat sovelluksen taitoluokkiin. Jos teknologia ei löydy, se laitetaan "other"-kategoriaan.
     
 
             const mapGithubTechToSkills = (techList) => {
@@ -119,6 +129,8 @@ useSynchronizeCandidateSkills(
 
                 return mapped;
     };
+
+    // GitHub-analyysifunktio, joka hakee käyttäjän repositoriot ja niissä käytetyt kielet, ja mapataan ne taitoihin. Tässä tuli jokin häikkä että ei hae teknologioita
 
     const handleGithubAnalyze = async () => {
 
@@ -237,7 +249,7 @@ useSynchronizeCandidateSkills(
 
 
 
-
+    
     
     const parseLines = (value) =>
       value
