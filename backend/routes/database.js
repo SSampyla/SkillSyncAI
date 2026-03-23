@@ -140,6 +140,7 @@ router.put("/portfolio", asyncHandler(async (req) => {
 /**
  * Tyhjentää portfolion (nollaa tietokannan kentän).
  */
+
 router.delete("/portfolio", asyncHandler(async () => {
     const db = await readDB();
     // Nollataan takaisin alkutilaan nullin sijaan
@@ -147,5 +148,45 @@ router.delete("/portfolio", asyncHandler(async () => {
     await writeDB(db);
     return { success: true, message: "Portfolio nollattu" };
 }, "Portfolion nollaus"));
+
+/**
+ * Portfolioprojektien CRUD-reitit
+ */
+
+router.get("/portfolio-projects", asyncHandler(async () => {
+    const db = await readDB();
+    return { projects: db.portfolioProjects ?? [] };
+}, "Projektien haku"));
+
+// POST
+router.post("/portfolio-projects", asyncHandler(async (req) => {
+    const db = await readDB();
+    const newProject = {
+        ...req.body,
+        id: `proj_${Date.now()}`,
+        createdAt: new Date().toISOString()
+    };
+    db.portfolioProjects = [newProject, ...(db.portfolioProjects ?? [])];
+    await writeDB(db);
+    return { success: true, project: newProject };
+}, "Projektin luonti"));
+
+// PUT
+router.put("/portfolio-projects/:id", asyncHandler(async (req) => {
+    const db = await readDB();
+    const idx = db.portfolioProjects.findIndex(p => p.id === req.params.id);
+    if (idx === -1) return { success: false };
+    db.portfolioProjects[idx] = { ...db.portfolioProjects[idx], ...req.body };
+    await writeDB(db);
+    return { success: true, project: db.portfolioProjects[idx] };
+}, "Projektin päivitys"));
+
+// DELETE
+router.delete("/portfolio-projects/:id", asyncHandler(async (req) => {
+    const db = await readDB();
+    db.portfolioProjects = db.portfolioProjects.filter(p => p.id !== req.params.id);
+    await writeDB(db);
+    return { success: true, deletedId: req.params.id };
+}, "Projektin poisto"));
 
 export default router;

@@ -1,6 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
+import { MOCK_PROJECTS } from "../data/projects.mock.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DB_PATH = path.join(__dirname, "../data/db.json");
@@ -20,13 +21,14 @@ export const createEmptyPortfolio = () => ({
     profileSummary: {
         whyMe: [],
         lookingFor: [],
-    },
+    }
 });
 
 /**
  * Tietokannan "skeema"
  * Lisää uudet "taulut" tänne. Logiikka huolehtii alustuksesta ja oletusarvoista.
  */
+
 export const INITIAL_STATE = {
     appliedJobs: [],
     candidateProfile: {
@@ -36,6 +38,7 @@ export const INITIAL_STATE = {
         softSkillsBasics: []
     },
     portfolio: createEmptyPortfolio(),
+    portfolioProjects: [...MOCK_PROJECTS], // MOCK PROJEKTIT JOTKA INITIALISOIDAAN DB:hen
     availableSkills: {
         frontend: [
             "React.js",

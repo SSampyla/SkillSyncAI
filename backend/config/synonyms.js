@@ -308,6 +308,26 @@ export const SYNONYMS = {
   adaptable: "adaptability",
   adaptability: "adaptability",
 
+  // ==================================================================
+  // CLOUD
+  // ==================================================================
+  amazonwebservices: "aws",
+  aws: "aws",
+
+  // ==================================================================
+  // DOTNET FIX
+  // ==================================================================
+  net: "dotnet",
+  dotnet: "dotnet",
+
+  // ==================================================================
+  // FINNISH SOFT SKILLS
+  // ==================================================================
+  ryhmatyo: "teamcollaboration",
+  tiimityo: "teamcollaboration",
+  tiimityoskentely: "teamcollaboration",
+  yhteistyokyky: "teamcollaboration",
+
 };
 
 /**

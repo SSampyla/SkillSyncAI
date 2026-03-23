@@ -35,6 +35,7 @@ const {
   useCandidateSkills,
   usePortfolio,
   useAppliedJobs,
+  usePortfolioProjects,
 } = await import("./useDatabase.js");
 
 // ---------------------------------------------------------------------------
@@ -729,5 +730,152 @@ describe("AbortController", () => {
       expect(savedCalls.length).toBeGreaterThanOrEqual(1); // synct pääsevät läpi
       vi.useRealTimers();
     });
+  });
+});
+
+// =========================================================================
+describe("usePortfolioProjects", () => {
+
+  const mockProjects = [
+    { id: "proj_1", title: "Projekti 1", category: "Full Stack", technologies: ["React"], status: "Completed" },
+    { id: "proj_2", title: "Projekti 2", category: "Frontend", technologies: ["Vue.js"], status: "In Progress" },
+  ];
+
+  test("hakee projektit mountissa", async () => {
+    global.fetch = mockFetchOk(mockProjects);
+    const { result } = renderHook(() => usePortfolioProjects());
+    expect(result.current.loading).toBe(true);
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.projects).toHaveLength(2);
+    expect(result.current.projects[0].title).toBe("Projekti 1");
+  });
+
+  test("asettaa error-tilan kun alkuhaku epäonnistuu", async () => {
+    global.fetch = mockFetchFail(503);
+    const { result } = renderHook(() => usePortfolioProjects());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.error).not.toBeNull();
+    expect(result.current.projects).toEqual([]);
+  });
+
+  test("createProject luo uuden projektin ja lisää sen listaan", async () => {
+    const newProject = { id: "proj_3", title: "Uusi", category: "Full Stack", technologies: ["React"], status: "In Progress", createdAt: "2025-01-01T00:00:00.000Z" };
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockProjects) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ success: true, project: newProject }) });
+
+    const { result } = renderHook(() => usePortfolioProjects());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await act(async () => { await result.current.createProject({ title: "Uusi" }); });
+
+    expect(result.current.projects).toHaveLength(3);
+    expect(result.current.projects[0].title).toBe("Uusi");
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/database/portfolio-projects"),
+      expect.objectContaining({ method: "POST" })
+    );
+  });
+
+  test("createProject heittää virheen epäonnistuessa", async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockProjects) })
+      .mockResolvedValueOnce({ ok: false, status: 500, json: () => Promise.resolve({}) });
+
+    const { result } = renderHook(() => usePortfolioProjects());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let caughtError;
+    await act(async () => {
+      try { await result.current.createProject({ title: "Fail" }); }
+      catch (err) { caughtError = err; }
+    });
+
+    expect(caughtError).toBeDefined();
+    expect(result.current.error).not.toBeNull();
+    expect(result.current.projects).toHaveLength(2);
+  });
+
+  test("updateProject päivittää olemassaolevan projektin", async () => {
+    const updatedProject = { ...mockProjects[0], title: "Päivitetty Projekti" };
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockProjects) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ success: true, project: updatedProject }) });
+
+    const { result } = renderHook(() => usePortfolioProjects());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await act(async () => { await result.current.updateProject("proj_1", { title: "Päivitetty Projekti" }); });
+
+    expect(result.current.projects[0].title).toBe("Päivitetty Projekti");
+    expect(result.current.projects).toHaveLength(2);
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/database/portfolio-projects/proj_1"),
+      expect.objectContaining({ method: "PUT" })
+    );
+  });
+
+  test("updateProject heittää virheen epäonnistuessa", async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockProjects) })
+      .mockResolvedValueOnce({ ok: false, status: 500, json: () => Promise.resolve({}) });
+
+    const { result } = renderHook(() => usePortfolioProjects());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let caughtError;
+    await act(async () => {
+      try { await result.current.updateProject("proj_1", { title: "Fail" }); }
+      catch (err) { caughtError = err; }
+    });
+
+    expect(caughtError).toBeDefined();
+    expect(result.current.error).not.toBeNull();
+  });
+
+  test("deleteProject poistaa projektin listasta", async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockProjects) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ success: true }) });
+
+    const { result } = renderHook(() => usePortfolioProjects());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await act(async () => { await result.current.deleteProject("proj_1"); });
+
+    expect(result.current.projects).toHaveLength(1);
+    expect(result.current.projects.find(p => p.id === "proj_1")).toBeUndefined();
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/database/portfolio-projects/proj_1"),
+      expect.objectContaining({ method: "DELETE" })
+    );
+  });
+
+  test("deleteProject heittää virheen epäonnistuessa eikä muuta listaa", async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockProjects) })
+      .mockResolvedValueOnce({ ok: false, status: 500, json: () => Promise.resolve({}) });
+
+    const { result } = renderHook(() => usePortfolioProjects());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await expect(act(async () => { await result.current.deleteProject("proj_1"); })).rejects.toThrow();
+    expect(result.current.projects).toHaveLength(2);
+  });
+
+  test("error nollataan ennen uutta operaatiota", async () => {
+    const newProject = { id: "proj_3", title: "Uusi", category: "Full Stack", technologies: [], status: "In Progress", createdAt: "2025-01-01T00:00:00.000Z" };
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockProjects) })
+      .mockResolvedValueOnce({ ok: false, status: 500, json: () => Promise.resolve({}) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ success: true, project: newProject }) });
+
+    const { result } = renderHook(() => usePortfolioProjects());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      try { await result.current.deleteProject("proj_1"); }
+      catch { /* odotettu */ }
+    });
+    expect(result.current.error).not.toBeNull();
+
+    await act(async () => { await result.current.createProject({ title: "Uusi" }); });
+    expect(result.current.error).toBeNull();
   });
 });

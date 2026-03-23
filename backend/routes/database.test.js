@@ -368,4 +368,125 @@ describe("Database Router", () => {
     expect(saved.title).toBe("");
     expect(saved.experience).toEqual([]);
   });
+
+  // -------------------------------------------------------------------------
+  // /portfolio-projects
+  // -------------------------------------------------------------------------
+
+  test("GET /portfolio-projects palauttaa projektit projects-kentässä", async () => {
+    mockDB.portfolioProjects = [
+      { id: "proj_1", title: "Projekti 1", technologies: ["React"] },
+      { id: "proj_2", title: "Projekti 2", technologies: ["Vue.js"] },
+    ];
+    const handler = getRouteHandler("get", "/portfolio-projects");
+    const { req, res, getJson } = mockReqRes();
+    await handler(req, res);
+
+    expect(getJson().projects).toHaveLength(2);
+    expect(getJson().projects[0].title).toBe("Projekti 1");
+  });
+
+  test("GET /portfolio-projects tyhjänä palauttaa tyhjän taulukon", async () => {
+    mockDB.portfolioProjects = [];
+    const handler = getRouteHandler("get", "/portfolio-projects");
+    const { req, res, getJson } = mockReqRes();
+    await handler(req, res);
+
+    expect(getJson().projects).toEqual([]);
+  });
+
+  test("GET /portfolio-projects — portfolioProjects puuttuu DB:stä → tyhjä taulukko", async () => {
+    delete mockDB.portfolioProjects;
+    const handler = getRouteHandler("get", "/portfolio-projects");
+    const { req, res, getJson } = mockReqRes();
+    await handler(req, res);
+
+    expect(getJson().projects).toEqual([]);
+  });
+
+  test("POST /portfolio-projects luo uuden projektin ja generoi id:n ja createdAt:n", async () => {
+    mockDB.portfolioProjects = [];
+    const handler = getRouteHandler("post", "/portfolio-projects");
+    const { req, res, getJson } = mockReqRes({
+      body: { title: "Uusi projekti", category: "Full Stack", technologies: ["React"] }
+    });
+    await handler(req, res);
+
+    expect(getJson().success).toBe(true);
+    expect(getJson().project.title).toBe("Uusi projekti");
+    expect(getJson().project.id).toMatch(/^proj_/);
+    expect(getJson().project.createdAt).toBeDefined();
+    expect(writeDB).toHaveBeenCalledTimes(1);
+  });
+
+  test("POST /portfolio-projects lisää projektin listan alkuun", async () => {
+    mockDB.portfolioProjects = [{ id: "proj_old", title: "Vanha" }];
+    const handler = getRouteHandler("post", "/portfolio-projects");
+    const { req, res, getJson } = mockReqRes({
+      body: { title: "Uusi" }
+    });
+    await handler(req, res);
+
+    const saved = writeDB.mock.calls[0][0].portfolioProjects;
+    expect(saved[0].title).toBe("Uusi");
+    expect(saved[1].id).toBe("proj_old");
+  });
+
+  test("PUT /portfolio-projects/:id päivittää olemassaolevan projektin", async () => {
+    mockDB.portfolioProjects = [
+      { id: "proj_1", title: "Vanha nimi", category: "Frontend" }
+    ];
+    const handler = getRouteHandler("put", "/portfolio-projects/:id");
+    const { req, res, getJson } = mockReqRes({
+      body: { title: "Uusi nimi" },
+      params: { id: "proj_1" }
+    });
+    await handler(req, res);
+
+    expect(getJson().success).toBe(true);
+    expect(getJson().project.title).toBe("Uusi nimi");
+    expect(getJson().project.category).toBe("Frontend"); // muut kentät säilyvät
+    expect(writeDB).toHaveBeenCalledTimes(1);
+  });
+
+  test("PUT /portfolio-projects/:id — projekti ei löydy → success: false", async () => {
+    mockDB.portfolioProjects = [];
+    const handler = getRouteHandler("put", "/portfolio-projects/:id");
+    const { req, res, getJson } = mockReqRes({
+      body: { title: "X" },
+      params: { id: "proj_999" }
+    });
+    await handler(req, res);
+
+    expect(getJson().success).toBe(false);
+    expect(writeDB).not.toHaveBeenCalled();
+  });
+
+  test("DELETE /portfolio-projects/:id poistaa projektin", async () => {
+    mockDB.portfolioProjects = [
+      { id: "proj_1", title: "Projekti 1" },
+      { id: "proj_2", title: "Projekti 2" },
+    ];
+    const handler = getRouteHandler("delete", "/portfolio-projects/:id");
+    const { req, res, getJson } = mockReqRes({ params: { id: "proj_1" } });
+    await handler(req, res);
+
+    expect(getJson().success).toBe(true);
+    expect(getJson().deletedId).toBe("proj_1");
+    const saved = writeDB.mock.calls[0][0].portfolioProjects;
+    expect(saved).toHaveLength(1);
+    expect(saved[0].id).toBe("proj_2");
+  });
+
+  test("DELETE /portfolio-projects/:id — projekti ei löydy → lista säilyy muuttumattomana", async () => {
+    mockDB.portfolioProjects = [{ id: "proj_1", title: "Projekti 1" }];
+    const handler = getRouteHandler("delete", "/portfolio-projects/:id");
+    const { req, res } = mockReqRes({ params: { id: "proj_999" } });
+    await handler(req, res);
+
+    const saved = writeDB.mock.calls[0][0].portfolioProjects;
+    expect(saved).toHaveLength(1);
+  });
+
 });
+

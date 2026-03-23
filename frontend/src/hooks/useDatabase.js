@@ -444,5 +444,111 @@ export function useAppliedJobs() {
     return apiFetch(`/api/database/applied-jobs/${id}`);
   }, []);
 
-  return { jobs, loading, saving, error, saveJob, deleteJob, getJob }; // ← error mukaan
+  return { jobs, loading, saving, error, saveJob, deleteJob, getJob };
+}
+
+// ---------------------------------------------------------------------------
+// usePortfolioProjects
+// ---------------------------------------------------------------------------
+/**
+ * Hakee, luo, päivittää ja poistaa portfolio-projekteja.
+ *
+ * @returns {{
+ *   projects: object[],
+ *   loading: boolean,
+ *   saving: boolean,
+ *   error: string|null,
+ *   createProject: function,  - Luo uuden projektin (POST)
+ *   updateProject: function,  - Päivittää projektin (PUT /portfolio-projects/:id)
+ *   deleteProject: function,  - Poistaa projektin (DELETE /portfolio-projects/:id)
+ * }}
+ *
+ * @example
+ * const { projects, createProject, updateProject, deleteProject } = usePortfolioProjects();
+ * const { project } = await createProject({ title: "Uusi projekti" });
+ * await updateProject("proj_123", { title: "Päivitetty nimi" });
+ * await deleteProject("proj_123");
+ */
+export function usePortfolioProjects() {
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setError(null);
+
+    apiFetch("/api/database/portfolio-projects", { signal: controller.signal })
+      .then(data => {
+        if (Array.isArray(data.projects)) {
+          setProjects(data.projects);
+        } else {
+          console.warn("[usePortfolioProjects] Odottamaton rakenne:", data);
+          setProjects([]);
+        }
+      }).catch(err => {
+        if (err.name === "AbortError") return;
+        console.warn("[usePortfolioProjects]", err);
+        setError(err.message);
+      })
+      .finally(() => setLoading(false));
+
+    return () => controller.abort();
+  }, []);
+
+  const createProject = useCallback(async (projectData) => {
+    setSaving(true);
+    setError(null);
+    try {
+      const result = await apiFetch("/api/database/portfolio-projects", {
+        method: "POST",
+        body: JSON.stringify(projectData),
+      });
+      setProjects(prev => [result.project, ...prev]);
+      return result.project;
+    } catch (err) {
+      console.error("[usePortfolioProjects] Luonti epäonnistui:", err);
+      setError(err.message);
+      throw err;
+    } finally {
+      setSaving(false);
+    }
+  }, []);
+
+  const updateProject = useCallback(async (id, projectData) => {
+    setSaving(true);
+    setError(null);
+    try {
+      const result = await apiFetch(`/api/database/portfolio-projects/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(projectData),
+      });
+      setProjects(prev => prev.map(p => p.id === id ? result.project : p));
+      return result.project;
+    } catch (err) {
+      console.error("[usePortfolioProjects] Päivitys epäonnistui:", err);
+      setError(err.message);
+      throw err;
+    } finally {
+      setSaving(false);
+    }
+  }, []);
+
+  const deleteProject = useCallback(async (id) => {
+    setSaving(true);
+    setError(null);
+    try {
+      await apiFetch(`/api/database/portfolio-projects/${id}`, { method: "DELETE" });
+      setProjects(prev => prev.filter(p => p.id !== id));
+    } catch (err) {
+      console.error("[usePortfolioProjects] Poisto epäonnistui:", err);
+      setError(err.message);
+      throw err;
+    } finally {
+      setSaving(false);
+    }
+  }, []);
+
+  return { projects, loading, saving, error, createProject, updateProject, deleteProject };
 }

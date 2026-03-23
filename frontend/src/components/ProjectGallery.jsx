@@ -1,108 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Navbar from "./Navbar";
 import "../styles/gallery.css";
+import { usePortfolioProjects } from "../hooks/useDatabase";
 
-const PROJECTS_STORAGE_KEY = "portfolio_projects_v1";
 const PLACEHOLDER_IMAGE =
   "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&h=600&fit=crop";
-
-const DEFAULT_PROJECTS = [
-  {
-    id: 1,
-    title: "Job Matching Platform",
-    category: "Full Stack",
-    description:
-      "Älykkäät rekrytointi- ja hakija-sovellus, joka käyttää tekoälyä kandidaatille sopivien työpaikkojen löytämiseen ja osaamisen analysointiin.",
-    longDescription:
-      "Tämä sovellus yhdistää Job Board -alustan, joka näyttää avoimi työpaikkailmoituksia ja kehittyneen matching-algoritmin, joka analysoi kandidaatin osaamisen ja vertaa sitä työpaikan vaatimuksiin. Sovellus käyttää LLM:iä (Large Language Models) työtaitojen automaattiseen ekstrahointiin ja portfolio-analyysiin.",
-    technologies: ["React", "Node.js", "Express", "MongoDB", "LLM", "AI"],
-    images: [
-      "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&h=600&fit=crop",
-      "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&h=600&fit=crop",
-    ],
-    video: "",
-    liveDemo: "",
-    github: "https://github.com/yourname/job-matching",
-    status: "In Progress",
-    impact: "Auttaa tekemään recruitment-prosessista tehokkaamman ja dataperusteisemman.",
-  },
-  {
-    id: 2,
-    title: "Responsiivinen Portfolio Website",
-    category: "Frontend",
-    description:
-      "Moderni, käyttäjäystävällinen portfoliosivusto, joka näyttää projekteja, osaamista ja kokemusta.",
-    longDescription:
-      "Täysin responsive portfoliosivusto, jonka rakentaminen tehtiin React + Vite -yhdistelmällä. Sivustolla on dynaaminen sisällön hallinta, kaunis visuaalinen muotoilu ja saumaton käyttäjäkokemus eri laitteilla.",
-    technologies: ["React", "Vite", "CSS3", "JavaScript"],
-    images: [
-      "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&h=600&fit=crop",
-      "https://images.unsplash.com/photo-1559163499-c4c4f2d30e6f?w=800&h=600&fit=crop",
-    ],
-    video: "",
-    liveDemo: "https://portfolio-demo.example.com",
-    github: "https://github.com/yourname/portfolio",
-    status: "Completed",
-    impact: "Muuttaa portfolion esittämisen visuaalisemmaksi ja interaktiivisemmaksi.",
-  },
-  {
-    id: 3,
-    title: "E-Commerce Dashboard",
-    category: "Full Stack",
-    description:
-      "Kattava hallintapaneeli, joka hallinnoi tuotteita, tilauksia ja käyttäjiä reaaliajassa.",
-    longDescription:
-      "Tehty Node.js/Express backendilla ja React frontendilla, tämä dashboard tarjoaa yritysten kaikki tarvitsemat analyze- ja hallintatyökalut. Reaaliaikainen päivitys Socket.io:n avulla, kaunis data-visualisointi chartien avulla.",
-    technologies: ["React", "Node.js", "MongoDB", "Socket.io", "Chart.js"],
-    images: [
-      "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=600&fit=crop",
-      "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&h=600&fit=crop",
-    ],
-    video: "",
-    liveDemo: "https://ecommerce-dashboard.example.com",
-    github: "https://github.com/yourname/ecommerce-dashboard",
-    status: "Completed",
-    impact: "Parantaa myynnin hallintaa ja asiakastyytyväisyyttä merkittävästi.",
-  },
-  {
-    id: 4,
-    title: "Mobile App UI/UX",
-    category: "Design",
-    description:
-      "Muotoilusta korostuva mobiilisovelluksen käyttöliittymä, joka yhdistää kauneuden ja funktionaalisuuden.",
-    longDescription:
-      "Tässä projektissa oli keskeinen rooli muotoilulla. Luotiin houkutteleva ja intuitiivinen käyttöliittymä, joka tekee sovelluksen käytöstä miellyttävää ja tehokasta. Noudatetaan Material Design -periaatteita ja modernia väripalettiä.",
-    technologies: ["Figma", "UI/UX Design", "Prototyping"],
-    images: [
-      "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&h=600&fit=crop",
-      "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&h=600&fit=crop",
-    ],
-    video: "",
-    liveDemo: "https://www.figma.com/file/example",
-    github: "",
-    status: "Completed",
-    impact: "Käyttäjät raportoivat 40% paremman käytettävyyden skoorin.",
-  },
-  {
-    id: 5,
-    title: "Weather Analytics App",
-    category: "Frontend",
-    description:
-      "Reaaliaikainen säädata-sovellus, joka näyttää kauniisti visualisoituja säätietoja.",
-    longDescription:
-      "Käyttää avoimen sää-API:n tietoja näyttääkseen reaaliaikaisen sääinformaatioon. Sovellus pyyytää käyttäjältä sijaintia ja näyttää seitsemän päivän ennusteet kauniissa visualisoinnissa.",
-    technologies: ["React", "OpenWeather API", "Chart.js", "CSS3"],
-    images: [
-      "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&h=600&fit=crop",
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=800&h=600&fit=crop",
-    ],
-    video: "",
-    liveDemo: "https://weather-app.example.com",
-    github: "https://github.com/yourname/weather-app",
-    status: "Completed",
-    impact: "Näyttää sään intuitiivisella tavalla, joka tekee datan ymmärtämisestä helppoa.",
-  },
-];
 
 const parseTechnologies = (value) =>
   value
@@ -110,8 +12,7 @@ const parseTechnologies = (value) =>
     .map((tech) => tech.trim())
     .filter(Boolean);
 
-const createNewProject = (id) => ({
-  id,
+const createEmptyProject = () => ({
   title: "Uusi projekti",
   category: "Full Stack",
   description: "Lyhyt kuvaus projektista.",
@@ -126,35 +27,18 @@ const createNewProject = (id) => ({
 });
 
 export default function ProjectGallery() {
+  const { projects, loading, saving, error, createProject, updateProject, deleteProject } = usePortfolioProjects();
+
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [filterTag, setFilterTag] = useState("all");
   const [isEditMode, setIsEditMode] = useState(false);
   const [editedProject, setEditedProject] = useState(null);
   const [newImageUrl, setNewImageUrl] = useState("");
 
-  const [projects, setProjects] = useState(() => {
-    const storedProjects = localStorage.getItem(PROJECTS_STORAGE_KEY);
-
-    if (!storedProjects) {
-      return DEFAULT_PROJECTS;
-    }
-
-    try {
-      const parsed = JSON.parse(storedProjects);
-      return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_PROJECTS;
-    } catch {
-      return DEFAULT_PROJECTS;
-    }
-  });
-
   const selectedProject = useMemo(
     () => projects.find((project) => project.id === selectedProjectId) || null,
     [projects, selectedProjectId]
   );
-
-  useEffect(() => {
-    localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(projects));
-  }, [projects]);
 
   const closeModal = () => {
     setSelectedProjectId(null);
@@ -183,7 +67,7 @@ export default function ProjectGallery() {
     setIsEditMode(true);
   };
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     const normalizedProject = {
       ...editedProject,
       technologies:
@@ -196,14 +80,14 @@ export default function ProjectGallery() {
           : [PLACEHOLDER_IMAGE],
     };
 
-    setProjects((prevProjects) =>
-      prevProjects.map((project) =>
-        project.id === normalizedProject.id ? normalizedProject : project
-      )
-    );
-    setIsEditMode(false);
-    setEditedProject(null);
-    setNewImageUrl("");
+    try {
+      await updateProject(normalizedProject.id, normalizedProject);
+      setIsEditMode(false);
+      setEditedProject(null);
+      setNewImageUrl("");
+    } catch {
+      alert("Tallennus epäonnistui");
+    }
   };
 
   const cancelEdit = () => {
@@ -212,65 +96,56 @@ export default function ProjectGallery() {
     setNewImageUrl("");
   };
 
-  const addNewProject = () => {
-    const nextId =
-      projects.length > 0 ? Math.max(...projects.map((project) => project.id)) + 1 : 1;
-
-    const newProject = createNewProject(nextId);
-    setProjects((prevProjects) => [newProject, ...prevProjects]);
-    openProject(newProject);
-    startEdit(newProject);
-    setFilterTag("all");
+  const addNewProject = async () => {
+    try {
+      const newProject = await createProject(createEmptyProject());
+      setFilterTag("all");
+      openProject(newProject);
+      startEdit(newProject);
+    } catch {
+      alert("Projektin luonti epäonnistui");
+    }
   };
 
-  const deleteProject = (projectId) => {
+  const handleDeleteProject = async (projectId) => {
     const projectToDelete = projects.find((project) => project.id === projectId);
-    if (!projectToDelete) {
-      return;
-    }
+    if (!projectToDelete) return;
 
     const shouldDelete = window.confirm(
-      `Poistetaanko projekti \"${projectToDelete.title}\" pysyvästi?`
+      `Poistetaanko projekti "${projectToDelete.title}" pysyvästi?`
     );
-    if (!shouldDelete) {
-      return;
-    }
+    if (!shouldDelete) return;
 
-    setProjects((prevProjects) =>
-      prevProjects.filter((project) => project.id !== projectId)
-    );
-    closeModal();
+    try {
+      await deleteProject(projectId);
+      closeModal();
+    } catch {
+      alert("Poisto epäonnistui");
+    }
   };
 
   const addImageToEditedProject = () => {
     const trimmedUrl = newImageUrl.trim();
-    if (!trimmedUrl || !editedProject) {
-      return;
-    }
+    if (!trimmedUrl || !editedProject) return;
 
-    setEditedProject((prevProject) => ({
-      ...prevProject,
-      images: [...prevProject.images, trimmedUrl],
+    setEditedProject((prev) => ({
+      ...prev,
+      images: [...prev.images, trimmedUrl],
     }));
     setNewImageUrl("");
   };
 
   const removeImageFromEditedProject = (imageIndex) => {
-    if (!editedProject) {
-      return;
-    }
+    if (!editedProject) return;
 
     const nextImages = editedProject.images.filter((_, idx) => idx !== imageIndex);
-    setEditedProject((prevProject) => ({
-      ...prevProject,
+    setEditedProject((prev) => ({
+      ...prev,
       images: nextImages.length > 0 ? nextImages : [PLACEHOLDER_IMAGE],
     }));
   };
 
-  const allTags = [
-    "all",
-    ...new Set(projects.flatMap((p) => p.technologies)),
-  ];
+  const allTags = ["all", ...new Set(projects.flatMap((p) => p.technologies))];
 
   const filteredProjects =
     filterTag === "all"
@@ -289,10 +164,13 @@ export default function ProjectGallery() {
               Tutkimme eri teknologioita ja luomme innovatiivisia ratkaisuja
             </p>
           </div>
-          <button className="add-project-btn" onClick={addNewProject}>
+          <button className="add-project-btn" onClick={addNewProject} disabled={saving}>
             + Lisää uusi projekti
           </button>
         </div>
+
+        {loading && <div style={{ padding: "20px", color: "var(--text-secondary)" }}>Ladataan projekteja...</div>}
+        {error && <div style={{ padding: "10px", color: "var(--color-error, #dc3545)" }}>Virhe: {error}</div>}
 
         {/* Filter Tags */}
         <div className="filter-section">
@@ -336,14 +214,10 @@ export default function ProjectGallery() {
                 <p className="project-description">{project.description}</p>
                 <div className="project-tech">
                   {project.technologies.slice(0, 3).map((tech) => (
-                    <span key={tech} className="tech-tag">
-                      {tech}
-                    </span>
+                    <span key={tech} className="tech-tag">{tech}</span>
                   ))}
                   {project.technologies.length > 3 && (
-                    <span className="tech-tag more">
-                      +{project.technologies.length - 3}
-                    </span>
+                    <span className="tech-tag more">+{project.technologies.length - 3}</span>
                   )}
                 </div>
               </div>
@@ -351,543 +225,352 @@ export default function ProjectGallery() {
           ))}
         </div>
 
-      {/* Modal for Project Details */}
-      {selectedProject && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div
-            className="modal-content"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="close-btn"
-              onClick={closeModal}
-            >
-              X
-            </button>
+        {/* Modal for Project Details */}
+        {selectedProject && (
+          <div className="modal-overlay" onClick={closeModal}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <button className="close-btn" onClick={closeModal}>X</button>
 
-            {!isEditMode && (
-              <div className="modal-top-actions">
-                <button
-                  className="edit-btn"
-                  onClick={() => startEdit(selectedProject)}
-                  style={{
-                    padding: "10px 18px",
-                    backgroundColor: "rgba(40, 61, 168, 0.16)",
-                    color: "var(--color-primary)",
-                    border: "1px solid rgba(40, 61, 168, 0.24)",
-                    borderRadius: "8px",
-                    cursor: "pointer",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                  }}
-                >
-                  Muokkaa
-                </button>
-                <button
-                  className="delete-project-btn"
-                  onClick={() => deleteProject(selectedProject.id)}
-                >
-                  Poista projekti
-                </button>
-              </div>
-            )}
-
-            <div className="modal-gallery">
-              {(isEditMode ? editedProject.images : selectedProject.images).map((img, idx) => (
-                <div key={idx} className="modal-image-wrapper" style={{ position: "relative" }}>
-                  <img src={img} alt={`${isEditMode ? editedProject.title : selectedProject.title} ${idx + 1}`} />
-                  {isEditMode && (
-                    <button
-                      onClick={() => removeImageFromEditedProject(idx)}
-                      style={{
-                        position: "absolute",
-                        top: "10px",
-                        right: "10px",
-                        background: "rgba(239, 68, 68, 0.8)",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "50%",
-                        width: "35px",
-                        height: "35px",
-                        cursor: "pointer",
-                        fontSize: "18px",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      X
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {isEditMode && (
-              <div style={{ padding: "20px", backgroundColor: "rgba(40, 61, 168, 0.10)", borderRadius: "12px", marginBottom: "20px" }}>
-                <h4 style={{ color: "var(--color-primary)", marginTop: "0" }}>Lisää tai muokkaa kuvia</h4>
-                <div style={{ marginBottom: "15px" }}>
-                  <label style={{ display: "block", color: "var(--text-secondary)", marginBottom: "5px", fontSize: "0.9rem" }}>
-                    Kuvan URL:
-                  </label>
-                  <div style={{ display: "flex", gap: "10px" }}>
-                    <input
-                      type="text"
-                      value={newImageUrl}
-                      onChange={(e) => setNewImageUrl(e.target.value)}
-                      placeholder="Syötä kuvan URL-osoite"
-                      style={{
-                        flex: 1,
-                        padding: "10px",
-                        backgroundColor: "var(--surface-glass)",
-                        border: "1px solid rgba(40, 61, 168, 0.24)",
-                        borderRadius: "8px",
-                        color: "var(--text-primary)",
-                        fontSize: "14px",
-                        fontFamily: "monospace",
-                      }}
-                    />
-                    <button
-                      onClick={addImageToEditedProject}
-                      style={{
-                        padding: "10px 20px",
-                        backgroundColor: "rgba(76, 185, 68, 0.2)",
-                        color: "var(--color-success)",
-                        border: "1px solid rgba(76, 185, 68, 0.3)",
-                        borderRadius: "8px",
-                        cursor: "pointer",
-                        fontWeight: "600",
-                        fontSize: "14px",
-                      }}
-                    >
-                      + Lisää
-                    </button>
-                  </div>
-                </div>
-
-                <div style={{ marginBottom: "15px" }}>
-                  <label style={{ display: "block", color: "var(--text-secondary)", marginBottom: "10px", fontSize: "0.9rem" }}>
-                    Nykyiset kuvat ({editedProject.images.length}):
-                  </label>
-                  <div style={{ maxHeight: "150px", overflowY: "auto", backgroundColor: "var(--surface-input-soft)", borderRadius: "6px", padding: "10px" }}>
-                    {editedProject.images.map((img, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          padding: "8px",
-                          backgroundColor: "var(--surface-glass)",
-                          borderRadius: "4px",
-                          marginBottom: idx < editedProject.images.length - 1 ? "8px" : "0",
-                          fontSize: "12px",
-                          color: "var(--text-muted)",
-                          wordBreak: "break-all",
-                        }}
-                      >
-                        <span>{img.substring(0, 50)}...</span>
-                        <button
-                          onClick={() => removeImageFromEditedProject(idx)}
-                          style={{
-                            padding: "4px 10px",
-                            backgroundColor: "rgba(239, 68, 68, 0.2)",
-                            color: "#ef4444",
-                            border: "none",
-                            borderRadius: "4px",
-                            cursor: "pointer",
-                            fontSize: "12px",
-                            fontWeight: "600",
-                            marginLeft: "10px",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          Poista
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="modal-body">
-              <div className="modal-header">
-                {isEditMode ? (
-                  <div style={{ width: "100%", display: "grid", gap: "10px" }}>
-                    <input
-                      type="text"
-                      value={editedProject.title}
-                      onChange={(e) =>
-                        setEditedProject({ ...editedProject, title: e.target.value })
-                      }
-                      placeholder="Projektin nimi"
-                      style={{
-                        width: "100%",
-                        padding: "10px",
-                        backgroundColor: "var(--surface-glass)",
-                        border: "1px solid rgba(40, 61, 168, 0.24)",
-                        borderRadius: "8px",
-                        color: "var(--text-primary)",
-                        fontSize: "20px",
-                        fontWeight: "700",
-                      }}
-                    />
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                      <input
-                        type="text"
-                        value={editedProject.category}
-                        onChange={(e) =>
-                          setEditedProject({ ...editedProject, category: e.target.value })
-                        }
-                        placeholder="Kategoria"
-                        style={{
-                          width: "100%",
-                          padding: "10px",
-                          backgroundColor: "var(--surface-glass)",
-                          border: "1px solid rgba(40, 61, 168, 0.24)",
-                          borderRadius: "8px",
-                          color: "var(--text-primary)",
-                          fontSize: "14px",
-                        }}
-                      />
-                      <input
-                        type="text"
-                        value={editedProject.status}
-                        onChange={(e) =>
-                          setEditedProject({ ...editedProject, status: e.target.value })
-                        }
-                        placeholder="Status"
-                        style={{
-                          width: "100%",
-                          padding: "10px",
-                          backgroundColor: "var(--surface-glass)",
-                          border: "1px solid rgba(40, 61, 168, 0.24)",
-                          borderRadius: "8px",
-                          color: "var(--text-primary)",
-                          fontSize: "14px",
-                        }}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <h2>{selectedProject.title}</h2>
-                    <span className="modal-status">{selectedProject.status}</span>
-                  </>
-                )}
-              </div>
-
-              {isEditMode ? (
-                <div style={{ display: "grid", gap: "10px", marginBottom: "20px" }}>
-                  <textarea
-                    value={editedProject.description}
-                    onChange={(e) =>
-                      setEditedProject({ ...editedProject, description: e.target.value })
-                    }
-                    placeholder="Lyhyt kuvaus"
+              {!isEditMode && (
+                <div className="modal-top-actions">
+                  <button
+                    className="edit-btn"
+                    onClick={() => startEdit(selectedProject)}
                     style={{
-                      width: "100%",
-                      minHeight: "72px",
-                      padding: "10px",
-                      backgroundColor: "var(--surface-glass)",
+                      padding: "10px 18px",
+                      backgroundColor: "rgba(40, 61, 168, 0.16)",
+                      color: "var(--color-primary)",
                       border: "1px solid rgba(40, 61, 168, 0.24)",
                       borderRadius: "8px",
-                      color: "var(--text-primary)",
+                      cursor: "pointer",
                       fontSize: "14px",
-                      lineHeight: "1.4",
+                      fontWeight: "600",
                     }}
-                  />
-                  <textarea
-                    value={editedProject.longDescription}
-                    onChange={(e) =>
-                      setEditedProject({ ...editedProject, longDescription: e.target.value })
-                    }
-                    placeholder="Pitkä kuvaus"
-                    style={{
-                      width: "100%",
-                      minHeight: "120px",
-                      padding: "10px",
-                      backgroundColor: "var(--surface-glass)",
-                      border: "1px solid rgba(40, 61, 168, 0.24)",
-                      borderRadius: "8px",
-                      color: "var(--text-primary)",
-                      fontSize: "14px",
-                      lineHeight: "1.5",
-                    }}
-                  />
+                  >
+                    Muokkaa
+                  </button>
+                  <button
+                    className="delete-project-btn"
+                    onClick={() => handleDeleteProject(selectedProject.id)}
+                  >
+                    Poista projekti
+                  </button>
                 </div>
-              ) : (
-                <p className="modal-description">{selectedProject.longDescription}</p>
               )}
 
-              {/* Video Section with Edit */}
-              <div className="video-section">
-                <h3>Video Demo</h3>
-                {isEditMode ? (
+              <div className="modal-gallery">
+                {(isEditMode ? editedProject.images : selectedProject.images).map((img, idx) => (
+                  <div key={idx} className="modal-image-wrapper" style={{ position: "relative" }}>
+                    <img src={img} alt={`${isEditMode ? editedProject.title : selectedProject.title} ${idx + 1}`} />
+                    {isEditMode && (
+                      <button
+                        onClick={() => removeImageFromEditedProject(idx)}
+                        style={{
+                          position: "absolute", top: "10px", right: "10px",
+                          background: "rgba(239, 68, 68, 0.8)", color: "white",
+                          border: "none", borderRadius: "50%", width: "35px",
+                          height: "35px", cursor: "pointer", fontSize: "18px", fontWeight: "bold",
+                        }}
+                      >X</button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {isEditMode && (
+                <div style={{ padding: "20px", backgroundColor: "rgba(40, 61, 168, 0.10)", borderRadius: "12px", marginBottom: "20px" }}>
+                  <h4 style={{ color: "var(--color-primary)", marginTop: "0" }}>Lisää tai muokkaa kuvia</h4>
                   <div style={{ marginBottom: "15px" }}>
+                    <label style={{ display: "block", color: "var(--text-secondary)", marginBottom: "5px", fontSize: "0.9rem" }}>
+                      Kuvan URL:
+                    </label>
+                    <div style={{ display: "flex", gap: "10px" }}>
+                      <input
+                        type="text"
+                        value={newImageUrl}
+                        onChange={(e) => setNewImageUrl(e.target.value)}
+                        placeholder="Syötä kuvan URL-osoite"
+                        style={{
+                          flex: 1, padding: "10px", backgroundColor: "var(--surface-glass)",
+                          border: "1px solid rgba(40, 61, 168, 0.24)", borderRadius: "8px",
+                          color: "var(--text-primary)", fontSize: "14px", fontFamily: "monospace",
+                        }}
+                      />
+                      <button
+                        onClick={addImageToEditedProject}
+                        style={{
+                          padding: "10px 20px", backgroundColor: "rgba(76, 185, 68, 0.2)",
+                          color: "var(--color-success)", border: "1px solid rgba(76, 185, 68, 0.3)",
+                          borderRadius: "8px", cursor: "pointer", fontWeight: "600", fontSize: "14px",
+                        }}
+                      >+ Lisää</button>
+                    </div>
+                  </div>
+                  <div style={{ marginBottom: "15px" }}>
+                    <label style={{ display: "block", color: "var(--text-secondary)", marginBottom: "10px", fontSize: "0.9rem" }}>
+                      Nykyiset kuvat ({editedProject.images.length}):
+                    </label>
+                    <div style={{ maxHeight: "150px", overflowY: "auto", backgroundColor: "var(--surface-input-soft)", borderRadius: "6px", padding: "10px" }}>
+                      {editedProject.images.map((img, idx) => (
+                        <div key={idx} style={{
+                          display: "flex", justifyContent: "space-between", alignItems: "center",
+                          padding: "8px", backgroundColor: "var(--surface-glass)", borderRadius: "4px",
+                          marginBottom: idx < editedProject.images.length - 1 ? "8px" : "0",
+                          fontSize: "12px", color: "var(--text-muted)", wordBreak: "break-all",
+                        }}>
+                          <span>{img.substring(0, 50)}...</span>
+                          <button
+                            onClick={() => removeImageFromEditedProject(idx)}
+                            style={{
+                              padding: "4px 10px", backgroundColor: "rgba(239, 68, 68, 0.2)",
+                              color: "#ef4444", border: "none", borderRadius: "4px", cursor: "pointer",
+                              fontSize: "12px", fontWeight: "600", marginLeft: "10px", whiteSpace: "nowrap",
+                            }}
+                          >Poista</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="modal-body">
+                <div className="modal-header">
+                  {isEditMode ? (
+                    <div style={{ width: "100%", display: "grid", gap: "10px" }}>
+                      <input
+                        type="text"
+                        value={editedProject.title}
+                        onChange={(e) => setEditedProject({ ...editedProject, title: e.target.value })}
+                        placeholder="Projektin nimi"
+                        style={{
+                          width: "100%", padding: "10px", backgroundColor: "var(--surface-glass)",
+                          border: "1px solid rgba(40, 61, 168, 0.24)", borderRadius: "8px",
+                          color: "var(--text-primary)", fontSize: "20px", fontWeight: "700",
+                        }}
+                      />
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                        <input
+                          type="text"
+                          value={editedProject.category}
+                          onChange={(e) => setEditedProject({ ...editedProject, category: e.target.value })}
+                          placeholder="Kategoria"
+                          style={{
+                            width: "100%", padding: "10px", backgroundColor: "var(--surface-glass)",
+                            border: "1px solid rgba(40, 61, 168, 0.24)", borderRadius: "8px",
+                            color: "var(--text-primary)", fontSize: "14px",
+                          }}
+                        />
+                        <input
+                          type="text"
+                          value={editedProject.status}
+                          onChange={(e) => setEditedProject({ ...editedProject, status: e.target.value })}
+                          placeholder="Status"
+                          style={{
+                            width: "100%", padding: "10px", backgroundColor: "var(--surface-glass)",
+                            border: "1px solid rgba(40, 61, 168, 0.24)", borderRadius: "8px",
+                            color: "var(--text-primary)", fontSize: "14px",
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <h2>{selectedProject.title}</h2>
+                      <span className="modal-status">{selectedProject.status}</span>
+                    </>
+                  )}
+                </div>
+
+                {isEditMode ? (
+                  <div style={{ display: "grid", gap: "10px", marginBottom: "20px" }}>
+                    <textarea
+                      value={editedProject.description}
+                      onChange={(e) => setEditedProject({ ...editedProject, description: e.target.value })}
+                      placeholder="Lyhyt kuvaus"
+                      style={{
+                        width: "100%", minHeight: "72px", padding: "10px",
+                        backgroundColor: "var(--surface-glass)", border: "1px solid rgba(40, 61, 168, 0.24)",
+                        borderRadius: "8px", color: "var(--text-primary)", fontSize: "14px", lineHeight: "1.4",
+                      }}
+                    />
+                    <textarea
+                      value={editedProject.longDescription}
+                      onChange={(e) => setEditedProject({ ...editedProject, longDescription: e.target.value })}
+                      placeholder="Pitkä kuvaus"
+                      style={{
+                        width: "100%", minHeight: "120px", padding: "10px",
+                        backgroundColor: "var(--surface-glass)", border: "1px solid rgba(40, 61, 168, 0.24)",
+                        borderRadius: "8px", color: "var(--text-primary)", fontSize: "14px", lineHeight: "1.5",
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <p className="modal-description">{selectedProject.longDescription}</p>
+                )}
+
+                <div className="video-section">
+                  <h3>Video Demo</h3>
+                  {isEditMode ? (
                     <input
                       type="text"
                       value={editedProject?.video || ""}
-                      onChange={(e) =>
-                        setEditedProject({ ...editedProject, video: e.target.value })
-                      }
-                      placeholder="Kirjoita YouTube embed URL (esim. https://www.youtube.com/embed/...)"
+                      onChange={(e) => setEditedProject({ ...editedProject, video: e.target.value })}
+                      placeholder="YouTube embed URL (https://www.youtube.com/embed/...)"
                       style={{
-                        width: "100%",
-                        padding: "10px",
-                        backgroundColor: "var(--surface-glass)",
-                        border: "1px solid rgba(40, 61, 168, 0.24)",
-                        borderRadius: "8px",
-                        color: "var(--text-primary)",
-                        fontSize: "14px",
-                        fontFamily: "monospace",
+                        width: "100%", padding: "10px", backgroundColor: "var(--surface-glass)",
+                        border: "1px solid rgba(40, 61, 168, 0.24)", borderRadius: "8px",
+                        color: "var(--text-primary)", fontSize: "14px", fontFamily: "monospace",
                       }}
                     />
-                  </div>
-                ) : selectedProject?.video ? (
-                  <div className="video-container">
-                    <iframe
-                      src={selectedProject.video}
-                      title={`${selectedProject.title} demo`}
-                      allowFullScreen
-                    ></iframe>
-                  </div>
-                ) : (
-                  <p style={{ color: "var(--text-muted)" }}>Ei videota lisätty</p>
-                )}
-              </div>
+                  ) : selectedProject?.video ? (
+                    <div className="video-container">
+                      <iframe src={selectedProject.video} title={`${selectedProject.title} demo`} allowFullScreen />
+                    </div>
+                  ) : (
+                    <p style={{ color: "var(--text-muted)" }}>Ei videota lisätty</p>
+                  )}
+                </div>
 
-              {/* Live Demo Link with Edit */}
-              <div className="demo-section" style={{ marginTop: "20px" }}>
-                <h3>Live Demo</h3>
-                {isEditMode ? (
-                  <div style={{ marginBottom: "15px" }}>
+                <div className="demo-section" style={{ marginTop: "20px" }}>
+                  <h3>Live Demo</h3>
+                  {isEditMode ? (
                     <input
                       type="text"
                       value={editedProject?.liveDemo || ""}
-                      onChange={(e) =>
-                        setEditedProject({ ...editedProject, liveDemo: e.target.value })
-                      }
-                      placeholder="Kirjoita Live Demo URL"
+                      onChange={(e) => setEditedProject({ ...editedProject, liveDemo: e.target.value })}
+                      placeholder="Live Demo URL"
                       style={{
-                        width: "100%",
-                        padding: "10px",
-                        backgroundColor: "var(--surface-glass)",
-                        border: "1px solid rgba(40, 61, 168, 0.24)",
-                        borderRadius: "8px",
-                        color: "var(--text-primary)",
-                        fontSize: "14px",
-                        fontFamily: "monospace",
+                        width: "100%", padding: "10px", backgroundColor: "var(--surface-glass)",
+                        border: "1px solid rgba(40, 61, 168, 0.24)", borderRadius: "8px",
+                        color: "var(--text-primary)", fontSize: "14px", fontFamily: "monospace",
                       }}
                     />
-                  </div>
-                ) : selectedProject?.liveDemo ? (
-                  <a
-                    href={selectedProject.liveDemo}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      display: "inline-block",
-                      color: "var(--color-primary)",
-                      textDecoration: "none",
-                      padding: "8px 16px",
-                      backgroundColor: "rgba(40, 61, 168, 0.1)",
-                      border: "1px solid rgba(40, 61, 168, 0.24)",
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                    }}
-                  >
-                    Avaa linkki →
-                  </a>
-                ) : (
-                  <p style={{ color: "var(--text-muted)" }}>Ei live demoa</p>
-                )}
-              </div>
+                  ) : selectedProject?.liveDemo ? (
+                    <a href={selectedProject.liveDemo} target="_blank" rel="noopener noreferrer"
+                      style={{
+                        display: "inline-block", color: "var(--color-primary)", textDecoration: "none",
+                        padding: "8px 16px", backgroundColor: "rgba(40, 61, 168, 0.1)",
+                        border: "1px solid rgba(40, 61, 168, 0.24)", borderRadius: "8px",
+                        fontSize: "14px", fontWeight: "500",
+                      }}
+                    >Avaa linkki →</a>
+                  ) : (
+                    <p style={{ color: "var(--text-muted)" }}>Ei live demoa</p>
+                  )}
+                </div>
 
-              {/* Technologies */}
-              <div className="tech-section">
-                <h3>Käytetyt Teknologiat</h3>
-                {isEditMode ? (
-                  <input
-                    type="text"
-                    value={editedProject.technologies.join(", ")}
-                    onChange={(e) =>
-                      setEditedProject({
-                        ...editedProject,
-                        technologies: parseTechnologies(e.target.value),
-                      })
-                    }
-                    placeholder="Esim. React, Node.js, MongoDB"
-                    style={{
-                      width: "100%",
-                      padding: "10px",
-                      backgroundColor: "var(--surface-glass)",
-                      border: "1px solid rgba(40, 61, 168, 0.24)",
-                      borderRadius: "8px",
-                      color: "var(--text-primary)",
-                      fontSize: "14px",
-                    }}
-                  />
-                ) : (
-                  <div className="tech-list">
-                    {selectedProject.technologies.map((tech) => (
-                      <span key={tech} className="tech-badge">
-                        {tech}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
+                <div className="tech-section">
+                  <h3>Käytetyt Teknologiat</h3>
+                  {isEditMode ? (
+                    <input
+                      type="text"
+                      value={editedProject.technologies.join(", ")}
+                      onChange={(e) => setEditedProject({ ...editedProject, technologies: parseTechnologies(e.target.value) })}
+                      placeholder="Esim. React, Node.js, MongoDB"
+                      style={{
+                        width: "100%", padding: "10px", backgroundColor: "var(--surface-glass)",
+                        border: "1px solid rgba(40, 61, 168, 0.24)", borderRadius: "8px",
+                        color: "var(--text-primary)", fontSize: "14px",
+                      }}
+                    />
+                  ) : (
+                    <div className="tech-list">
+                      {selectedProject.technologies.map((tech) => (
+                        <span key={tech} className="tech-badge">{tech}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-              {/* Impact */}
-              <div className="impact-section">
-                <h3>Vaikutus</h3>
-                {isEditMode ? (
-                  <textarea
-                    value={editedProject.impact}
-                    onChange={(e) =>
-                      setEditedProject({ ...editedProject, impact: e.target.value })
-                    }
-                    placeholder="Projektin vaikutus"
-                    style={{
-                      width: "100%",
-                      minHeight: "72px",
-                      padding: "10px",
-                      backgroundColor: "var(--surface-glass)",
-                      border: "1px solid rgba(40, 61, 168, 0.24)",
-                      borderRadius: "8px",
-                      color: "var(--text-primary)",
-                      fontSize: "14px",
-                      lineHeight: "1.4",
-                    }}
-                  />
-                ) : (
-                  <p>{selectedProject.impact}</p>
-                )}
-              </div>
+                <div className="impact-section">
+                  <h3>Vaikutus</h3>
+                  {isEditMode ? (
+                    <textarea
+                      value={editedProject.impact}
+                      onChange={(e) => setEditedProject({ ...editedProject, impact: e.target.value })}
+                      placeholder="Projektin vaikutus"
+                      style={{
+                        width: "100%", minHeight: "72px", padding: "10px",
+                        backgroundColor: "var(--surface-glass)", border: "1px solid rgba(40, 61, 168, 0.24)",
+                        borderRadius: "8px", color: "var(--text-primary)", fontSize: "14px", lineHeight: "1.4",
+                      }}
+                    />
+                  ) : (
+                    <p>{selectedProject.impact}</p>
+                  )}
+                </div>
 
-              {/* GitHub Link with Edit */}
-              <div className="demo-section" style={{ marginTop: "20px" }}>
-                <h3>GitHub</h3>
-                {isEditMode ? (
-                  <div style={{ marginBottom: "15px" }}>
+                <div className="demo-section" style={{ marginTop: "20px" }}>
+                  <h3>GitHub</h3>
+                  {isEditMode ? (
                     <input
                       type="text"
                       value={editedProject?.github || ""}
-                      onChange={(e) =>
-                        setEditedProject({ ...editedProject, github: e.target.value })
-                      }
-                      placeholder="Kirjoita GitHub URL"
+                      onChange={(e) => setEditedProject({ ...editedProject, github: e.target.value })}
+                      placeholder="GitHub URL"
                       style={{
-                        width: "100%",
-                        padding: "10px",
-                        backgroundColor: "var(--surface-glass)",
-                        border: "1px solid rgba(40, 61, 168, 0.24)",
-                        borderRadius: "8px",
-                        color: "var(--text-primary)",
-                        fontSize: "14px",
-                        fontFamily: "monospace",
+                        width: "100%", padding: "10px", backgroundColor: "var(--surface-glass)",
+                        border: "1px solid rgba(40, 61, 168, 0.24)", borderRadius: "8px",
+                        color: "var(--text-primary)", fontSize: "14px", fontFamily: "monospace",
                       }}
                     />
+                  ) : selectedProject?.github ? (
+                    <a href={selectedProject.github} target="_blank" rel="noopener noreferrer"
+                      style={{
+                        display: "inline-block", color: "var(--color-primary)", textDecoration: "none",
+                        padding: "8px 16px", backgroundColor: "rgba(40, 61, 168, 0.1)",
+                        border: "1px solid rgba(40, 61, 168, 0.24)", borderRadius: "8px",
+                        fontSize: "14px", fontWeight: "500",
+                      }}
+                    >Avaa GitHub →</a>
+                  ) : (
+                    <p style={{ color: "var(--text-muted)" }}>Ei GitHub-linkkiä</p>
+                  )}
+                </div>
+
+                {isEditMode && (
+                  <div className="edit-actions" style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+                    <button
+                      onClick={saveEdit}
+                      disabled={saving}
+                      style={{
+                        flex: 1, padding: "12px", backgroundColor: "rgba(76, 185, 68, 0.2)",
+                        color: "var(--color-success)", border: "1px solid rgba(76, 185, 68, 0.3)",
+                        borderRadius: "8px", cursor: "pointer", fontSize: "14px", fontWeight: "600",
+                      }}
+                    >
+                      {saving ? "Tallennetaan..." : "Tallenna Muutokset"}
+                    </button>
+                    <button
+                      onClick={cancelEdit}
+                      style={{
+                        flex: 1, padding: "12px", backgroundColor: "rgba(239, 68, 68, 0.2)",
+                        color: "#ef4444", border: "1px solid rgba(239, 68, 68, 0.3)",
+                        borderRadius: "8px", cursor: "pointer", fontSize: "14px", fontWeight: "600",
+                      }}
+                    >Peruuta</button>
                   </div>
-                ) : selectedProject?.github ? (
-                  <a
-                    href={selectedProject.github}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      display: "inline-block",
-                      color: "var(--color-primary)",
-                      textDecoration: "none",
-                      padding: "8px 16px",
-                      backgroundColor: "rgba(40, 61, 168, 0.1)",
-                      border: "1px solid rgba(40, 61, 168, 0.24)",
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                    }}
-                  >
-                    Avaa GitHub →
-                  </a>
-                ) : (
-                  <p style={{ color: "var(--text-muted)" }}>Ei GitHub-linkkiä</p>
+                )}
+
+                {!isEditMode && (
+                  <div className="links-section">
+                    {selectedProject.liveDemo && (
+                      <a href={selectedProject.liveDemo} target="_blank" rel="noopener noreferrer" className="link-btn primary">
+                        Live Demo
+                      </a>
+                    )}
+                    {selectedProject.github && (
+                      <a href={selectedProject.github} target="_blank" rel="noopener noreferrer" className="link-btn secondary">
+                        GitHub
+                      </a>
+                    )}
+                  </div>
                 )}
               </div>
-
-              {/* Edit Mode Buttons */}
-              {isEditMode && (
-                <div
-                  className="edit-actions"
-                  style={{
-                    display: "flex",
-                    gap: "10px",
-                    marginTop: "20px",
-                  }}
-                >
-                  <button
-                    onClick={saveEdit}
-                    style={{
-                      flex: 1,
-                      padding: "12px",
-                      backgroundColor: "rgba(76, 185, 68, 0.2)",
-                      color: "var(--color-success)",
-                      border: "1px solid rgba(76, 185, 68, 0.3)",
-                      borderRadius: "8px",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Tallenna Muutokset
-                  </button>
-                  <button
-                    onClick={cancelEdit}
-                    style={{
-                      flex: 1,
-                      padding: "12px",
-                      backgroundColor: "rgba(239, 68, 68, 0.2)",
-                      color: "#ef4444",
-                      border: "1px solid rgba(239, 68, 68, 0.3)",
-                      borderRadius: "8px",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Peruuta
-                  </button>
-                </div>
-              )}
-
-              {/* Links */}
-              {!isEditMode && (
-                <div className="links-section">
-                  {selectedProject.liveDemo && (
-                    <a
-                      href={selectedProject.liveDemo}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="link-btn primary"
-                    >
-                      Live Demo
-                    </a>
-                  )}
-                  {selectedProject.github && (
-                    <a
-                      href={selectedProject.github}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="link-btn secondary"
-                    >
-                      GitHub
-                    </a>
-                  )}
-                </div>
-              )}
             </div>
           </div>
-        </div>
-      )}
+        )}
       </div>
     </div>
   );
