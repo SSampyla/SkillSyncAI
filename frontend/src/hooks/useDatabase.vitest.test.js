@@ -32,7 +32,7 @@ vi.mock("../utils/skillUtils", () => ({
 const {
   useSynchronizeCandidateSkills,
   useAvailableSkills,
-  useCandidateProfile,
+  useCandidateSkills,
   usePortfolio,
   useAppliedJobs,
 } = await import("./useDatabase.js");
@@ -122,17 +122,17 @@ describe("useDatabase hooks", () => {
   });
 
   // =========================================================================
-  describe("useCandidateProfile", () => {
+  describe("useCandidateSkills", () => {
     test("ei hae ennen kuin availableSkills on ladattu", () => {
       global.fetch = mockFetchOk(MOCK_CANDIDATE_PROFILE);
-      renderHook(() => useCandidateProfile({ frontend: [], backend: [], tools: [], other: [] }, { current: false }));
+      renderHook(() => useCandidateSkills({ frontend: [], backend: [], tools: [], other: [] }, { current: false }));
       expect(global.fetch).not.toHaveBeenCalled();
     });
 
     test("hakee ja muuntaa profiilin oikeisiin kategorioihin", async () => {
       global.fetch = mockFetchOk(MOCK_CANDIDATE_PROFILE);
       const { result } = renderHook(() =>
-        useCandidateProfile(MOCK_AVAILABLE_SKILLS, { current: false })
+        useCandidateSkills(MOCK_AVAILABLE_SKILLS, { current: false })
       );
       await waitFor(() => expect(result.current.selectedSkills.frontend.length).toBeGreaterThan(0));
       expect(result.current.selectedSkills.frontend).toContain("React.js");
@@ -144,7 +144,7 @@ describe("useDatabase hooks", () => {
     test("asettaa isLoadingFromDB.current = true haun jälkeen", async () => {
       global.fetch = mockFetchOk(MOCK_CANDIDATE_PROFILE);
       const isLoadingFromDB = { current: false };
-      const { result } = renderHook(() => useCandidateProfile(MOCK_AVAILABLE_SKILLS, isLoadingFromDB));
+      const { result } = renderHook(() => useCandidateSkills(MOCK_AVAILABLE_SKILLS, isLoadingFromDB));
       await waitFor(() => expect(result.current.selectedSkills.frontend.length).toBeGreaterThan(0));
       expect(isLoadingFromDB.current).toBe(true);
     });
@@ -152,7 +152,7 @@ describe("useDatabase hooks", () => {
     test("ei päivitä taitoja jos candidateProfile on tyhjä", async () => {
       global.fetch = mockFetchOk({ hardSkillsProficient: [], hardSkillsBasics: [], softSkillsProficient: [], softSkillsBasics: [] });
       const isLoadingFromDB = { current: false };
-      const { result } = renderHook(() => useCandidateProfile(MOCK_AVAILABLE_SKILLS, isLoadingFromDB));
+      const { result } = renderHook(() => useCandidateSkills(MOCK_AVAILABLE_SKILLS, isLoadingFromDB));
       await waitFor(() => expect(result.current.loading).toBe(false));
       expect(result.current.selectedSkills).toEqual({ frontend: [], backend: [], tools: [], other: [] });
       expect(isLoadingFromDB.current).toBe(false);
@@ -161,7 +161,7 @@ describe("useDatabase hooks", () => {
     test("asettaa error-tilan kun haku epäonnistuu", async () => {
       global.fetch = mockFetchFail(500);
       const { result } = renderHook(() =>
-        useCandidateProfile(MOCK_AVAILABLE_SKILLS, { current: false })
+        useCandidateSkills(MOCK_AVAILABLE_SKILLS, { current: false })
       );
       await waitFor(() => expect(result.current.loading).toBe(false));
       expect(result.current.error).not.toBeNull();
@@ -566,11 +566,11 @@ describe("AbortController", () => {
     });
   });
 
-  describe("useCandidateProfile", () => {
+  describe("useCandidateSkills", () => {
     test("abort-signaali välitetään fetch-kutsulle", async () => {
       global.fetch = mockFetchOk(MOCK_CANDIDATE_PROFILE);
       const { unmount } = renderHook(() =>
-        useCandidateProfile(MOCK_AVAILABLE_SKILLS, { current: false })
+        useCandidateSkills(MOCK_AVAILABLE_SKILLS, { current: false })
       );
       unmount();
 
@@ -587,7 +587,7 @@ describe("AbortController", () => {
       );
 
       const { result, unmount } = renderHook(() =>
-        useCandidateProfile(MOCK_AVAILABLE_SKILLS, { current: false })
+        useCandidateSkills(MOCK_AVAILABLE_SKILLS, { current: false })
       );
 
       unmount();

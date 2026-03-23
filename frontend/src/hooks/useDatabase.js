@@ -9,7 +9,7 @@
  *
  *   useAvailableSkills             — Hakee taitovalikoiman (read-only, haetaan kerran mountissa).
  *
- *   useCandidateProfile            — Hakee hakijan profiilin DB:stä ja muuntaa sen
+ *   useCandidateSkills            — Hakee hakijan profiilin DB:stä ja muuntaa sen
  *                                    frontend-muotoon (frontend/backend/tools/other).
  *
  *   usePortfolio                   — Hakee, päivittää ja nollaa portfolion.
@@ -29,7 +29,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { frontendSkillsToApplicantText, dbProfileToFrontendSkills } from "../utils/skillUtils";
 
-const DEBOUNCE_MS = 2500;
+const DEBOUNCE_MS = 1750;
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 // ---------------------------------------------------------------------------
@@ -54,7 +54,7 @@ async function apiFetch(path, options = {}) {
  * Toimintaperiaate:
  *   1. Käyttäjä muuttaa taitoja → debounce käynnistyy (2.5s hiljaisuus)
  *   2. Debounce laukeaa → LLM analysoi taidot ja luokittelee ne
- *      (hardSkillsProficient / softSkillsBasics jne.)
+ *      (hardSkillsProficient / softSkillsBasics jne.)0
  *   3. Luokiteltu profiili tallennetaan /api/database/candidate-profile
  *
  * Optimoinnit:
@@ -75,6 +75,11 @@ export function useSynchronizeCandidateSkills(skills, onStatusChange, isLoadingF
   const debounceTimer = useRef(null);
   const isSyncing = useRef(false);
   const abortController = useRef(null);
+  const skillsRef = useRef(skills);
+
+  useEffect(() => {
+    skillsRef.current = skills;
+  }, [skills]);
 
   const runSync = useCallback(async (currentSkills) => {
     if (isSyncing.current) {
@@ -115,15 +120,24 @@ export function useSynchronizeCandidateSkills(skills, onStatusChange, isLoadingF
   }, [onStatusChange]);
 
   useEffect(() => {
+
     if (isLoadingFromDB?.current) {
       isLoadingFromDB.current = false;
       return;
     }
-    if (!skills) return;
+    if (!skills) {
+      return;
+    }
 
     onStatusChange?.("pending");
+
+    const hasSkills = Object.values(skills).some(arr => arr.length > 0);
+    if (!hasSkills) {
+      return;
+    }
+
     clearTimeout(debounceTimer.current);
-    debounceTimer.current = setTimeout(() => runSync(skills), DEBOUNCE_MS);
+    debounceTimer.current = setTimeout(() => runSync(skillsRef.current), DEBOUNCE_MS);
 
     return () => {
       clearTimeout(debounceTimer.current);
@@ -154,7 +168,14 @@ export function useAvailableSkills() {
     const controller = new AbortController();
 
     apiFetch("/api/database/available-skills", { signal: controller.signal })
-      .then(setAvailableSkills)
+      .then(data => {
+        const keys = ["frontend", "backend", "tools", "other"];
+        if (data && keys.every(k => Array.isArray(data[k]))) {
+          setAvailableSkills(data);
+        } else {
+          console.warn("[useAvailableSkills] Odottamaton rakenne:", data);
+        }
+      })
       .catch(err => {
         if (err.name === "AbortError") return;
         console.warn("[useAvailableSkills]", err);
@@ -169,7 +190,7 @@ export function useAvailableSkills() {
 }
 
 // ---------------------------------------------------------------------------
-// useCandidateProfile
+// useCandidateSkills
 // ---------------------------------------------------------------------------
 /**
  * Hakee hakijan profiilin DB:stä ja muuntaa sen frontend-kategoriamutoon.
@@ -186,43 +207,69 @@ export function useAvailableSkills() {
  *
  * @example
  * const { availableSkills } = useAvailableSkills();
- * const { selectedSkills, setSelectedSkills } = useCandidateProfile(availableSkills, isLoadingFromDB);
+ * const { selectedSkills, setSelectedSkills } = useCandidateSkills(availableSkills, isLoadingFromDB);
  */
-export function useCandidateProfile(availableSkills, isLoadingFromDB) {
+export async function clearCandidateSkills() {
+  await apiFetch("/api/database/candidate-profile", {
+    method: "PUT",
+    body: JSON.stringify({
+      hardSkillsProficient: [],
+      hardSkillsBasics: [],
+      softSkillsProficient: [],
+      softSkillsBasics: []
+    }),
+  });
+}
+export async function syncSkillsOnce(skills) {
+  const { frontendSkillsToApplicantText } = await import("../utils/skillUtils");
+  const applicantText = frontendSkillsToApplicantText(skills);
+  if (!applicantText) return;
+
+  const llmData = await apiFetch("/api/jobs/skills/applicant", {
+    method: "POST",
+    body: JSON.stringify({ applicantText }),
+  });
+
+  await apiFetch("/api/database/candidate-profile", {
+    method: "PUT",
+    body: JSON.stringify(llmData.skills),
+  });
+}
+export function useCandidateSkills(availableSkills, isLoadingFromDB) {
   const [selectedSkills, setSelectedSkills] = useState({
     frontend: [], backend: [], tools: [], other: []
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null); // ← uusi
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const fetchSkills = useCallback((signal, isManualRefetch = false) => {
     if (availableSkills.frontend.length === 0) return;
-
-    const controller = new AbortController(); // ← uusi
     setLoading(true);
     setError(null);
 
-    apiFetch("/api/database/candidate-profile", { signal: controller.signal }) // ← signal mukaan
+    apiFetch("/api/database/candidate-profile", { signal })
       .then(dbProfile => {
-        const hasData = Object.values(dbProfile).some(
-          v => Array.isArray(v) && v.length > 0
-        );
+        const hasData = Object.values(dbProfile).some(v => Array.isArray(v) && v.length > 0);
         if (hasData) {
-          if (isLoadingFromDB) isLoadingFromDB.current = true;
+          if (!isManualRefetch && isLoadingFromDB) isLoadingFromDB.current = true;
           setSelectedSkills(dbProfileToFrontendSkills(dbProfile, availableSkills));
         }
       })
       .catch(err => {
-        if (err.name === "AbortError") return; // ← abort ei ole virhe
-        console.warn("[useCandidateProfile]", err);
-        setError(err.message); // ← virhe näkyviin
+        if (err.name === "AbortError") return;
+        console.warn("[useCandidateSkills]", err);
+        setError(err.message);
       })
       .finally(() => setLoading(false));
+  }, [availableSkills, isLoadingFromDB]);
 
-    return () => controller.abort(); // ← cleanup
-  }, [availableSkills]);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchSkills(controller.signal);
+    return () => controller.abort();
+  }, [fetchSkills]);
 
-  return { selectedSkills, setSelectedSkills, loading, error }; // ← error mukaan
+  return { selectedSkills, setSelectedSkills, loading, error, refetch: fetchSkills };
 }
 
 // ---------------------------------------------------------------------------
@@ -231,7 +278,7 @@ export function useCandidateProfile(availableSkills, isLoadingFromDB) {
 /**
  * Hakee, päivittää ja nollaa portfolion.
  *
- * Huomio: skills-kenttä tulee candidateProfilesta (ks. useCandidateProfile),
+ * Huomio: skills-kenttä tulee candidateProfilesta (ks. useCandidateSkills),
  * ei tallenneta portfolioon. GET /portfolio yhdistää ne automaattisesti.
  *
  * @returns {{
@@ -246,6 +293,7 @@ export function useCandidateProfile(availableSkills, isLoadingFromDB) {
  * const { portfolio, updatePortfolio } = usePortfolio();
  * await updatePortfolio({ name: "Matti", title: "Dev" });
  */
+
 export function usePortfolio() {
   const [portfolio, setPortfolio] = useState(null);
   const [loading, setLoading] = useState(true);

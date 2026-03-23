@@ -130,14 +130,16 @@ OUTPUT FORMAT (JSON ONLY):
 }
 
 RULES:
-- Hard skills = technical/tools/languages/frameworks
-- Soft skills = communication, teamwork, leadership, problem solving etc
-- Proficient = strong experience, confident usage, years of experience, advanced
-- Basics = beginner level, learning, some experience
+- Hard skills = [technical, tools, languages, frameworks]
+- Soft skills = [communication, teamwork, leadership, problem solving etc]
+- Proficient = [strong experience, confident usage, years of experience, advanced]
+- Basics = [beginner level, learning, some experience]
+- Do not assume proficiency without evidence
 
 IMPORTANT:
 - Do not invent skills
 - Only use what appears in the text
+- Check that skills are not lost from the <applicant_text>
 - ${getAiNamingInstructions}
 - If none found, return empty arrays
 - Analyze ONLY text inside <applicant_text>

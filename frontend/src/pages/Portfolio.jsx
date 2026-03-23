@@ -1,10 +1,12 @@
 import Navbar from "../components/Navbar";
 import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import {
     useAvailableSkills,
-    useCandidateProfile,
+    useCandidateSkills,
     usePortfolio,
-    useSynchronizeCandidateSkills
+    useSynchronizeCandidateSkills, 
+    syncSkillsOnce
 } from "../hooks/useDatabase";
 import "../styles/portfolio.css";
 
@@ -24,29 +26,34 @@ export default function Portfolio() {
     const [activeSection, setActiveSection] = useState("profile");
     const [isEditing, setIsEditing] = useState(false);
  
-const isLoadingFromDB = useRef(false);
+    const isLoadingFromDB = useRef(false);
+    const isProfileFromDB = useRef(false); 
 
-const { availableSkills } = useAvailableSkills();
+    const { availableSkills } = useAvailableSkills();
 
-const {
-    selectedSkills,
-    setSelectedSkills
-} = useCandidateProfile(availableSkills, isLoadingFromDB);
+    const location = useLocation();
+
+    const {
+        selectedSkills,
+        setSelectedSkills,
+        refetch: refetchSkills
+    } = useCandidateSkills(availableSkills, isLoadingFromDB);
 
     // Portfolio data ja päivitysfunktio backendistä
 
-const {
-    portfolio,
-    updatePortfolio,
-    loading: portfolioLoading
-} = usePortfolio();
+    const {
+        portfolio,
+        updatePortfolio,
+        loading: portfolioLoading
+    } = usePortfolio();
 
     // Paikallinen tila, joka peilaa backendistä haettua portfolioa
 
-const [profile, setProfile] = useState(createEmptyPortfolio());
+    const [profile, setProfile] = useState(createEmptyPortfolio());
 
     useEffect(() => {
         if (portfolio) {
+            isProfileFromDB.current = true;
             setProfile(prev => ({
                 ...prev,
                 ...portfolio
@@ -54,19 +61,15 @@ const [profile, setProfile] = useState(createEmptyPortfolio());
         }
     }, [portfolio]);
 
-    const isInitialLoad = useRef(true);
-
     const DEBOUNCE_MS = 250;
 
     useEffect(() => {
-        if (isInitialLoad.current) {
-            isInitialLoad.current = false;
+        if (isProfileFromDB.current) {      
+            isProfileFromDB.current = false;
             return;
         }
 
         const timeout = setTimeout(() => {
-            console.log("Lähetetään backendiin:", profile);
-
             updatePortfolio(profile).catch(() => {
                 console.error("Tallennus epäonnistui");
             });
@@ -75,15 +78,23 @@ const [profile, setProfile] = useState(createEmptyPortfolio());
         return () => clearTimeout(timeout);
     }, [profile]);
 
+    useEffect(() => {
+        const pendingSkills = location.state?.pendingSkills;
+        if (!pendingSkills) return;
+
+        setSelectedSkills(pendingSkills); 
+        window.history.replaceState({}, "");
+    }, []);
+
     // Synkronointitila, joka kertoo onko taitojen synkronointi käynnissä, onnistui vai epäonnistui. Tämä tila voidaan näyttää UI:ssa käyttäjälle.
 
-const [syncStatus, setSyncStatus] = useState("idle");
+    const [syncStatus, setSyncStatus] = useState("idle");
 
-useSynchronizeCandidateSkills(
-    selectedSkills,
-    setSyncStatus,
-    isLoadingFromDB
-);
+    useSynchronizeCandidateSkills(
+        selectedSkills,
+        setSyncStatus,
+        isLoadingFromDB
+    );
 
     const [detectedSkills, setDetectedSkills] = useState(null);
     const [showSkillModal, setShowSkillModal] = useState(false); 
@@ -108,7 +119,7 @@ useSynchronizeCandidateSkills(
                     let foundCategory = null;
 
                     for (const [category, skills] of Object.entries(availableSkills)) {
-
+                        if (!Array.isArray(skills)) continue;
                         const match = skills.find(
                             skill => skill.toLowerCase() === normalized
                         );
@@ -265,6 +276,21 @@ useSynchronizeCandidateSkills(
           {portfolioLoading && (
               <div style={{ padding: "10px", color: "gray" }}>
                   Ladataan profiilia...
+              </div>
+          )}
+          {syncStatus === "syncing" && (
+              <div style={{ padding: "10px", color: "var(--text-secondary)", fontSize: "14px" }}>
+                  Tallennetaan taustalla...
+              </div>
+          )}
+          {syncStatus === "saved" && (
+              <div style={{ padding: "10px", color: "var(--color-success)", fontSize: "14px" }}>
+                  Valmis
+              </div>
+          )}
+          {syncStatus === "error" && (
+              <div style={{ padding: "10px", color: "var(--color-error, #dc3545)", fontSize: "14px" }}>
+                  Taitojen tallennus epäonnistui
               </div>
           )}
 
@@ -500,7 +526,9 @@ useSynchronizeCandidateSkills(
           {["profile", "skills", "experience", "education", "githubProjects"].map((section) => (
             <button
               key={section}
-              onClick={() => setActiveSection(section)}
+              onClick={() => {
+                  setActiveSection(section);
+                  if (section === "skills") refetchSkills(undefined, true);}}
               style={{
                 padding: "12px 24px",
                 backgroundColor: activeSection === section ? "var(--color-primary)" : "var(--surface-soft)",
@@ -531,15 +559,15 @@ useSynchronizeCandidateSkills(
 
         {/* Skills Section */}
         {activeSection === "skills" && (
-          <section style={{ marginBottom: "50px" }}>
-            <h2>Tekniset Taidot</h2>
+            <section style={{ marginBottom: "50px" }}>
+                <h2 style={{ margin: 0 }}>Tekniset Taidot</h2>
             {isEditing ? (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "30px" }}>
                                   {Object.entries(availableSkills).map(([category, skillsList]) => (
                   <div key={category}>
                     <h3 style={{ textTransform: "capitalize" }}>{category === "frontend" ? "Frontend" : category === "backend" ? "Backend" : category === "tools" ? "Työkalut" : "Muut Taidot"}</h3>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "10px" }}>
-                      {skillsList.map((skill) => (
+                      {Array.isArray(skillsList) && skillsList.map((skill) => (
                         <label key={skill} style={{ display: "flex", alignItems: "center", fontSize: "14px" }}>
                           <input
                             type="checkbox"

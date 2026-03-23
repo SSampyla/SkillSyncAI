@@ -2,8 +2,7 @@ import Navbar from "../components/Navbar";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/home.css";
 import { useState } from "react";
-import { useAvailableSkills } from "../hooks/useDatabase";
-import { usePortfolio } from "../hooks/useDatabase";
+import { useAvailableSkills, usePortfolio, clearCandidateSkills  } from "../hooks/useDatabase";
 import { createEmptyPortfolio } from "../data/portfolioTemplate";
 
 /*Lisätty kotisivulle profiilin luonti ja taitovalinnat.
@@ -146,9 +145,9 @@ function Home() {
             };
 
             await updatePortfolio(fullProfile);
-
+            await clearCandidateSkills();
             setShowForm(false);
-            navigate("/portfolio");
+            navigate("/portfolio", { state: { pendingSkills: selectedSkills } });
 
         } catch (err) {
             console.error(err);
@@ -313,7 +312,9 @@ function Home() {
 
                                 <h3>Valitse teknologiat</h3>
 
-                                {Object.entries(availableSkills || {}).map(([category, skills]) => (
+                                {Object.entries(availableSkills || {})
+                                    .filter(([, skills]) => Array.isArray(skills))
+                                    .map(([category, skills]) => (
 
                                     <div key={category} style={{ marginBottom: "15px" }}>
 

@@ -135,6 +135,7 @@ export const SYNONYMS = {
   csharp: "csharp",
   dotnet: "dotnet",
   net: "dotnet",
+  cpp: "cpp",
 
   php: "php",
   laravel: "laravel",

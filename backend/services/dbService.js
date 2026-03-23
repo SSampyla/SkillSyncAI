@@ -75,6 +75,7 @@ export const INITIAL_STATE = {
             "Java",
             "Spring Boot",
             "C#",
+            "C++",
             ".NET",
             "PHP",
             "Laravel",
