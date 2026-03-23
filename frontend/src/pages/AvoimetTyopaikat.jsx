@@ -55,6 +55,279 @@ const buildJobText = (job) => {
   ].join("\n");
 };
 
+const normalizeTextValue = (value) => `${value ?? ""}`.trim();
+
+const normalizeObjectList = (value, shape) => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) => {
+      const normalizedEntry = {};
+
+      Object.keys(shape).forEach((key) => {
+        normalizedEntry[key] = normalizeTextValue(entry?.[key]);
+      });
+
+      return normalizedEntry;
+    })
+    .filter((entry) => Object.values(entry).some(Boolean));
+};
+
+const normalizeStructuredCv = (value) => {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const contact = value.contact && typeof value.contact === "object" ? value.contact : {};
+
+  const normalized = {
+    fullName: normalizeTextValue(value.fullName),
+    headline: normalizeTextValue(value.headline),
+    contact: {
+      address: normalizeTextValue(contact.address),
+      postalCodeAndCity: normalizeTextValue(contact.postalCodeAndCity),
+      phone: normalizeTextValue(contact.phone),
+      email: normalizeTextValue(contact.email),
+    },
+    profile: normalizeTextValue(value.profile),
+    workExperience: normalizeObjectList(value.workExperience, {
+      organization: "",
+      role: "",
+      period: "",
+      location: "",
+      summary: "",
+    }),
+    education: normalizeObjectList(value.education, {
+      degree: "",
+      institution: "",
+      period: "",
+      details: "",
+    }),
+    languages: normalizeObjectList(value.languages, {
+      language: "",
+      level: "",
+    }),
+    hobbies: Array.isArray(value.hobbies)
+      ? value.hobbies.map((item) => normalizeTextValue(item)).filter(Boolean)
+      : [],
+    references: normalizeObjectList(value.references, {
+      name: "",
+      title: "",
+      phone: "",
+      email: "",
+    }),
+  };
+
+  const hasContent = normalized.fullName
+    || normalized.headline
+    || normalized.profile
+    || normalized.workExperience.length
+    || normalized.education.length
+    || normalized.languages.length
+    || normalized.hobbies.length
+    || normalized.references.length
+    || Object.values(normalized.contact).some(Boolean);
+
+  return hasContent ? normalized : null;
+};
+
+const drawWrappedText = (doc, text, x, y, maxWidth, lineHeight, options = {}) => {
+  const content = normalizeTextValue(text) || " ";
+  const lines = doc.splitTextToSize(content, maxWidth);
+
+  lines.forEach((line) => {
+    doc.text(line, x, y, options);
+    y += lineHeight;
+  });
+
+  return y;
+};
+
+const drawStructuredCvPdf = (doc, structuredCv) => {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 42;
+  const labelWidth = 120;
+  const columnGap = 18;
+  const contentX = margin + labelWidth + columnGap;
+  const contentWidth = pageWidth - contentX - margin;
+  let y = margin;
+
+  const ensureSpace = (requiredHeight = 32) => {
+    if (y + requiredHeight <= pageHeight - margin) {
+      return;
+    }
+
+    doc.addPage();
+    y = margin;
+  };
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(20);
+  doc.text(structuredCv.fullName || "CV", margin, y);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  const contactLines = [
+    structuredCv.contact.address,
+    structuredCv.contact.postalCodeAndCity,
+    structuredCv.contact.phone,
+    structuredCv.contact.email,
+  ].filter(Boolean);
+
+  let contactY = margin;
+  contactLines.forEach((line) => {
+    doc.text(line, pageWidth - margin, contactY, { align: "right" });
+    contactY += 14;
+  });
+
+  y += 22;
+  if (structuredCv.headline) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    doc.text(structuredCv.headline, margin, y);
+    y += 22;
+  }
+
+  doc.setDrawColor(120, 120, 120);
+  doc.line(margin, y, pageWidth - margin, y);
+  y += 24;
+
+  const drawSection = (label, drawContent, estimatedHeight = 72) => {
+    ensureSpace(estimatedHeight);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text(label, margin, y);
+
+    const sectionStartY = y;
+    let sectionY = y;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    sectionY = drawContent(sectionY);
+    y = Math.max(sectionY, sectionStartY + 18) + 18;
+  };
+
+  if (structuredCv.profile) {
+    drawSection("Profiili", (sectionY) => (
+      drawWrappedText(doc, structuredCv.profile, contentX, sectionY, contentWidth, 15)
+    ), 70);
+  }
+
+  if (structuredCv.workExperience.length) {
+    drawSection("Työkokemus", (sectionY) => {
+      structuredCv.workExperience.forEach((entry, index) => {
+        if (index > 0) {
+          ensureSpace(68);
+          sectionY += 8;
+        }
+
+        doc.setFont("helvetica", "bold");
+        doc.text(entry.organization || entry.role || "Työkokemus", contentX, sectionY);
+        sectionY += 15;
+
+        const meta = [entry.role, entry.period, entry.location].filter(Boolean).join(", ");
+        if (meta) {
+          doc.setFont("helvetica", "normal");
+          sectionY = drawWrappedText(doc, meta, contentX, sectionY, contentWidth, 14);
+        }
+
+        if (entry.summary) {
+          doc.setFont("helvetica", "normal");
+          sectionY = drawWrappedText(doc, entry.summary, contentX, sectionY, contentWidth, 15);
+        }
+      });
+
+      return sectionY;
+    }, 120);
+  }
+
+  if (structuredCv.education.length) {
+    drawSection("Koulutus", (sectionY) => {
+      structuredCv.education.forEach((entry, index) => {
+        if (index > 0) {
+          ensureSpace(62);
+          sectionY += 8;
+        }
+
+        doc.setFont("helvetica", "bold");
+        doc.text(entry.degree || entry.institution || "Koulutus", contentX, sectionY);
+        sectionY += 15;
+
+        const meta = [entry.period, entry.institution].filter(Boolean).join(" | ");
+        if (meta) {
+          doc.setFont("helvetica", "normal");
+          sectionY = drawWrappedText(doc, meta, contentX, sectionY, contentWidth, 14);
+        }
+
+        if (entry.details) {
+          doc.setFont("helvetica", "normal");
+          sectionY = drawWrappedText(doc, entry.details, contentX, sectionY, contentWidth, 15);
+        }
+      });
+
+      return sectionY;
+    }, 110);
+  }
+
+  if (structuredCv.languages.length) {
+    drawSection("Kielitaito", (sectionY) => {
+      doc.setFont("helvetica", "normal");
+      structuredCv.languages.forEach((entry, index) => {
+        const line = [entry.language, entry.level].filter(Boolean).join("    ");
+        sectionY = drawWrappedText(doc, line, contentX, sectionY, contentWidth, 15);
+
+        if (index < structuredCv.languages.length - 1) {
+          sectionY += 2;
+        }
+      });
+
+      return sectionY;
+    }, 80);
+  }
+
+  if (structuredCv.hobbies.length) {
+    drawSection("Harrastukset", (sectionY) => (
+      drawWrappedText(doc, structuredCv.hobbies.join(", "), contentX, sectionY, contentWidth, 15)
+    ), 60);
+  }
+
+  if (structuredCv.references.length) {
+    drawSection("Suosittelijat", (sectionY) => {
+      const columnWidth = (contentWidth - 16) / 3;
+      const refsPerRow = 3;
+
+      for (let index = 0; index < structuredCv.references.length; index += refsPerRow) {
+        const row = structuredCv.references.slice(index, index + refsPerRow);
+        ensureSpace(72);
+
+        let rowBottom = sectionY;
+
+        row.forEach((entry, columnIndex) => {
+          const refX = contentX + columnIndex * (columnWidth + 8);
+          let refY = sectionY;
+
+          doc.setFont("helvetica", "bold");
+          refY = drawWrappedText(doc, entry.name, refX, refY, columnWidth, 14);
+
+          doc.setFont("helvetica", "normal");
+          [entry.title, entry.phone, entry.email].filter(Boolean).forEach((line) => {
+            refY = drawWrappedText(doc, line, refX, refY, columnWidth, 14);
+          });
+
+          rowBottom = Math.max(rowBottom, refY);
+        });
+
+        sectionY = rowBottom + 8;
+      }
+
+      return sectionY;
+    }, 96);
+  }
+};
+
 export default function AvoimetTyopaikat() {
   // Hakukriteerit
   const [searchCriteria, setSearchCriteria] = useState({
@@ -78,6 +351,7 @@ export default function AvoimetTyopaikat() {
   );
   const [coverLetterDraft, setCoverLetterDraft] = useState("");
   const [editedCvDraft, setEditedCvDraft] = useState("");
+  const [editedCvStructured, setEditedCvStructured] = useState(null);
   const [draftLoading, setDraftLoading] = useState({ coverLetter: false, cv: false });
   const [draftError, setDraftError] = useState("");
   const [selectedDraftTarget, setSelectedDraftTarget] = useState("coverLetter");
@@ -87,12 +361,14 @@ export default function AvoimetTyopaikat() {
     setSelectedDraftTarget(draftTarget);
     setCoverLetterDraft("");
     setEditedCvDraft("");
+    setEditedCvStructured(null);
     setDraftError("");
   };
 
   const closeCustomizationPanel = () => {
     setCustomizationJob(null);
     setSelectedDraftTarget("coverLetter");
+    setEditedCvStructured(null);
     setDraftError("");
   };
 
@@ -148,6 +424,7 @@ export default function AvoimetTyopaikat() {
       });
 
       setEditedCvDraft(response.editedCV || "CV-luonnosta ei saatu muodostettua.");
+      setEditedCvStructured(normalizeStructuredCv(response.structuredCV));
     } catch (err) {
       setDraftError(`CV:n räätälöinti epäonnistui: ${err.message}`);
     } finally {
@@ -158,6 +435,7 @@ export default function AvoimetTyopaikat() {
   const downloadDraftAsPdf = (draftType) => {
     const isCoverLetter = draftType === "coverLetter";
     const draftText = isCoverLetter ? coverLetterDraft : editedCvDraft;
+    const canUseStructuredCv = !isCoverLetter && editedCvStructured;
 
     if (!draftText.trim()) {
       setDraftError("Ei ladattavaa sisältöä. Luo luonnos ensin.");
@@ -178,6 +456,12 @@ export default function AvoimetTyopaikat() {
     const margin = 44;
     const maxWidth = pageWidth - margin * 2;
     let y = margin;
+
+    if (canUseStructuredCv) {
+      drawStructuredCvPdf(doc, editedCvStructured);
+      doc.save(fileName);
+      return;
+    }
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
@@ -938,8 +1222,144 @@ export default function AvoimetTyopaikat() {
               )}
 
               {selectedDraftTarget === "cv" && editedCvDraft && (
-                <div>
+                <div style={{ display: "grid", gap: "14px" }}>
                   <h4 style={{ margin: "0 0 8px 0", color: "var(--text-primary)" }}>Räätälöity CV-luonnos</h4>
+
+                  {editedCvStructured && (
+                    <div style={{
+                      padding: "18px",
+                      borderRadius: "18px",
+                      border: "1px solid rgba(148, 163, 184, 0.22)",
+                      background: "linear-gradient(180deg, rgba(245, 241, 232, 0.92), rgba(235, 229, 214, 0.88))",
+                      overflowX: "auto",
+                    }}>
+                      <div style={{
+                        width: "100%",
+                        maxWidth: "760px",
+                        margin: "0 auto",
+                        backgroundColor: "#fffdf8",
+                        color: "#111827",
+                        borderRadius: "6px",
+                        boxShadow: "0 18px 40px rgba(15, 23, 42, 0.18)",
+                        padding: "34px 38px 30px",
+                        fontFamily: '"Georgia", "Times New Roman", serif',
+                      }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: "24px", alignItems: "flex-start" }}>
+                          <div style={{ flex: "1 1 auto" }}>
+                            <div style={{ fontSize: "34px", fontWeight: "700", lineHeight: 1.05, marginBottom: "10px" }}>
+                              {editedCvStructured.fullName || "Nimetön hakija"}
+                            </div>
+                            {editedCvStructured.headline && (
+                              <div style={{ fontSize: "16px", lineHeight: 1.4 }}>{editedCvStructured.headline}</div>
+                            )}
+                          </div>
+
+                          <div style={{ minWidth: "180px", textAlign: "right", fontSize: "13px", lineHeight: 1.5 }}>
+                            {[editedCvStructured.contact.address, editedCvStructured.contact.postalCodeAndCity, editedCvStructured.contact.phone, editedCvStructured.contact.email]
+                              .filter(Boolean)
+                              .map((line) => (
+                                <div key={line}>{line}</div>
+                              ))}
+                          </div>
+                        </div>
+
+                        <div style={{ height: "1px", backgroundColor: "rgba(15, 23, 42, 0.28)", margin: "26px 0 30px" }} />
+
+                        {[
+                          editedCvStructured.profile && {
+                            title: "Profiili",
+                            content: (
+                              <p style={{ margin: 0, fontSize: "14px", lineHeight: 1.65 }}>
+                                {editedCvStructured.profile}
+                              </p>
+                            ),
+                          },
+                          editedCvStructured.workExperience.length > 0 && {
+                            title: "Työkokemus",
+                            content: (
+                              <div style={{ display: "grid", gap: "20px" }}>
+                                {editedCvStructured.workExperience.map((entry, index) => (
+                                  <div key={`${entry.organization}-${entry.role}-${index}`}>
+                                    <div style={{ fontSize: "18px", fontWeight: "700", marginBottom: "4px" }}>
+                                      {entry.organization || entry.role}
+                                    </div>
+                                    <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "8px" }}>
+                                      {[entry.role, entry.period, entry.location].filter(Boolean).join(", ")}
+                                    </div>
+                                    {entry.summary && (
+                                      <p style={{ margin: 0, fontSize: "14px", lineHeight: 1.65 }}>{entry.summary}</p>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            ),
+                          },
+                          editedCvStructured.education.length > 0 && {
+                            title: "Koulutus",
+                            content: (
+                              <div style={{ display: "grid", gap: "18px" }}>
+                                {editedCvStructured.education.map((entry, index) => (
+                                  <div key={`${entry.degree}-${entry.institution}-${index}`}>
+                                    <div style={{ fontSize: "18px", fontWeight: "700", marginBottom: "4px" }}>
+                                      {entry.degree || entry.institution}
+                                    </div>
+                                    <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: entry.details ? "8px" : 0 }}>
+                                      {[entry.period, entry.institution].filter(Boolean).join(" | ")}
+                                    </div>
+                                    {entry.details && (
+                                      <p style={{ margin: 0, fontSize: "14px", lineHeight: 1.65 }}>{entry.details}</p>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            ),
+                          },
+                          editedCvStructured.languages.length > 0 && {
+                            title: "Kielitaito",
+                            content: (
+                              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "6px 18px", fontSize: "14px", lineHeight: 1.6 }}>
+                                {editedCvStructured.languages.map((entry, index) => (
+                                  <div key={`${entry.language}-${index}`} style={{ display: "flex", justifyContent: "space-between", gap: "12px" }}>
+                                    <span>{entry.language}</span>
+                                    <span>{entry.level}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            ),
+                          },
+                          editedCvStructured.hobbies.length > 0 && {
+                            title: "Harrastukset",
+                            content: (
+                              <p style={{ margin: 0, fontSize: "14px", lineHeight: 1.65 }}>
+                                {editedCvStructured.hobbies.join(", ")}
+                              </p>
+                            ),
+                          },
+                          editedCvStructured.references.length > 0 && {
+                            title: "Suosittelijat",
+                            content: (
+                              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "18px 24px" }}>
+                                {editedCvStructured.references.map((entry, index) => (
+                                  <div key={`${entry.name}-${index}`} style={{ fontSize: "13px", lineHeight: 1.55 }}>
+                                    <div style={{ fontWeight: "700" }}>{entry.name}</div>
+                                    {entry.title && <div>{entry.title}</div>}
+                                    {entry.phone && <div>{entry.phone}</div>}
+                                    {entry.email && <div>{entry.email}</div>}
+                                  </div>
+                                ))}
+                              </div>
+                            ),
+                          },
+                        ].filter(Boolean).map((section) => (
+                          <div key={section.title} style={{ display: "grid", gridTemplateColumns: "130px 1fr", gap: "16px", marginBottom: "28px" }}>
+                            <div style={{ fontSize: "16px", fontWeight: "700" }}>{section.title}</div>
+                            <div>{section.content}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <textarea
                     value={editedCvDraft}
                     onChange={(e) => setEditedCvDraft(e.target.value)}
