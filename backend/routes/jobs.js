@@ -4,31 +4,75 @@ import { createValidator, validateJobText, validateCoverLetter, validateApplican
 import { summarizeJob } from "../LLM/jobSummary.js";
 import { extractJobSkills, extractCandidateSkills } from "../LLM/jobExtractSkills.js";
 import { generateCoverLetter } from "../LLM/jobCoverLetter.js";
+import { searchJobsFromAllSources } from "../services/jobScraper.js";
+import { readDB } from "../services/dbService.js";
+import { calculateMatch, getSkillMatchList } from "../utils/matchCandidateToJob.js";
 
 /*
 # Job & Cover Letter API
-Tämä reititin käsittelee työpaikkailmoitusten analysointia ja työhakemusten (Cover Letter) generointia LLM:n avulla.
+Tämä reititin käsittelee työpaikkailmoitusten analysointia, työhakemusten (Cover Letter) generointia LLM:n avulla sekä työpaikkojen hakua ja ehdotusten rikastamista hakijan profiilin perusteella.
 
 ## Caching
-`/letter` -reitissä on sisäänrakennettu versionhallinta:
+- **`/letter`**: Sisäänrakennettu versionhallinta:
+  1. **Uuden luonti:** Kun kutsut reittiä ilman `versionId` -kenttää, backend generoi uuden kirjeen ja palauttaa uniikin ID:n (esim. `versionId: "cv_123xyz"`).
+  2. **Vanhan haku:** Jos käyttäjä haluaa palata tähän tiettyyn versioon, lähetä pyynnön bodyssä saamasi `versionId`. Backend palauttaa välimuistista kyseisen version nopeasti.
+  3. Jos `versionId` on väärä, generoidaan uusi kirje ja uusi ID.
 
-1. **Uuden luonti:** Kun kutsut reittiä ilman `versionId` -kenttää, backend generoi uuden kirjeen ja palauttaa sen mukana uniikin ID:n (esim. `versionId: "cv_123xyz"`).
-2. **Vanhan haku:** Jos käyttäjä haluaa palata tähän tiettyyn versioon (esim. peruuttaa muutoksen tai vaihtaa näkymää), lähetä pyynnön bodyssä saamasi `versionId`. Backend palauttaa välimuistista kyseisen version nopeasti.
-3. Jos versio ID on väärä, generoidaan uusi kirje ja uusi ID.
+- Muut reitit **eivät käytä välimuistia** (`/jobs/search` on nopea, eikä cachea tarvita).
 
 ## Reitit
 
-### `POST /summary` | `POST /skills/job` | `POST /skills/applicant`
-Perusanalyysireitit. Palauttavat yhteenvedon tai taidot.
-* **Välimuisti:** Automaattinen. Sama payload palauttaa aina saman tuloksen (1 tunnin ajan).
+### Analyysi- ja taitoreitit
+- **`POST /summary`** – analysoi työpaikkailmoituksen tekstin ja palauttaa yhteenvedon.  
+  * **Välimuisti:** 1 tunti.
+- **`POST /skills/job`** – palauttaa ilmoituksesta löytyvät taidot.  
+  * **Välimuisti:** 1 tunti.
+- **`POST /skills/applicant`** – palauttaa hakijan taidot.  
+  * **Välimuisti:** 1 tunti.
 
-### `POST /letter`
-Generoi työhakemuksen (Cover letter).
-* **Body:** `{ jobText, applicantText, language, matchData, versionId? }`
-* **Paluuarvo:** `{ coverLetter: "...", versionId: "cv_1710..." }`
+### Työhakemuksen generointi
+- **`POST /letter`** – generoi työhakemuksen LLM:n avulla.  
+  * **Body:** `{ jobText, applicantText, language, matchData, versionId? }`  
+  * **Paluuarvo:** `{ coverLetter: "...", versionId: "cv_1710..." }`  
+
+### Työpaikkahaku
+- **`GET /jobs/search`** – hakee työpaikat eri lähteistä ja rikastaa ne hakijan profiilin perusteella:
+  * Parametrit queryssä: `title`, `location`, `keywords` (pilkuilla eroteltu lista).  
+  * Ei käytä cachea – tulokset lasketaan aina uudelleen.  
+  * Palauttaa työpaikat sortattuna yhteensopivuuden mukaan sekä `matchedSkills` ja `missingSkills`.
 */
 
 const router = express.Router();
+
+// =======================================
+//  MAP: scraper → match engine
+// =======================================
+const mapJobToMatchFormat = (job) => ({
+  hardSkillsRequired: job.requiredSkills ?? [],
+  hardSkillsOptional: [],
+  softSkillsRequired: [],
+  softSkillsOptional: []
+});
+
+// =======================================
+//  ENRICH: match + skill list
+// =======================================
+const enrichJob = (job, candidateProfile) => {
+  if (!job || !candidateProfile) return job;
+
+  const jobSkills = mapJobToMatchFormat(job);
+
+  const compatibility = calculateMatch(jobSkills, candidateProfile) ?? 0;
+  const { matchedSkills, missingSkills } = getSkillMatchList(jobSkills, candidateProfile);
+
+  return {
+    ...job,
+    compatibility,
+    recommended: compatibility >= 75,
+    matchedSkills,
+    missingSkills
+  };
+};
 
 router.post(
   "/summary",
@@ -155,6 +199,67 @@ router.post(
 
     return response;
   }, "Hakemuksen generointi")
+);
+
+// =======================================
+//  JOB SEARCH & MATCHING
+// =======================================
+
+router.get(
+  "/search",
+  asyncHandler(async (req) => {
+    console.log("[Jobs search called]");
+
+    // 🔹 Yhdistä query + mahdollinen body (fallback)
+    const source = {
+      ...req.query,
+      ...req.body, // sallii myös POST fallbackin
+    };
+
+    // 🔹 Normalisoi kentät
+    const title = source.jobTitle || source.title || "";
+    const location = source.location || "";
+
+    let keywordList = [];
+
+    if (Array.isArray(source.keywords)) {
+      keywordList = source.keywords;
+    } else if (typeof source.keywords === "string") {
+      keywordList = source.keywords
+        .split(/[,;\n]/)
+        .map((k) => k.trim())
+        .filter(Boolean);
+    }
+
+    console.log("[Parsed search params]", {
+      title,
+      location,
+      keywordList,
+    });
+
+    const db = await readDB();
+    const candidateProfile = db.candidateProfile;
+
+    // 🔹 1. Hae jobit
+    const jobs = await searchJobsFromAllSources(
+      title,
+      location,
+      keywordList
+    );
+
+    // 🔹 2. Enrich
+    const enrichedJobs = jobs
+      .map((job) => enrichJob(job, candidateProfile))
+      .sort((a, b) => (b.compatibility || 0) - (a.compatibility || 0));
+
+    return {
+      jobs: enrichedJobs,
+      count: enrichedJobs.length,
+      meta: {
+        query: { title, location, keywordList },
+      },
+    };
+  }, "Jobs search")
 );
 
 export default router;

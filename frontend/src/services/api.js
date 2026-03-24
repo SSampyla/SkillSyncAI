@@ -27,10 +27,23 @@ async function apiRequest(path, options = {}) {
 }
 
 export function searchJobs(criteria) {
-	return apiRequest("/jobs/search", {
-		method: "POST",
-		body: JSON.stringify(criteria),
-	});
+  const params = new URLSearchParams();
+
+  if (criteria.jobTitle) {
+    params.append("jobTitle", criteria.jobTitle);
+  }
+
+  if (criteria.location) {
+    params.append("location", criteria.location);
+  }
+
+  if (criteria.keywords?.length) {
+    params.append("keywords", criteria.keywords.join(","));
+  }
+
+  return apiRequest(`/jobs/search?${params.toString()}`, {
+    method: "GET",
+  });
 }
 
 export function generateCoverLetterDraft(payload) {

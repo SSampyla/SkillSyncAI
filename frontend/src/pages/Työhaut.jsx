@@ -61,7 +61,7 @@ export default function Jobs() {
 
   // Funktio ympyräkaavion piirtämiseen
   const renderPieChart = (compatibility) => {
-    const angle = (compatibility / 100) * 360;
+    const angle = Math.min((compatibility / 100) * 360, 359.999); // jesari fix clamp: 0-360, koska 360 deg tarkoittaa 0.
     const largeArc = angle > 180 ? 1 : 0;
 
     const x1 = 125 + 100 * Math.cos((0 * Math.PI) / 180);

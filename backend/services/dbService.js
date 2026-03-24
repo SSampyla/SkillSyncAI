@@ -39,7 +39,7 @@ export const INITIAL_STATE = {
     },
     portfolio: createEmptyPortfolio(),
     portfolioProjects: [...MOCK_PROJECTS], // MOCK PROJEKTIT JOTKA INITIALISOIDAAN DB:hen
-    availableSkills: {
+    availableSkills: { // Frontend näyttää nämä taitolistoina, joista käyttäjä voi valita omat taitonsa.
         frontend: [
             "React.js",
             "Vue.js",
