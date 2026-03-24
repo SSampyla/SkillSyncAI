@@ -963,6 +963,55 @@ export default function AvoimetTyopaikat() {
                       </div>
                     </div>
 
+                    {/* PALAUTETUT AI-NAPIT */}
+                    <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
+                      <button
+                        onClick={() => {
+                          setCustomizationJob(job); // Oletan että tilamuuttujasi on tämä
+                          setSelectedDraftTarget("coverLetter"); // Oletan että tilamuuttujasi on tämä
+                        }}
+                        style={{
+                          flex: 1,
+                          padding: "10px",
+                          backgroundColor: "rgba(40, 61, 168, 0.08)",
+                          color: "var(--color-primary)",
+                          border: "1px solid rgba(40, 61, 168, 0.2)",
+                          borderRadius: "8px",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          cursor: "pointer",
+                          transition: "all 0.2s ease"
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "rgba(40, 61, 168, 0.15)"}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "rgba(40, 61, 168, 0.08)"}
+                      >
+                        AI-Saatekirje
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setCustomizationJob(job);
+                          setSelectedDraftTarget("cv");
+                        }}
+                        style={{
+                          flex: 1,
+                          padding: "10px",
+                          backgroundColor: "rgba(52, 199, 89, 0.08)",
+                          color: "var(--color-success)",
+                          border: "1px solid rgba(52, 199, 89, 0.2)",
+                          borderRadius: "8px",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          cursor: "pointer",
+                          transition: "all 0.2s ease"
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "rgba(52, 199, 89, 0.15)"}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "rgba(52, 199, 89, 0.08)"}
+                      >
+                        Räätälöi CV
+                      </button>
+                    </div>
+
                     <button
                       onClick={() => applyForJob(job)}
                       disabled={isApplied || saving}
