@@ -62,6 +62,23 @@ const enrichJob = (job, candidateProfile) => {
 
   const jobSkills = mapJobToMatchFormat(job);
 
+  // Tarkistetaan onko taitolista täytetty
+  const hasAnyRequirements = Object.values(jobSkills).some(skillList =>
+    Array.isArray(skillList) && skillList.length > 0
+  );
+
+  // Jos ilmoitus on täysin "geneerinen" (ei taitoja listattu), palautetaan 100%
+  if (!hasAnyRequirements) {
+    return {
+      ...job,
+      compatibility: 100,
+      recommended: true,
+      matchedSkills: [],
+      missingSkills: []
+    };
+  }
+
+  // Muussa tapauksessa lasketaan normaali match
   const compatibility = calculateMatch(jobSkills, candidateProfile) ?? 0;
   const { matchedSkills, missingSkills } = getSkillMatchList(jobSkills, candidateProfile);
 
@@ -176,9 +193,9 @@ router.post(
     // Käytetään yksinkertaista koostetta: cv_ + aikaleima + lyhyt random-pätkä
     const newVersionId = `cv_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
-    const response = { 
-      coverLetter, 
-      versionId: newVersionId 
+    const response = {
+      coverLetter,
+      versionId: newVersionId
     };
 
     // 4. Validointi ja tallennus cacheen uniikilla ID:llä
@@ -189,7 +206,7 @@ router.post(
     ) {
       // Tallennetaan ID:llä, jotta frontend voi hakea tämän uudestaan tarvittaessa
       setCache(newVersionId, response, 1000 * 60 * 60); // 1h
-      
+
       // Tallennetaan lisäksi input-perusteisella avaimella
       const inputCacheKey = createCacheKey("cover_letter", { jobText, applicantText, language, matchData });
       setCache(inputCacheKey, response, 1000 * 60 * 60);

@@ -1,14 +1,15 @@
 import Navbar from "../components/Navbar";
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { jsPDF } from "jspdf";
 import {
   searchJobs,
   generateCoverLetterDraft,
   generateEditedCvDraft,
 } from "../services/api";
+import { useAppliedJobs } from "../hooks/db/useAppliedJobs";
 import "../styles/portfolio.css";
 
-const normalize = (value) => `${value ?? ""}`.trim().toLowerCase();
+// const normalize = (value) => `${value ?? ""}`.trim().toLowerCase();
 
 const parseKeywords = (rawInput) =>
   rawInput
@@ -16,6 +17,7 @@ const parseKeywords = (rawInput) =>
     .map((k) => k.trim())
     .filter(Boolean);
 
+/*
 const matchesCriteria = (job, criteria) => {
   const titleMatch =
     !criteria.jobTitle || normalize(job.title).includes(normalize(criteria.jobTitle));
@@ -38,7 +40,8 @@ const matchesCriteria = (job, criteria) => {
     keywords.every((keyword) => searchText.includes(normalize(keyword)));
 
   return titleMatch && locationMatch && keywordMatch;
-};
+}; 
+*/
 
 const buildJobText = (job) => {
   const requiredSkills = Array.isArray(job.requiredSkills)
@@ -329,32 +332,40 @@ const drawStructuredCvPdf = (doc, structuredCv) => {
 };
 
 export default function AvoimetTyopaikat() {
-  // Hakukriteerit
+  // --- DATA HOOK ---
+  // Haetaan tallennetut työpaikat ja tallennusfunktio hookista
+  const { jobs: appliedJobs = [], saveJob, saving, loading } = useAppliedJobs();
+  const appliedIds = useMemo(() => {
+    // console.log("DEBUG: appliedJobs kanta-data:", appliedJobs);
+    return new Set(appliedJobs.map(j => String(j.id || j._id))); // Huomioidaan myös mahdolliset _id -kentät
+  }, [appliedJobs]);
+
+  // --- HAKUKRITEERIT JA TILAT ---
   const [searchCriteria, setSearchCriteria] = useState({
-    jobTitle: "Frontend Developer",
-    location: "Helsinki",
-    keywords: ["React", "JavaScript"]
+    jobTitle: "",
+    location: "",
+    keywords: []
   });
 
-  // Hakutulokset ja loading-state
   const [availableJobs, setAvailableJobs] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
-  const [keywordInput, setKeywordInput] = useState("React, JavaScript");
-  const [searchMeta, setSearchMeta] = useState({ responseTime: null, sources: [] });
+  const [keywordInput, setKeywordInput] = useState("");
+  const [searchError, setSearchError] = useState(null);
+  // const [searchMeta, setSearchMeta] = useState({ responseTime: null, sources: [] });
+
+
+  // Kustomoinnin tilat
   const [customizationJob, setCustomizationJob] = useState(null);
-  const [applicantText, setApplicantText] = useState(
-    "Kirjoita tähän oma osaamisprofiilisi: koulutus, projektit, teknologiat ja vahvuudet."
-  );
-  const [cvText, setCvText] = useState(
-    "Kirjoita tähän nykyinen CV-luonnos, jonka haluat räätälöidä tähän työpaikkaan."
-  );
+  const [applicantText, setApplicantText] = useState("Kirjoita tähän oma osaamisprofiilisi...");
+  const [cvText, setCvText] = useState("Kirjoita tähän nykyinen CV-luonnos...");
   const [coverLetterDraft, setCoverLetterDraft] = useState("");
   const [editedCvDraft, setEditedCvDraft] = useState("");
   const [editedCvStructured, setEditedCvStructured] = useState(null);
   const [draftLoading, setDraftLoading] = useState({ coverLetter: false, cv: false });
   const [draftError, setDraftError] = useState("");
   const [selectedDraftTarget, setSelectedDraftTarget] = useState("coverLetter");
+
+  // --- TOIMINNALLISUUDET ---
 
   const openCustomizationPanel = (job, draftTarget = "coverLetter") => {
     setCustomizationJob(job);
@@ -494,43 +505,28 @@ export default function AvoimetTyopaikat() {
   // Hae työpaikkoja
   const handleSearch = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setSearchError(null);
 
     const criteria = {
       ...searchCriteria,
       jobTitle: searchCriteria.jobTitle.trim(),
       location: searchCriteria.location.trim(),
-      keywords: parseKeywords(keywordInput),
+      keywords: keywordInput.split(/[,;\n]/).map(k => k.trim()).filter(Boolean),
     };
-
-    setSearchCriteria(criteria);
 
     try {
       const data = await searchJobs(criteria);
       setAvailableJobs(data.jobs || []);
-      setSearchMeta({
-        responseTime: data.responseTimeMs || null,
-        sources: data.sources || ["Kaikki lahteet"]
-      });
       setSearched(true);
     } catch (err) {
-      console.error("API virhe:", err);
-      const filteredDemoJobs = getDemoJobs().filter((job) =>
-        matchesCriteria(job, criteria)
-      );
-
-      setAvailableJobs(filteredDemoJobs);
-      setSearchMeta({
-        responseTime: null,
-        sources: ["Demo-data (suodatettu)"]
-      });
-      setSearched(true);
+      console.error("Haku epäonnistui:", err);
+      setSearchError("Työpaikkojen haku epäonnistui. Tarkista yhteys taustapalveluun.");
+      setAvailableJobs([]);
     } finally {
-      setLoading(false);
     }
   };
 
-  // Demo-data varalle
+  /* Demo-data varalle
   const getDemoJobs = () => [
     {
       id: 1,
@@ -629,16 +625,12 @@ export default function AvoimetTyopaikat() {
       source: "Yrityksen sivu"
     }
   ];
+  
 
   // Ei ladata mitään automaattisesti - vain kun käyttäjä hakee
   useEffect(() => {
     // Tyhjä aluksi, käyttäjä klikkaa "Hae työpaikkoja"
   }, []);
-
-  const [appliedJobs, setAppliedJobs] = useState(() => {
-    const saved = localStorage.getItem('appliedJobs');
-    return saved ? JSON.parse(saved) : [];
-  });
 
   // Kuuntele localStorage muutoksia (kun hakemus poistetaan Työhaut-sivulta)
   useEffect(() => {
@@ -650,13 +642,21 @@ export default function AvoimetTyopaikat() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  const applyForJob = (job) => {
-    if (!appliedJobs.find(applied => applied.id === job.id)) {
-      const newApplied = [...appliedJobs, job];
-      setAppliedJobs(newApplied);
-      localStorage.setItem('appliedJobs', JSON.stringify(newApplied));
-      // Trigger storage event for other tabs
-      window.dispatchEvent(new Event('storage'));
+    */
+
+  const applyForJob = async (job) => {
+    if (loading || saving) return;
+
+    const alreadyApplied = appliedJobs.some(a => String(a.id) === String(job.id));
+    if (alreadyApplied) {
+      console.log("Tämä työpaikka on jo haettu (tietokannassa).");
+      return;
+    }
+
+    try {
+      await saveJob(String(job.id), job);
+    } catch (err) {
+      console.error("Tallennus epäonnistui:", err);
     }
   };
 
@@ -702,683 +702,638 @@ export default function AvoimetTyopaikat() {
       <hr className="divider" />
 
       <div className="portfolio-page">
-      <div className="portfolio-container">
-        <h1 style={{ marginBottom: "10px", color: "var(--text-primary)", fontSize: "2.5rem" }}>Avoimet Työpaikat</h1>
-        <p style={{ color: "var(--text-secondary)", marginBottom: "10px", fontSize: "1.1rem" }}>
-          Löydä sinulle sopivia työpaikkoja
-        </p>
-
-        {/* Hakumuoto */}
-        <form onSubmit={handleSearch} style={{ marginBottom: "30px", padding: "20px", backgroundColor: "rgba(40, 61, 168, 0.10)", borderRadius: "16px", border: "1px solid rgba(40, 61, 168, 0.24)" }}>
-          <h3 style={{ color: "var(--text-primary)", marginTop: 0 }}>Automaattinen Haku</h3>
-          
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "15px", marginBottom: "15px" }}>
-            <div>
-              <label style={{ display: "block", color: "var(--text-secondary)", marginBottom: "5px", fontSize: "0.9rem", fontWeight: "500" }}>
-                Tehtävän nimi
-              </label>
-              <input
-                type="text"
-                value={searchCriteria.jobTitle}
-                onChange={(e) => setSearchCriteria({ ...searchCriteria, jobTitle: e.target.value })}
-                placeholder="esim. Frontend Developer"
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  backgroundColor: "var(--surface-glass)",
-                  border: "1px solid var(--border-soft-82)",
-                  borderRadius: "8px",
-                  color: "var(--text-primary)",
-                  fontSize: "0.95rem"
-                }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: "block", color: "var(--text-secondary)", marginBottom: "5px", fontSize: "0.9rem", fontWeight: "500" }}>
-                Sijainti
-              </label>
-              <input
-                type="text"
-                value={searchCriteria.location}
-                onChange={(e) => setSearchCriteria({ ...searchCriteria, location: e.target.value })}
-                placeholder="esim. Helsinki, Remote"
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  backgroundColor: "var(--surface-glass)",
-                  border: "1px solid var(--border-soft-82)",
-                  borderRadius: "8px",
-                  color: "var(--text-primary)",
-                  fontSize: "0.95rem"
-                }}
-              />
-            </div>
-
-          </div>
-
-          <div style={{ marginBottom: "15px" }}>
-            <label style={{ display: "block", color: "var(--text-secondary)", marginBottom: "5px", fontSize: "0.9rem", fontWeight: "500" }}>
-              Avainsanat (pilkulla erotettu)
-            </label>
-            <input
-              type="text"
-              value={keywordInput}
-              onChange={(e) => {
-                setKeywordInput(e.target.value);
-                setSearchCriteria({
-                  ...searchCriteria,
-                  keywords: parseKeywords(e.target.value),
-                });
-              }}
-              placeholder="esim. React, JavaScript, TypeScript"
-              style={{
-                width: "100%",
-                padding: "10px",
-                backgroundColor: "var(--surface-glass)",
-                border: "1px solid var(--border-soft-82)",
-                borderRadius: "8px",
-                color: "var(--text-primary)",
-                fontSize: "0.95rem"
-              }}
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              padding: "12px 30px",
-              background: loading ? "var(--border-soft-82)" : "linear-gradient(135deg, var(--color-primary), var(--color-primary-strong))",
-              color: "#ffffff",
-              border: "none",
-              borderRadius: "10px",
-              fontSize: "1rem",
-              fontWeight: "600",
-              cursor: loading ? "wait" : "pointer",
-              transition: "all 0.3s ease",
-              boxShadow: loading ? "none" : "0 4px 12px rgba(40, 61, 168, 0.24)"
-            }}
-            onMouseEnter={(e) => {
-              if (!loading) {
-                e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow = "0 6px 16px rgba(40, 61, 168, 0.32)";
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!loading) {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 4px 12px rgba(40, 61, 168, 0.24)";
-              }
-            }}
-          >
-            {loading ? "Haetaan..." : "Hae työpaikkoja"}
-          </button>
-        </form>
-
-        {!searched && !loading && (
-          <div style={{
-            textAlign: "center",
-            padding: "60px 20px",
-            color: "var(--text-secondary)",
-            fontSize: "1.1rem"
-          }}>
-            <p>Käytä hakumuotoa etsiäksesi sinulle sopivia työpaikkoja</p>
-            <p style={{ fontSize: "0.9rem", color: "var(--text-muted)", marginTop: "10px" }}>
-              Haku käy läpi Duunitori, LinkedIn ja yritysten omat sivut
-            </p>
-          </div>
-        )}
-
-        {searched && availableJobs.length === 0 && (
-          <p style={{ color: "#ef4444", fontSize: "1.1rem", textAlign: "center", padding: "20px" }}>
-            Ei löytynyt työpaikkoja annettujen kriteerien perusteella.
+        <div className="portfolio-container">
+          <h1 style={{ marginBottom: "10px", color: "var(--text-primary)", fontSize: "2.5rem" }}>Avoimet Työpaikat</h1>
+          <p style={{ color: "var(--text-secondary)", marginBottom: "10px", fontSize: "1.1rem" }}>
+            Löydä sinulle sopivia työpaikkoja
           </p>
-        )}
 
-        {availableJobs.length > 0 && (
-          <div style={{ marginBottom: "20px" }}>
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem", marginBottom: "8px" }}>
-              Löytyi {availableJobs.length} työpaikkaa
-              {searchMeta.responseTime && ` (haettu ${searchMeta.responseTime}ms)`}
-            </p>
-            {searchMeta.sources && searchMeta.sources.length > 0 && (
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                {searchMeta.sources.map((source, idx) => (
-                  <span key={idx} style={{
-                    display: "inline-block",
-                    padding: "4px 10px",
-                    backgroundColor: "rgba(40, 61, 168, 0.16)",
-                    color: "var(--color-primary)",
-                    borderRadius: "6px",
-                    fontSize: "12px",
-                    fontWeight: "500"
-                  }}>
-                    {source}
-                  </span>
-                ))}
+          {/* Hakumuoto */}
+          <form onSubmit={handleSearch} style={{ marginBottom: "30px", padding: "20px", backgroundColor: "rgba(40, 61, 168, 0.10)", borderRadius: "16px", border: "1px solid rgba(40, 61, 168, 0.24)" }}>
+            <h3 style={{ color: "var(--text-primary)", marginTop: 0 }}>Automaattinen Haku</h3>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "15px", marginBottom: "15px" }}>
+              <div>
+                <label style={{ display: "block", color: "var(--text-secondary)", marginBottom: "5px", fontSize: "0.9rem", fontWeight: "500" }}>
+                  Tehtävän nimi
+                </label>
+                <input
+                  type="text"
+                  value={searchCriteria.jobTitle}
+                  onChange={(e) => setSearchCriteria({ ...searchCriteria, jobTitle: e.target.value })}
+                  placeholder="esim. Frontend Developer"
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    backgroundColor: "var(--surface-glass)",
+                    border: "1px solid var(--border-soft-82)",
+                    borderRadius: "8px",
+                    color: "var(--text-primary)",
+                    fontSize: "0.95rem"
+                  }}
+                />
               </div>
-            )}
-          </div>
-        )}
 
-        {availableJobs.length > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px" }}>
-            {availableJobs.map((job) => {
-              const isApplied = appliedJobs.find(applied => applied.id === job.id);
-              return (
-              <div
-                key={job.id}
+              <div>
+                <label style={{ display: "block", color: "var(--text-secondary)", marginBottom: "5px", fontSize: "0.9rem", fontWeight: "500" }}>
+                  Sijainti
+                </label>
+                <input
+                  type="text"
+                  value={searchCriteria.location}
+                  onChange={(e) => setSearchCriteria({ ...searchCriteria, location: e.target.value })}
+                  placeholder="esim. Helsinki, Remote"
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    backgroundColor: "var(--surface-glass)",
+                    border: "1px solid var(--border-soft-82)",
+                    borderRadius: "8px",
+                    color: "var(--text-primary)",
+                    fontSize: "0.95rem"
+                  }}
+                />
+              </div>
+
+            </div>
+
+            <div style={{ marginBottom: "15px" }}>
+              <label style={{ display: "block", color: "var(--text-secondary)", marginBottom: "5px", fontSize: "0.9rem", fontWeight: "500" }}>
+                Avainsanat (pilkulla erotettu)
+              </label>
+              <input
+                type="text"
+                value={keywordInput}
+                onChange={(e) => {
+                  setKeywordInput(e.target.value);
+                  setSearchCriteria({
+                    ...searchCriteria,
+                    keywords: parseKeywords(e.target.value),
+                  });
+                }}
+                placeholder="esim. React, JavaScript, TypeScript"
                 style={{
-                  padding: "24px",
-                  border: "1px solid var(--border-soft-72)",
-                  borderRadius: "16px",
+                  width: "100%",
+                  padding: "10px",
                   backgroundColor: "var(--surface-glass)",
-                  backdropFilter: "blur(10px)",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-                  transition: "all 0.3s ease",
+                  border: "1px solid var(--border-soft-82)",
+                  borderRadius: "8px",
+                  color: "var(--text-primary)",
+                  fontSize: "0.95rem"
                 }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-5px)";
-                  e.currentTarget.style.borderColor = "rgba(40, 61, 168, 0.32)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.borderColor = "var(--border-soft-72)";
-                }}
-              >
-                <h3 style={{ margin: "0 0 10px 0", color: "var(--color-primary)", fontSize: "1.4rem" }}>{job.title}</h3>
-                <p style={{ margin: "0 0 15px 0", fontSize: "16px", color: "var(--text-secondary)" }}>
-                  <strong>{job.company}</strong> • {job.location}
-                </p>
+              />
+            </div>
 
-                {/* Lähde-badge */}
-                <div style={{ marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{
-                    display: "inline-block",
-                    padding: "4px 12px",
-                    backgroundColor: 
-                      job.source === "Duunitori" ? "rgba(255, 107, 107, 0.2)" :
-                      job.source === "LinkedIn" ? "rgba(0, 102, 153, 0.2)" :
-                      job.source === "Yrityksen sivu" ? "rgba(40, 61, 168, 0.16)" :
-                      "var(--border-soft-72)",
-                    color: 
-                      job.source === "Duunitori" ? "#ef4444" :
-                      job.source === "LinkedIn" ? "#06b6d4" :
-                      job.source === "Yrityksen sivu" ? "var(--color-primary)" :
-                      "var(--text-muted)",
-                    borderRadius: "6px",
-                    fontSize: "12px",
-                    fontWeight: "500"
-                  }}>
-                    {job.source}
-                  </span>
-                </div>
-                <div style={{ display: "flex", gap: "20px", alignItems: "center", marginBottom: "15px" }}>
-                  <div style={{ flexShrink: 0 }}>
-                    {renderPieChart(job.compatibility)}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px", color: "var(--text-muted)" }}>
-                      <span>💰 {job.salary}</span>
-                      <span>Tyyppi: {job.type}</span>
-                      <span>Julkaistu: {job.posted}</span>
-                      {job.recommended && <span style={{ color: "var(--color-success)", fontWeight: "600" }}>Suositeltu sinulle</span>}
-                    </div>
-                  </div>
-                </div>
-
-                <p style={{ color: "var(--text-secondary)", marginBottom: "15px", lineHeight: "1.6" }}>{job.description}</p>
-
-                <div style={{ marginBottom: "15px" }}>
-                  <h4 style={{ margin: "0 0 8px 0", fontSize: "14px", color: "var(--text-primary)" }}>Vaaditut Taidot:</h4>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                    {job.requiredSkills.map((skill) => {
-                      const isMatched = job.matchedSkills.includes(skill);
-                      return (
-                        <span
-                          key={skill}
-                          style={{
-                            padding: "6px 12px",
-                            backgroundColor: isMatched ? "rgba(76, 185, 68, 0.2)" : "rgba(239, 68, 68, 0.2)",
-                            color: isMatched ? "var(--color-success)" : "#ef4444",
-                            border: `1px solid ${isMatched ? "rgba(76, 185, 68, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
-                            borderRadius: "8px",
-                            fontSize: "12px",
-                            fontWeight: "500",
-                          }}
-                        >
-                          {isMatched ? "Sopii: " : "Puuttuu: "}
-                          {skill}
-                        </span>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "10px" }}>
-                  <button
-                    onClick={() => applyForJob(job)}
-                    disabled={isApplied}
-                    style={{
-                      width: "100%",
-                      padding: "12px 24px",
-                      background: isApplied ? "var(--border-soft-82)" : "linear-gradient(135deg, var(--color-primary), var(--color-primary-strong))",
-                      color: "#ffffff",
-                      border: isApplied ? "1px solid var(--border-soft-82)" : "none",
-                      borderRadius: "10px",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      cursor: isApplied ? "not-allowed" : "pointer",
-                      transition: "all 0.3s ease",
-                      boxShadow: isApplied ? "none" : "0 4px 12px rgba(40, 61, 168, 0.24)",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isApplied) {
-                        e.currentTarget.style.transform = "translateY(-2px)";
-                        e.currentTarget.style.boxShadow = "0 6px 16px rgba(40, 61, 168, 0.32)";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isApplied) {
-                        e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow = "0 4px 12px rgba(40, 61, 168, 0.24)";
-                      }
-                    }}
-                  >
-                    {isApplied ? "Hakemus lähetetty" : "Hae työpaikkaa"}
-                  </button>
-
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                    <button
-                      onClick={() => openCustomizationPanel(job, "coverLetter")}
-                      style={{
-                        width: "100%",
-                        padding: "11px 12px",
-                        backgroundColor: "rgba(40, 61, 168, 0.1)",
-                        color: "var(--color-primary)",
-                        border: "1px solid rgba(40, 61, 168, 0.3)",
-                        borderRadius: "10px",
-                        fontSize: "13px",
-                        fontWeight: "700",
-                        cursor: "pointer",
-                      }}
-                    >
-                      AI Saatekirje
-                    </button>
-
-                    <button
-                      onClick={() => openCustomizationPanel(job, "cv")}
-                      style={{
-                        width: "100%",
-                        padding: "11px 12px",
-                        backgroundColor: "rgba(52, 199, 89, 0.12)",
-                        color: "var(--color-success)",
-                        border: "1px solid rgba(52, 199, 89, 0.3)",
-                        borderRadius: "10px",
-                        fontSize: "13px",
-                        fontWeight: "700",
-                        cursor: "pointer",
-                      }}
-                    >
-                      AI CV
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-          </div>
-        )}
-
-        {customizationJob && (
-          <div
-            onClick={closeCustomizationPanel}
-            style={{
-              position: "fixed",
-              inset: 0,
-              backgroundColor: "rgba(2, 6, 23, 0.75)",
-              zIndex: 2000,
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              padding: "20px",
-            }}
-          >
-            <div
-              onClick={(e) => e.stopPropagation()}
+            <button
+              type="submit"
+              disabled={loading}
               style={{
-                width: "min(920px, 100%)",
-                maxHeight: "90vh",
-                overflowY: "auto",
-                backgroundColor: "var(--surface-soft)",
-                border: "1px solid var(--border-soft-78)",
-                borderRadius: "16px",
-                padding: "24px",
+                padding: "12px 30px",
+                background: loading ? "var(--border-soft-82)" : "linear-gradient(135deg, var(--color-primary), var(--color-primary-strong))",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: "10px",
+                fontSize: "1rem",
+                fontWeight: "600",
+                cursor: loading ? "wait" : "pointer",
+                transition: "all 0.3s ease",
+                boxShadow: loading ? "none" : "0 4px 12px rgba(40, 61, 168, 0.24)"
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = "0 6px 16px rgba(40, 61, 168, 0.32)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!loading) {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(40, 61, 168, 0.24)";
+                }
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "center", marginBottom: "12px" }}>
-                <div>
-                  <h3 style={{ margin: 0, color: "var(--text-primary)" }}>AI-räätälöinti: {customizationJob.title}</h3>
-                  <p style={{ margin: "6px 0 0 0", color: "var(--text-muted)", fontSize: "14px" }}>
-                    Luo työpaikkakohtainen saatekirjeluonnos ja CV-luonnos tämän ilmoituksen painotusten mukaan.
-                  </p>
-                  <p style={{ margin: "6px 0 0 0", color: "var(--text-secondary)", fontSize: "13px", fontWeight: "600" }}>
-                    Avattu: {selectedDraftTarget === "coverLetter" ? "Saatekirje" : "CV"}
-                  </p>
-                </div>
-                <button
-                  onClick={closeCustomizationPanel}
-                  style={{
-                    border: "1px solid var(--border-soft-90)",
-                    background: "transparent",
-                    color: "var(--text-secondary)",
-                    borderRadius: "8px",
-                    padding: "8px 10px",
-                    cursor: "pointer",
-                  }}
-                >
-                  Sulje
-                </button>
-              </div>
+              {loading ? "Haetaan..." : "Hae työpaikkoja"}
+            </button>
+          </form>
 
-              {selectedDraftTarget === "coverLetter" && (
-                <>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "14px", marginBottom: "14px" }}>
-                    <label style={{ color: "var(--text-secondary)", fontSize: "14px", fontWeight: "600" }}>
-                      Oma osaamisprofiili (saatekirjeen pohja)
-                    </label>
-                    <textarea
-                      value={applicantText}
-                      onChange={(e) => setApplicantText(e.target.value)}
+          {searchError && (
+            <div style={{ marginBottom: "20px", padding: "16px", backgroundColor: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: "10px", color: "#ef4444", textAlign: "center" }}>
+              <p style={{ margin: 0, fontWeight: "500" }}>{searchError}</p>
+            </div>
+          )}
+
+          {!searched && !loading && (
+            <div style={{
+              textAlign: "center",
+              padding: "60px 20px",
+              color: "var(--text-secondary)",
+              fontSize: "1.1rem"
+            }}>
+              <p>Käytä hakumuotoa etsiäksesi sinulle sopivia työpaikkoja</p>
+              <p style={{ fontSize: "0.9rem", color: "var(--text-muted)", marginTop: "10px" }}>
+                Haku käy läpi Duunitori, LinkedIn ja yritysten omat sivut
+              </p>
+            </div>
+          )}
+
+          {searched && availableJobs.length === 0 && (
+            <p style={{ color: "#ef4444", fontSize: "1.1rem", textAlign: "center", padding: "20px" }}>
+              Ei löytynyt työpaikkoja annettujen kriteerien perusteella.
+            </p>
+          )}
+
+
+          {availableJobs.length > 0 && (
+            <div style={{ marginBottom: "20px" }}>
+              <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem", marginBottom: "8px" }}>
+                Löytyi {availableJobs.length} työpaikkaa
+              </p>
+            </div>
+          )}
+
+          {availableJobs.length > 0 && (
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))",
+              gap: "24px",
+              width: "100%"
+            }}>
+              {availableJobs.map((job) => {
+                const jobIdStr = String(job.id);
+                const isApplied = appliedIds.has(jobIdStr);
+                return (
+                  <div
+                    key={job.id}
+                    style={{
+                      padding: "24px",
+                      border: "1px solid var(--border-soft-72)",
+                      borderRadius: "16px",
+                      backgroundColor: "var(--surface-glass)",
+                      backdropFilter: "blur(10px)",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                      transition: "all 0.3s ease",
+                      display: "flex",
+                      flexDirection: "column"
+                    }}
+                  >
+                    <h3 style={{ margin: "0 0 10px 0", color: "var(--color-primary)", fontSize: "1.4rem" }}>{job.title}</h3>
+
+                    <p style={{ margin: "0 0 15px 0", fontSize: "16px", color: "var(--text-secondary)" }}>
+                      <strong>{job.company}</strong> • {job.location}
+                    </p>
+
+                    <div style={{ marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{
+                        display: "inline-block",
+                        padding: "4px 12px",
+                        backgroundColor: job.source === "LinkedIn" ? "rgba(0, 102, 153, 0.2)" : "rgba(40, 61, 168, 0.16)",
+                        color: job.source === "LinkedIn" ? "#06b6d4" : "var(--color-primary)",
+                        borderRadius: "6px",
+                        fontSize: "12px",
+                        fontWeight: "500"
+                      }}>
+                        {job.source}
+                      </span>
+                    </div>
+
+                    <div style={{ display: "flex", gap: "20px", alignItems: "flex-start", marginBottom: "15px" }}>
+                      <div style={{ flexShrink: 0 }}>
+                        {renderPieChart(job.compatibility)}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px", color: "var(--text-muted)" }}>
+                          {/* PALKKA: Näytetään vain jos se on olemassa ja järkevä */}
+                          {job.salary && job.salary !== "Ei ilmoitettu" && <span>💰 {job.salary}</span>}
+                          <span>Tyyppi: {job.type}</span>
+                          <span>Julkaistu: {job.posted}</span>
+                          {job.recommended && <span style={{ color: "var(--color-success)", fontWeight: "600" }}>Suositeltu sinulle</span>}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* KUVAUS: Leikattu siististi 3 riviin */}
+                    <p style={{
+                      color: "var(--text-secondary)",
+                      marginBottom: "15px",
+                      lineHeight: "1.5",
+                      fontSize: "0.95rem",
+                      display: "-webkit-box",
+                      WebkitLineClamp: "3",
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                      height: "4.5em"
+                    }}>
+                      {job.description}
+                    </p>
+
+                    {/* TAIDOT: Nyt mahtuu noin 3 riviä taitoja */}
+                    <div style={{ marginBottom: "15px", flexGrow: 1 }}>
+                      <h4 style={{ margin: "0 0 8px 0", fontSize: "14px", color: "var(--text-primary)" }}>Vaaditut Taidot:</h4>
+                      <div style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: "8px",
+                        height: "105px",
+                        overflow: "hidden",
+                        alignContent: "flex-start"
+                      }}>
+                        {job.requiredSkills.map((skill) => {
+                          const isMatched = job.matchedSkills.includes(skill);
+                          return (
+                            <span
+                              key={skill}
+                              style={{
+                                padding: "6px 12px",
+                                // Poistettu kiinteä height, jotta teksti ei leikkaudu
+                                backgroundColor: isMatched ? "rgba(76, 185, 68, 0.2)" : "rgba(239, 68, 68, 0.2)",
+                                color: isMatched ? "var(--color-success)" : "#ef4444",
+                                border: `1px solid ${isMatched ? "rgba(76, 185, 68, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
+                                borderRadius: "8px",
+                                fontSize: "12px",
+                                fontWeight: "500",
+                                whiteSpace: "nowrap",
+                                lineHeight: "1.2"
+                              }}
+                            >
+                              {isMatched ? "Sopii: " : "Puuttuu: "}
+                              {skill}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => applyForJob(job)}
+                      disabled={isApplied || saving}
                       style={{
                         width: "100%",
-                        minHeight: "140px",
-                        borderRadius: "10px",
-                        border: "1px solid var(--border-soft-82)",
-                        backgroundColor: "var(--surface-input)",
-                        color: "var(--text-primary)",
-                        padding: "12px",
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "14px" }}>
-                    <button
-                      onClick={createCoverLetter}
-                      disabled={draftLoading.coverLetter}
-                      style={{
-                        padding: "10px 16px",
-                        borderRadius: "10px",
+                        padding: "12px 24px",
+                        background: isApplied ? "var(--border-soft-82)" : "linear-gradient(135deg, var(--color-primary), var(--color-primary-strong))",
+                        color: "#ffffff",
                         border: "none",
-                        background: "linear-gradient(135deg, var(--color-primary), var(--color-primary-strong))",
-                        color: "white",
-                        cursor: draftLoading.coverLetter ? "wait" : "pointer",
+                        borderRadius: "10px",
+                        fontSize: "14px",
                         fontWeight: "600",
+                        cursor: isApplied ? "not-allowed" : "pointer"
                       }}
                     >
-                      {draftLoading.coverLetter ? "Luodaan saatekirjettä..." : "Luo saatekirjeluonnos"}
-                    </button>
-
-                    <button
-                      onClick={() => downloadDraftAsPdf("coverLetter")}
-                      disabled={!coverLetterDraft.trim()}
-                      style={{
-                        padding: "10px 14px",
-                        borderRadius: "8px",
-                        border: "1px solid rgba(40, 61, 168, 0.35)",
-                        backgroundColor: !coverLetterDraft.trim() ? "rgba(51, 65, 85, 0.45)" : "rgba(40, 61, 168, 0.12)",
-                        color: !coverLetterDraft.trim() ? "var(--text-muted)" : "var(--color-primary)",
-                        cursor: !coverLetterDraft.trim() ? "not-allowed" : "pointer",
-                        fontWeight: "600",
-                      }}
-                    >
-                      Lataa saatekirje PDF
+                      {isApplied ? "Hakemus lähetetty" : "Hae työpaikkaa"}
                     </button>
                   </div>
-                </>
-              )}
+                );
+              })}
+            </div>
+          )}
 
-              {selectedDraftTarget === "cv" && (
-                <>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "14px", marginBottom: "14px" }}>
-                    <label style={{ color: "var(--text-secondary)", fontSize: "14px", fontWeight: "600" }}>
-                      Nykyinen CV-teksti (CV-räätälöintiä varten)
-                    </label>
+          {customizationJob && (
+            <div
+              onClick={closeCustomizationPanel}
+              style={{
+                position: "fixed",
+                inset: 0,
+                backgroundColor: "rgba(2, 6, 23, 0.75)",
+                zIndex: 2000,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                padding: "20px",
+              }}
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  width: "min(920px, 100%)",
+                  maxHeight: "90vh",
+                  overflowY: "auto",
+                  backgroundColor: "var(--surface-soft)",
+                  border: "1px solid var(--border-soft-78)",
+                  borderRadius: "16px",
+                  padding: "24px",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "center", marginBottom: "12px" }}>
+                  <div>
+                    <h3 style={{ margin: 0, color: "var(--text-primary)" }}>AI-räätälöinti: {customizationJob.title}</h3>
+                    <p style={{ margin: "6px 0 0 0", color: "var(--text-muted)", fontSize: "14px" }}>
+                      Luo työpaikkakohtainen saatekirjeluonnos ja CV-luonnos tämän ilmoituksen painotusten mukaan.
+                    </p>
+                    <p style={{ margin: "6px 0 0 0", color: "var(--text-secondary)", fontSize: "13px", fontWeight: "600" }}>
+                      Avattu: {selectedDraftTarget === "coverLetter" ? "Saatekirje" : "CV"}
+                    </p>
+                  </div>
+                  <button
+                    onClick={closeCustomizationPanel}
+                    style={{
+                      border: "1px solid var(--border-soft-90)",
+                      background: "transparent",
+                      color: "var(--text-secondary)",
+                      borderRadius: "8px",
+                      padding: "8px 10px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Sulje
+                  </button>
+                </div>
+
+                {selectedDraftTarget === "coverLetter" && (
+                  <>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "14px", marginBottom: "14px" }}>
+                      <label style={{ color: "var(--text-secondary)", fontSize: "14px", fontWeight: "600" }}>
+                        Oma osaamisprofiili (saatekirjeen pohja)
+                      </label>
+                      <textarea
+                        value={applicantText}
+                        onChange={(e) => setApplicantText(e.target.value)}
+                        style={{
+                          width: "100%",
+                          minHeight: "140px",
+                          borderRadius: "10px",
+                          border: "1px solid var(--border-soft-82)",
+                          backgroundColor: "var(--surface-input)",
+                          color: "var(--text-primary)",
+                          padding: "12px",
+                        }}
+                      />
+                    </div>
+
+                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "14px" }}>
+                      <button
+                        onClick={createCoverLetter}
+                        disabled={draftLoading.coverLetter}
+                        style={{
+                          padding: "10px 16px",
+                          borderRadius: "10px",
+                          border: "none",
+                          background: "linear-gradient(135deg, var(--color-primary), var(--color-primary-strong))",
+                          color: "white",
+                          cursor: draftLoading.coverLetter ? "wait" : "pointer",
+                          fontWeight: "600",
+                        }}
+                      >
+                        {draftLoading.coverLetter ? "Luodaan saatekirjettä..." : "Luo saatekirjeluonnos"}
+                      </button>
+
+                      <button
+                        onClick={() => downloadDraftAsPdf("coverLetter")}
+                        disabled={!coverLetterDraft.trim()}
+                        style={{
+                          padding: "10px 14px",
+                          borderRadius: "8px",
+                          border: "1px solid rgba(40, 61, 168, 0.35)",
+                          backgroundColor: !coverLetterDraft.trim() ? "rgba(51, 65, 85, 0.45)" : "rgba(40, 61, 168, 0.12)",
+                          color: !coverLetterDraft.trim() ? "var(--text-muted)" : "var(--color-primary)",
+                          cursor: !coverLetterDraft.trim() ? "not-allowed" : "pointer",
+                          fontWeight: "600",
+                        }}
+                      >
+                        Lataa saatekirje PDF
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {selectedDraftTarget === "cv" && (
+                  <>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "14px", marginBottom: "14px" }}>
+                      <label style={{ color: "var(--text-secondary)", fontSize: "14px", fontWeight: "600" }}>
+                        Nykyinen CV-teksti (CV-räätälöintiä varten)
+                      </label>
+                      <textarea
+                        value={cvText}
+                        onChange={(e) => setCvText(e.target.value)}
+                        style={{
+                          width: "100%",
+                          minHeight: "180px",
+                          borderRadius: "10px",
+                          border: "1px solid var(--border-soft-82)",
+                          backgroundColor: "var(--surface-input)",
+                          color: "var(--text-primary)",
+                          padding: "12px",
+                        }}
+                      />
+                    </div>
+
+                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "14px" }}>
+                      <button
+                        onClick={createEditedCv}
+                        disabled={draftLoading.cv}
+                        style={{
+                          padding: "10px 16px",
+                          borderRadius: "10px",
+                          border: "none",
+                          background: "linear-gradient(135deg, var(--color-success), #2ea54b)",
+                          color: "white",
+                          cursor: draftLoading.cv ? "wait" : "pointer",
+                          fontWeight: "600",
+                        }}
+                      >
+                        {draftLoading.cv ? "Räätälöidään CV:tä..." : "Räätälöi CV-luonnos"}
+                      </button>
+
+                      <button
+                        onClick={() => downloadDraftAsPdf("cv")}
+                        disabled={!editedCvDraft.trim()}
+                        style={{
+                          padding: "10px 14px",
+                          borderRadius: "8px",
+                          border: "1px solid rgba(52, 199, 89, 0.4)",
+                          backgroundColor: !editedCvDraft.trim() ? "rgba(51, 65, 85, 0.45)" : "rgba(52, 199, 89, 0.14)",
+                          color: !editedCvDraft.trim() ? "var(--text-muted)" : "var(--color-success)",
+                          cursor: !editedCvDraft.trim() ? "not-allowed" : "pointer",
+                          fontWeight: "600",
+                        }}
+                      >
+                        Lataa CV PDF
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {draftError && (
+                  <p style={{ margin: "0 0 14px 0", color: "#f87171", fontSize: "14px" }}>
+                    {draftError}
+                  </p>
+                )}
+
+                {selectedDraftTarget === "coverLetter" && coverLetterDraft && (
+                  <div style={{ marginBottom: "14px" }}>
+                    <h4 style={{ margin: "0 0 8px 0", color: "var(--text-primary)" }}>Saatekirjeluonnos</h4>
                     <textarea
-                      value={cvText}
-                      onChange={(e) => setCvText(e.target.value)}
+                      value={coverLetterDraft}
+                      onChange={(e) => setCoverLetterDraft(e.target.value)}
                       style={{
                         width: "100%",
                         minHeight: "180px",
                         borderRadius: "10px",
-                        border: "1px solid var(--border-soft-82)",
+                        border: "1px solid var(--border-soft-90)",
                         backgroundColor: "var(--surface-input)",
                         color: "var(--text-primary)",
                         padding: "12px",
                       }}
                     />
                   </div>
+                )}
 
-                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "14px" }}>
-                    <button
-                      onClick={createEditedCv}
-                      disabled={draftLoading.cv}
-                      style={{
-                        padding: "10px 16px",
-                        borderRadius: "10px",
-                        border: "none",
-                        background: "linear-gradient(135deg, var(--color-success), #2ea54b)",
-                        color: "white",
-                        cursor: draftLoading.cv ? "wait" : "pointer",
-                        fontWeight: "600",
-                      }}
-                    >
-                      {draftLoading.cv ? "Räätälöidään CV:tä..." : "Räätälöi CV-luonnos"}
-                    </button>
+                {selectedDraftTarget === "cv" && editedCvDraft && (
+                  <div style={{ display: "grid", gap: "14px" }}>
+                    <h4 style={{ margin: "0 0 8px 0", color: "var(--text-primary)" }}>Räätälöity CV-luonnos</h4>
 
-                    <button
-                      onClick={() => downloadDraftAsPdf("cv")}
-                      disabled={!editedCvDraft.trim()}
-                      style={{
-                        padding: "10px 14px",
-                        borderRadius: "8px",
-                        border: "1px solid rgba(52, 199, 89, 0.4)",
-                        backgroundColor: !editedCvDraft.trim() ? "rgba(51, 65, 85, 0.45)" : "rgba(52, 199, 89, 0.14)",
-                        color: !editedCvDraft.trim() ? "var(--text-muted)" : "var(--color-success)",
-                        cursor: !editedCvDraft.trim() ? "not-allowed" : "pointer",
-                        fontWeight: "600",
-                      }}
-                    >
-                      Lataa CV PDF
-                    </button>
-                  </div>
-                </>
-              )}
-
-              {draftError && (
-                <p style={{ margin: "0 0 14px 0", color: "#f87171", fontSize: "14px" }}>
-                  {draftError}
-                </p>
-              )}
-
-              {selectedDraftTarget === "coverLetter" && coverLetterDraft && (
-                <div style={{ marginBottom: "14px" }}>
-                  <h4 style={{ margin: "0 0 8px 0", color: "var(--text-primary)" }}>Saatekirjeluonnos</h4>
-                  <textarea
-                    value={coverLetterDraft}
-                    onChange={(e) => setCoverLetterDraft(e.target.value)}
-                    style={{
-                      width: "100%",
-                      minHeight: "180px",
-                      borderRadius: "10px",
-                      border: "1px solid var(--border-soft-90)",
-                      backgroundColor: "var(--surface-input)",
-                      color: "var(--text-primary)",
-                      padding: "12px",
-                    }}
-                  />
-                </div>
-              )}
-
-              {selectedDraftTarget === "cv" && editedCvDraft && (
-                <div style={{ display: "grid", gap: "14px" }}>
-                  <h4 style={{ margin: "0 0 8px 0", color: "var(--text-primary)" }}>Räätälöity CV-luonnos</h4>
-
-                  {editedCvStructured && (
-                    <div style={{
-                      padding: "18px",
-                      borderRadius: "18px",
-                      border: "1px solid rgba(148, 163, 184, 0.22)",
-                      background: "linear-gradient(180deg, rgba(245, 241, 232, 0.92), rgba(235, 229, 214, 0.88))",
-                      overflowX: "auto",
-                    }}>
+                    {editedCvStructured && (
                       <div style={{
-                        width: "100%",
-                        maxWidth: "760px",
-                        margin: "0 auto",
-                        backgroundColor: "#fffdf8",
-                        color: "#111827",
-                        borderRadius: "6px",
-                        boxShadow: "0 18px 40px rgba(15, 23, 42, 0.18)",
-                        padding: "34px 38px 30px",
-                        fontFamily: '"Georgia", "Times New Roman", serif',
+                        padding: "18px",
+                        borderRadius: "18px",
+                        border: "1px solid rgba(148, 163, 184, 0.22)",
+                        background: "linear-gradient(180deg, rgba(245, 241, 232, 0.92), rgba(235, 229, 214, 0.88))",
+                        overflowX: "auto",
                       }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", gap: "24px", alignItems: "flex-start" }}>
-                          <div style={{ flex: "1 1 auto" }}>
-                            <div style={{ fontSize: "34px", fontWeight: "700", lineHeight: 1.05, marginBottom: "10px" }}>
-                              {editedCvStructured.fullName || "Nimetön hakija"}
+                        <div style={{
+                          width: "100%",
+                          maxWidth: "760px",
+                          margin: "0 auto",
+                          backgroundColor: "#fffdf8",
+                          color: "#111827",
+                          borderRadius: "6px",
+                          boxShadow: "0 18px 40px rgba(15, 23, 42, 0.18)",
+                          padding: "34px 38px 30px",
+                          fontFamily: '"Georgia", "Times New Roman", serif',
+                        }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", gap: "24px", alignItems: "flex-start" }}>
+                            <div style={{ flex: "1 1 auto" }}>
+                              <div style={{ fontSize: "34px", fontWeight: "700", lineHeight: 1.05, marginBottom: "10px" }}>
+                                {editedCvStructured.fullName || "Nimetön hakija"}
+                              </div>
+                              {editedCvStructured.headline && (
+                                <div style={{ fontSize: "16px", lineHeight: 1.4 }}>{editedCvStructured.headline}</div>
+                              )}
                             </div>
-                            {editedCvStructured.headline && (
-                              <div style={{ fontSize: "16px", lineHeight: 1.4 }}>{editedCvStructured.headline}</div>
-                            )}
+
+                            <div style={{ minWidth: "180px", textAlign: "right", fontSize: "13px", lineHeight: 1.5 }}>
+                              {[editedCvStructured.contact.address, editedCvStructured.contact.postalCodeAndCity, editedCvStructured.contact.phone, editedCvStructured.contact.email]
+                                .filter(Boolean)
+                                .map((line) => (
+                                  <div key={line}>{line}</div>
+                                ))}
+                            </div>
                           </div>
 
-                          <div style={{ minWidth: "180px", textAlign: "right", fontSize: "13px", lineHeight: 1.5 }}>
-                            {[editedCvStructured.contact.address, editedCvStructured.contact.postalCodeAndCity, editedCvStructured.contact.phone, editedCvStructured.contact.email]
-                              .filter(Boolean)
-                              .map((line) => (
-                                <div key={line}>{line}</div>
-                              ))}
-                          </div>
+                          <div style={{ height: "1px", backgroundColor: "rgba(15, 23, 42, 0.28)", margin: "26px 0 30px" }} />
+
+                          {[
+                            editedCvStructured.profile && {
+                              title: "Profiili",
+                              content: (
+                                <p style={{ margin: 0, fontSize: "14px", lineHeight: 1.65 }}>
+                                  {editedCvStructured.profile}
+                                </p>
+                              ),
+                            },
+                            editedCvStructured.workExperience.length > 0 && {
+                              title: "Työkokemus",
+                              content: (
+                                <div style={{ display: "grid", gap: "20px" }}>
+                                  {editedCvStructured.workExperience.map((entry, index) => (
+                                    <div key={`${entry.organization}-${entry.role}-${index}`}>
+                                      <div style={{ fontSize: "18px", fontWeight: "700", marginBottom: "4px" }}>
+                                        {entry.organization || entry.role}
+                                      </div>
+                                      <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "8px" }}>
+                                        {[entry.role, entry.period, entry.location].filter(Boolean).join(", ")}
+                                      </div>
+                                      {entry.summary && (
+                                        <p style={{ margin: 0, fontSize: "14px", lineHeight: 1.65 }}>{entry.summary}</p>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              ),
+                            },
+                            editedCvStructured.education.length > 0 && {
+                              title: "Koulutus",
+                              content: (
+                                <div style={{ display: "grid", gap: "18px" }}>
+                                  {editedCvStructured.education.map((entry, index) => (
+                                    <div key={`${entry.degree}-${entry.institution}-${index}`}>
+                                      <div style={{ fontSize: "18px", fontWeight: "700", marginBottom: "4px" }}>
+                                        {entry.degree || entry.institution}
+                                      </div>
+                                      <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: entry.details ? "8px" : 0 }}>
+                                        {[entry.period, entry.institution].filter(Boolean).join(" | ")}
+                                      </div>
+                                      {entry.details && (
+                                        <p style={{ margin: 0, fontSize: "14px", lineHeight: 1.65 }}>{entry.details}</p>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              ),
+                            },
+                            editedCvStructured.languages.length > 0 && {
+                              title: "Kielitaito",
+                              content: (
+                                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "6px 18px", fontSize: "14px", lineHeight: 1.6 }}>
+                                  {editedCvStructured.languages.map((entry, index) => (
+                                    <div key={`${entry.language}-${index}`} style={{ display: "flex", justifyContent: "space-between", gap: "12px" }}>
+                                      <span>{entry.language}</span>
+                                      <span>{entry.level}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              ),
+                            },
+                            editedCvStructured.hobbies.length > 0 && {
+                              title: "Harrastukset",
+                              content: (
+                                <p style={{ margin: 0, fontSize: "14px", lineHeight: 1.65 }}>
+                                  {editedCvStructured.hobbies.join(", ")}
+                                </p>
+                              ),
+                            },
+                            editedCvStructured.references.length > 0 && {
+                              title: "Suosittelijat",
+                              content: (
+                                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "18px 24px" }}>
+                                  {editedCvStructured.references.map((entry, index) => (
+                                    <div key={`${entry.name}-${index}`} style={{ fontSize: "13px", lineHeight: 1.55 }}>
+                                      <div style={{ fontWeight: "700" }}>{entry.name}</div>
+                                      {entry.title && <div>{entry.title}</div>}
+                                      {entry.phone && <div>{entry.phone}</div>}
+                                      {entry.email && <div>{entry.email}</div>}
+                                    </div>
+                                  ))}
+                                </div>
+                              ),
+                            },
+                          ].filter(Boolean).map((section) => (
+                            <div key={section.title} style={{ display: "grid", gridTemplateColumns: "130px 1fr", gap: "16px", marginBottom: "28px" }}>
+                              <div style={{ fontSize: "16px", fontWeight: "700" }}>{section.title}</div>
+                              <div>{section.content}</div>
+                            </div>
+                          ))}
                         </div>
-
-                        <div style={{ height: "1px", backgroundColor: "rgba(15, 23, 42, 0.28)", margin: "26px 0 30px" }} />
-
-                        {[
-                          editedCvStructured.profile && {
-                            title: "Profiili",
-                            content: (
-                              <p style={{ margin: 0, fontSize: "14px", lineHeight: 1.65 }}>
-                                {editedCvStructured.profile}
-                              </p>
-                            ),
-                          },
-                          editedCvStructured.workExperience.length > 0 && {
-                            title: "Työkokemus",
-                            content: (
-                              <div style={{ display: "grid", gap: "20px" }}>
-                                {editedCvStructured.workExperience.map((entry, index) => (
-                                  <div key={`${entry.organization}-${entry.role}-${index}`}>
-                                    <div style={{ fontSize: "18px", fontWeight: "700", marginBottom: "4px" }}>
-                                      {entry.organization || entry.role}
-                                    </div>
-                                    <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "8px" }}>
-                                      {[entry.role, entry.period, entry.location].filter(Boolean).join(", ")}
-                                    </div>
-                                    {entry.summary && (
-                                      <p style={{ margin: 0, fontSize: "14px", lineHeight: 1.65 }}>{entry.summary}</p>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            ),
-                          },
-                          editedCvStructured.education.length > 0 && {
-                            title: "Koulutus",
-                            content: (
-                              <div style={{ display: "grid", gap: "18px" }}>
-                                {editedCvStructured.education.map((entry, index) => (
-                                  <div key={`${entry.degree}-${entry.institution}-${index}`}>
-                                    <div style={{ fontSize: "18px", fontWeight: "700", marginBottom: "4px" }}>
-                                      {entry.degree || entry.institution}
-                                    </div>
-                                    <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: entry.details ? "8px" : 0 }}>
-                                      {[entry.period, entry.institution].filter(Boolean).join(" | ")}
-                                    </div>
-                                    {entry.details && (
-                                      <p style={{ margin: 0, fontSize: "14px", lineHeight: 1.65 }}>{entry.details}</p>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            ),
-                          },
-                          editedCvStructured.languages.length > 0 && {
-                            title: "Kielitaito",
-                            content: (
-                              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "6px 18px", fontSize: "14px", lineHeight: 1.6 }}>
-                                {editedCvStructured.languages.map((entry, index) => (
-                                  <div key={`${entry.language}-${index}`} style={{ display: "flex", justifyContent: "space-between", gap: "12px" }}>
-                                    <span>{entry.language}</span>
-                                    <span>{entry.level}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            ),
-                          },
-                          editedCvStructured.hobbies.length > 0 && {
-                            title: "Harrastukset",
-                            content: (
-                              <p style={{ margin: 0, fontSize: "14px", lineHeight: 1.65 }}>
-                                {editedCvStructured.hobbies.join(", ")}
-                              </p>
-                            ),
-                          },
-                          editedCvStructured.references.length > 0 && {
-                            title: "Suosittelijat",
-                            content: (
-                              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "18px 24px" }}>
-                                {editedCvStructured.references.map((entry, index) => (
-                                  <div key={`${entry.name}-${index}`} style={{ fontSize: "13px", lineHeight: 1.55 }}>
-                                    <div style={{ fontWeight: "700" }}>{entry.name}</div>
-                                    {entry.title && <div>{entry.title}</div>}
-                                    {entry.phone && <div>{entry.phone}</div>}
-                                    {entry.email && <div>{entry.email}</div>}
-                                  </div>
-                                ))}
-                              </div>
-                            ),
-                          },
-                        ].filter(Boolean).map((section) => (
-                          <div key={section.title} style={{ display: "grid", gridTemplateColumns: "130px 1fr", gap: "16px", marginBottom: "28px" }}>
-                            <div style={{ fontSize: "16px", fontWeight: "700" }}>{section.title}</div>
-                            <div>{section.content}</div>
-                          </div>
-                        ))}
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  <textarea
-                    value={editedCvDraft}
-                    onChange={(e) => setEditedCvDraft(e.target.value)}
-                    style={{
-                      width: "100%",
-                      minHeight: "220px",
-                      borderRadius: "10px",
-                      border: "1px solid var(--border-soft-90)",
-                      backgroundColor: "var(--surface-input)",
-                      color: "var(--text-primary)",
-                      padding: "12px",
-                    }}
-                  />
-                </div>
-              )}
+                    <textarea
+                      value={editedCvDraft}
+                      onChange={(e) => setEditedCvDraft(e.target.value)}
+                      style={{
+                        width: "100%",
+                        minHeight: "220px",
+                        borderRadius: "10px",
+                        border: "1px solid var(--border-soft-90)",
+                        backgroundColor: "var(--surface-input)",
+                        color: "var(--text-primary)",
+                        padding: "12px",
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
       </div>
     </>
   );

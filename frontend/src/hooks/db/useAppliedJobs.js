@@ -24,10 +24,25 @@ export function useAppliedJobs() {
 
   const fetchJobs = useCallback((signal) => {
     return apiFetch("/api/database/applied-jobs", { signal })
-      .then(setJobs)
+      .then(data => {
+        
+        // console.log("[useAppliedJobs] API vastasi:", data);
+
+        let jobsArray = [];
+        if (Array.isArray(data)) {
+          jobsArray = data;
+        } else if (data && typeof data === "object") {
+          // Poimitaan vain ne arvot, jotka ovat objekteja (työpaikkoja)
+          // ja jätetään 'responseTimeMs' pois.
+          jobsArray = Object.keys(data)
+            .filter(key => !isNaN(key)) // Otetaan vain numeeriset avaimet
+            .map(key => data[key]);
+        }
+
+        setJobs(jobsArray);
+      })
       .catch(err => {
         if (err.name === "AbortError") return;
-        console.warn("[useAppliedJobs]", err);
         setError(err.message);
       });
   }, [setError]);

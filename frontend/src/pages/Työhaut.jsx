@@ -1,43 +1,33 @@
 import Navbar from "../components/Navbar";
 import { useState, useEffect } from "react";
 import "../styles/portfolio.css";
+import { useAppliedJobs } from "../hooks/db/useAppliedJobs";
 
 export default function Jobs() {
   const [selectedJob, setSelectedJob] = useState(0);
+  const { jobs, loading, deleteJob } = useAppliedJobs();
+  const currentJobs = Array.isArray(jobs) ? jobs : [];
+  const currentJob = currentJobs[selectedJob] || currentJobs[0];
 
-  // Haetut työpaikat localStoragesta
-  const [jobs, setJobs] = useState(() => {
-    const saved = localStorage.getItem('appliedJobs');
-    return saved ? JSON.parse(saved) : [];
-  });
 
-  // Päivitä jobs kun localStorage muuttuu
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const saved = localStorage.getItem('appliedJobs');
-      if (saved) {
-        setJobs(JSON.parse(saved));
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <hr className="divider" />
+        <div className="portfolio-page">
+          <div className="portfolio-container" style={{ textAlign: "center" }}>
+            <h1 style={{ color: "var(--text-primary)", fontSize: "2.5rem", marginBottom: "20px" }}>Työhaut</h1>
+            <p style={{ color: "var(--text-secondary)", marginBottom: "30px", fontSize: "1.1rem" }}>
+              Ladataan haettuja työpaikkoja...
+            </p>
+          </div>
+        </div>
+      </>
+    );
+  }
 
-  // Poista hakemus
-  const removeJobApplication = (jobId) => {
-    const updatedJobs = jobs.filter(job => job.id !== jobId);
-    setJobs(updatedJobs);
-    localStorage.setItem('appliedJobs', JSON.stringify(updatedJobs));
-    
-    // Päivitä valittu työpaikka jos se poistettiin
-    if (selectedJob >= updatedJobs.length && updatedJobs.length > 0) {
-      setSelectedJob(updatedJobs.length - 1);
-    } else if (updatedJobs.length === 0) {
-      setSelectedJob(0);
-    }
-  };
-
-  if (jobs.length === 0) {
+  if (currentJobs.length === 0) {
     return (
       <>
         <Navbar />
@@ -56,8 +46,6 @@ export default function Jobs() {
       </>
     );
   }
-
-  const currentJob = jobs[selectedJob];
 
   // Funktio ympyräkaavion piirtämiseen
   const renderPieChart = (compatibility) => {
@@ -95,196 +83,154 @@ export default function Jobs() {
     );
   };
 
+  const handleDelete = async (jobId) => {
+    await deleteJob(jobId);
+    const updatedJobs = currentJobs.filter(j => j.id !== jobId);
+    if (selectedJob >= updatedJobs.length) {
+      setSelectedJob(Math.max(updatedJobs.length - 1, 0));
+    }
+  };
+
   return (
     <>
       <Navbar />
       <hr className="divider" />
 
       <div className="portfolio-page">
-      <div className="portfolio-container">
-        {/* Header */}
-        <h1 style={{ marginBottom: "10px", color: "var(--text-primary)", fontSize: "2.5rem" }}>Työhaut</h1>
-        <p style={{ color: "var(--text-secondary)", marginBottom: "30px", fontSize: "1.1rem" }}>
-          Haettujen työpaikkojen yhteensopivuus
-        </p>
+        <div className="portfolio-container">
+          <h1 style={{ marginBottom: "10px", color: "var(--text-primary)", fontSize: "2.5rem" }}>Työhaut</h1>
+          <p style={{ color: "var(--text-secondary)", marginBottom: "30px", fontSize: "1.1rem" }}>
+            Haettujen työpaikkojen yhteensopivuus
+          </p>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "30px" }}>
-          {/* Vasemman puolen: Työpaikkalista */}
-          <div>
-            <h3 style={{ marginTop: 0, color: "var(--text-primary)", fontSize: "1.3rem" }}>Haetut Työpaikat</h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {jobs.map((job, index) => (
-                <div
-                  key={job.id}
-                  style={{
-                    padding: "15px",
-                    backgroundColor: selectedJob === index ? "rgba(40, 61, 168, 0.24)" : "var(--surface-glass)",
-                    color: "var(--text-primary)",
-                    borderRadius: "12px",
-                    border: selectedJob === index ? "2px solid rgba(40, 61, 168, 0.42)" : "1px solid var(--border-soft-72)",
-                    transition: "all 0.3s",
-                    position: "relative",
-                    backdropFilter: "blur(10px)",
-                  }}
-                >
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "30px" }}>
+            <div>
+              <h3 style={{ marginTop: 0, color: "var(--text-primary)", fontSize: "1.3rem" }}>Haetut Työpaikat</h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                {currentJobs.map((job, index) => (
                   <div
-                    onClick={() => setSelectedJob(index)}
-                    style={{ cursor: "pointer", paddingRight: "40px" }}
-                  >
-                    <h4 style={{ margin: "0 0 5px 0", fontSize: "16px", color: "var(--text-primary)" }}>{job.title}</h4>
-                    <p style={{ margin: "0 0 5px 0", fontSize: "13px", opacity: 0.9, color: "var(--text-secondary)" }}>
-                      {job.company} • {job.location}
-                    </p>
-                    <div style={{ fontSize: "12px", fontWeight: "bold", color: "var(--color-primary)" }}>
-                      Yhteensopivuus: {job.compatibility}%
-                    </div>
-                    {job.recommended && (
-                      <div style={{ fontSize: "12px", marginTop: "5px", color: "var(--color-success)" }}>
-                        Suositeltu
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeJobApplication(job.id);
-                    }}
+                    key={job.id}
                     style={{
-                      position: "absolute",
-                      top: "10px",
-                      right: "10px",
-                      backgroundColor: "rgba(239, 68, 68, 0.8)",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "6px",
-                      padding: "5px 8px",
-                      fontSize: "12px",
-                      cursor: "pointer",
-                      opacity: 0.8,
+                      padding: "15px",
+                      backgroundColor: selectedJob === index ? "rgba(40, 61, 168, 0.24)" : "var(--surface-glass)",
+                      color: "var(--text-primary)",
+                      borderRadius: "12px",
+                      border: selectedJob === index ? "2px solid rgba(40, 61, 168, 0.42)" : "1px solid var(--border-soft-72)",
+                      transition: "all 0.3s",
+                      position: "relative",
+                      backdropFilter: "blur(10px)",
                     }}
-                    onMouseEnter={(e) => e.target.style.opacity = "1"}
-                    onMouseLeave={(e) => e.target.style.opacity = "0.8"}
-                    title="Poista hakemus"
                   >
-                    Poista
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Oikean puolen: Yksityiskohdat ja ympyräkaavio */}
-          <div>
-            <div style={{ backgroundColor: "var(--surface-glass)", border: "1px solid var(--border-soft-72)", backdropFilter: "blur(10px)", padding: "30px", borderRadius: "16px", boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}>
-              {/* Otsikko */}
-              <h2 style={{ margin: "0 0 10px 0", color: "var(--color-primary)", fontSize: "1.8rem" }}>{currentJob.title}</h2>
-              <p style={{ margin: "0 0 20px 0", fontSize: "16px", color: "var(--text-secondary)" }}>
-                <strong>{currentJob.company}</strong> • {currentJob.location}
-              </p>
-
-              {/* Ympyräkaavio */}
-              <div style={{ display: "flex", justifyContent: "center", margin: "30px 0" }}>
-                {renderPieChart(currentJob.compatibility)}
-              </div>
-
-              {/* Kuvaus */}
-              <p style={{ color: "var(--text-secondary)", lineHeight: "1.6", marginBottom: "25px" }}>
-                {currentJob.description}
-              </p>
-
-              {/* Taidot */}
-              <div style={{ marginBottom: "25px" }}>
-                <h4 style={{ marginTop: 0, marginBottom: "10px", color: "var(--text-primary)" }}>Vaaditut Taidot:</h4>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                  {currentJob.requiredSkills.map((skill) => {
-                    const isMatched = currentJob.matchedSkills.includes(skill);
-                    return (
-                      <span
-                        key={skill}
-                        style={{
-                          padding: "8px 14px",
-                          backgroundColor: isMatched ? "rgba(76, 185, 68, 0.2)" : "rgba(239, 68, 68, 0.2)",
-                          color: isMatched ? "var(--color-success)" : "#ef4444",
-                          border: `1px solid ${isMatched ? "rgba(76, 185, 68, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
-                          borderRadius: "10px",
-                          fontSize: "13px",
-                          fontWeight: "500",
-                        }}
-                      >
-                        {isMatched ? "Sopii: " : "Puuttuu: "}
-                        {skill}
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Puuttuvat taidot */}
-              {currentJob.missingSkills.length > 0 && (
-                <div style={{ backgroundColor: "rgba(255, 107, 107, 0.15)", padding: "20px", borderRadius: "12px", marginBottom: "25px", borderLeft: "4px solid #ef4444", border: "1px solid rgba(239, 68, 68, 0.3)" }}>
-                  <h4 style={{ marginTop: 0, marginBottom: "15px", color: "#ef4444" }}>Puuttuvat taidot:</h4>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                    {currentJob.missingSkills.map((skill) => (
-                      <div
-                        key={skill}
-                        style={{
-                          padding: "10px 16px",
-                          backgroundColor: "rgba(239, 68, 68, 0.2)",
-                          color: "#ef4444",
-                          border: "1px solid rgba(239, 68, 68, 0.3)",
-                          borderRadius: "10px",
-                          fontSize: "14px",
-                          fontWeight: "500",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                        }}
-                      >
-                        {skill}
+                    <div onClick={() => setSelectedJob(index)} style={{ cursor: "pointer", paddingRight: "40px" }}>
+                      <h4 style={{ margin: "0 0 5px 0", fontSize: "16px", color: "var(--text-primary)" }}>{job.title}</h4>
+                      <p style={{ margin: "0 0 5px 0", fontSize: "13px", opacity: 0.9, color: "var(--text-secondary)" }}>
+                        {job.company} • {job.location}
+                      </p>
+                      <div style={{ fontSize: "12px", fontWeight: "bold", color: "var(--color-primary)" }}>
+                        Yhteensopivuus: {job.compatibility}%
                       </div>
-                    ))}
+                      {job.recommended && (
+                        <div style={{ fontSize: "12px", marginTop: "5px", color: "var(--color-success)" }}>Suositeltu</div>
+                      )}
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(job.id);
+                      }}
+                      style={{
+                        position: "absolute",
+                        top: "10px",
+                        right: "10px",
+                        backgroundColor: "rgba(239, 68, 68, 0.8)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "6px",
+                        padding: "5px 8px",
+                        fontSize: "12px",
+                        cursor: "pointer",
+                        opacity: 0.8,
+                      }}
+                      onMouseEnter={(e) => e.target.style.opacity = "1"}
+                      onMouseLeave={(e) => e.target.style.opacity = "0.8"}
+                      title="Poista hakemus"
+                    >
+                      Poista
+                    </button>
                   </div>
-                  <p style={{ margin: "15px 0 0 0", fontSize: "13px", color: "#f87171" }}>
-                    Suositus: Näiden taitojen kehittäminen parantaisi yhteensopivuutta tämän työpaikan kanssa.
-                  </p>
-                </div>
-              )}
+                ))}
+              </div>
+            </div>
 
-              {/* Suositeltu työpaikka */}
-              {currentJob.recommended && (
-                <div style={{ backgroundColor: "rgba(76, 185, 68, 0.15)", padding: "20px", borderRadius: "12px", border: "1px solid rgba(76, 185, 68, 0.3)" }}>
-                  <h4 style={{ margin: "0 0 10px 0", color: "var(--color-success)" }}>Suositeltu työpaikka sinulle</h4>
-                  <p style={{ margin: 0, color: "var(--text-secondary)" }}>
-                    Tämä paikkaisteeltosi on paras vastine sinun taidoillesi. Henkilökohtainen yhteensopivuus on{" "}
-                    <strong style={{ color: "var(--color-success)" }}>{currentJob.compatibility}%</strong>.
-                  </p>
-                </div>
-              )}
+            <div>
+              <div style={{ backgroundColor: "var(--surface-glass)", border: "1px solid var(--border-soft-72)", backdropFilter: "blur(10px)", padding: "30px", borderRadius: "16px", boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}>
+                <h2 style={{ margin: "0 0 10px 0", color: "var(--color-primary)", fontSize: "1.8rem" }}>{currentJob.title}</h2>
+                <p style={{ margin: "0 0 20px 0", fontSize: "16px", color: "var(--text-secondary)" }}>
+                  <strong>{currentJob.company}</strong> • {currentJob.location}
+                </p>
 
-              {/* Hakemusnappula - poistettu koska jo haettu */}
-              {/* <button
-                style={{
-                  width: "100%",
-                  padding: "15px",
-                  marginTop: "25px",
-                  backgroundColor: "#1976d2",
-                  color: "#ffffff",
-                  border: "none",
-                  borderRadius: "6px",
-                  fontSize: "16px",
-                  fontWeight: "bold",
-                  cursor: "pointer",
-                  transition: "background-color 0.3s",
-                }}
-                onMouseEnter={(e) => (e.target.style.backgroundColor = "#1565c0")}
-                onMouseLeave={(e) => (e.target.style.backgroundColor = "#1976d2")}
-              >
-                Hae tätä työpaikkaa
-              </button> */}
+                <div style={{ display: "flex", justifyContent: "center", margin: "30px 0" }}>
+                  {renderPieChart(currentJob.compatibility)}
+                </div>
+
+                <p style={{ color: "var(--text-secondary)", lineHeight: "1.6", marginBottom: "25px" }}>
+                  {currentJob.description}
+                </p>
+
+                <div style={{ marginBottom: "25px" }}>
+                  <h4 style={{ marginTop: 0, marginBottom: "10px", color: "var(--text-primary)" }}>Vaaditut Taidot:</h4>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                    {currentJob.requiredSkills.map((skill) => {
+                      const isMatched = currentJob.matchedSkills.includes(skill);
+                      return (
+                        <span
+                          key={skill}
+                          style={{
+                            padding: "8px 14px",
+                            backgroundColor: isMatched ? "rgba(76, 185, 68, 0.2)" : "rgba(239, 68, 68, 0.2)",
+                            color: isMatched ? "var(--color-success)" : "#ef4444",
+                            border: `1px solid ${isMatched ? "rgba(76, 185, 68, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
+                            borderRadius: "10px",
+                            fontSize: "13px",
+                            fontWeight: "500",
+                          }}
+                        >
+                          {isMatched ? "Sopii: " : "Puuttuu: "}
+                          {skill}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {currentJob.missingSkills.length > 0 && (
+                  <div style={{ backgroundColor: "rgba(255, 107, 107, 0.15)", padding: "20px", borderRadius: "12px", marginBottom: "25px", borderLeft: "4px solid #ef4444", border: "1px solid rgba(239, 68, 68, 0.3)" }}>
+                    <h4 style={{ marginTop: 0, marginBottom: "15px", color: "#ef4444" }}>Puuttuvat taidot:</h4>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                      {currentJob.missingSkills.map((skill) => (
+                        <div key={skill} style={{ padding: "10px 16px", backgroundColor: "rgba(239, 68, 68, 0.2)", color: "#ef4444", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: "10px", fontSize: "14px", fontWeight: "500", display: "flex", alignItems: "center", gap: "6px" }}>
+                          {skill}
+                        </div>
+                      ))}
+                    </div>
+                    <p style={{ margin: "15px 0 0 0", fontSize: "13px", color: "#f87171" }}>
+                      Suositus: Näiden taitojen kehittäminen parantaisi yhteensopivuutta tämän työpaikan kanssa.
+                    </p>
+                  </div>
+                )}
+
+                {currentJob.recommended && (
+                  <div style={{ backgroundColor: "rgba(76, 185, 68, 0.15)", padding: "20px", borderRadius: "12px", border: "1px solid rgba(76, 185, 68, 0.3)" }}>
+                    <h4 style={{ margin: "0 0 10px 0", color: "var(--color-success)" }}>Suositeltu työpaikka sinulle</h4>
+                    <p style={{ margin: 0, color: "var(--text-secondary)" }}>
+                      Tämä paikkaisteeltosi on paras vastine sinun taidoillesi. Henkilökohtainen yhteensopivuus on <strong style={{ color: "var(--color-success)" }}>{currentJob.compatibility}%</strong>.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
       </div>
     </>
   );

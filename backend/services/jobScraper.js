@@ -85,7 +85,7 @@ async function scrapeLinkedIn() {
  * Tuotannossa tekisi HTTP-kutsuja ja parseisi HTML:ää cheerio/jsdom:lla
  */
 async function scrapeCompanyCareers() {
-  return [...SOURCE_JOBS["Yrityksen sivu"]];
+  return [...SOURCE_JOBS.YrityksenSivu];
 }
 
 /**
