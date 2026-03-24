@@ -95,12 +95,12 @@ describe("Jobs Router", () => {
     // PERUS HAKU
     // -------------------------------------------------------------------------
 
-    test("GET /jobs/search palauttaa työpaikat", async () => {
+    test("GET /search palauttaa työpaikat", async () => {
         searchJobsFromAllSources.mockResolvedValue([
             { id: "1", title: "React Dev", requiredSkills: ["React"] }
         ]);
 
-        const handler = getRouteHandler("get", "/jobs/search");
+        const handler = getRouteHandler("get", "/search");
         const { req, res, getJson } = mockReqRes();
 
         await handler(req, res);
@@ -116,13 +116,13 @@ describe("Jobs Router", () => {
     // SORTTAUS
     // -------------------------------------------------------------------------
 
-    test("GET /jobs/search sorttaa parhaat ensin", async () => {
+    test("GET /search sorttaa parhaat ensin", async () => {
         searchJobsFromAllSources.mockResolvedValue([
             { id: "1", title: "Low", requiredSkills: ["Node"] },
             { id: "2", title: "High", requiredSkills: ["React"] }
         ]);
 
-        const handler = getRouteHandler("get", "/jobs/search");
+        const handler = getRouteHandler("get", "/search");
         const { req, res, getJson } = mockReqRes();
 
         await handler(req, res);
@@ -137,10 +137,10 @@ describe("Jobs Router", () => {
     // KEYWORDS PARSING
     // -------------------------------------------------------------------------
 
-    test("GET /jobs/search parsii keywords oikein", async () => {
+    test("GET /search parsii keywords oikein", async () => {
         searchJobsFromAllSources.mockResolvedValue([]);
 
-        const handler = getRouteHandler("get", "/jobs/search");
+        const handler = getRouteHandler("get", "/search");
         const { req, res } = mockReqRes({
             query: {
                 keywords: "react, node , typescript"
@@ -160,10 +160,10 @@ describe("Jobs Router", () => {
     // TYHJÄ TULOS
     // -------------------------------------------------------------------------
 
-    test("GET /jobs/search palauttaa tyhjän listan jos ei tuloksia", async () => {
+    test("GET /search palauttaa tyhjän listan jos ei tuloksia", async () => {
         searchJobsFromAllSources.mockResolvedValue([]);
 
-        const handler = getRouteHandler("get", "/jobs/search");
+        const handler = getRouteHandler("get", "/search");
         const { req, res, getJson } = mockReqRes();
 
         await handler(req, res);
@@ -176,7 +176,7 @@ describe("Jobs Router", () => {
     // MATCH DATA
     // -------------------------------------------------------------------------
 
-    test("GET /jobs/search lisää matched ja missing skills", async () => {
+    test("GET /search lisää matched ja missing skills", async () => {
         searchJobsFromAllSources.mockResolvedValue([
             { id: "1", requiredSkills: ["React"] }
         ]);
@@ -186,7 +186,7 @@ describe("Jobs Router", () => {
             missingSkills: ["Node"]
         });
 
-        const handler = getRouteHandler("get", "/jobs/search");
+        const handler = getRouteHandler("get", "/search");
         const { req, res, getJson } = mockReqRes();
 
         await handler(req, res);
@@ -201,12 +201,12 @@ describe("Jobs Router", () => {
     // CANDIDATE PROFILE KÄYTETÄÄN
     // -------------------------------------------------------------------------
 
-    test("GET /jobs/search käyttää candidateProfilea matchiin", async () => {
+    test("GET /search käyttää candidateProfilea matchiin", async () => {
         searchJobsFromAllSources.mockResolvedValue([
             { id: "1", requiredSkills: ["React"] }
         ]);
 
-        const handler = getRouteHandler("get", "/jobs/search");
+        const handler = getRouteHandler("get", "/search");
         const { req, res } = mockReqRes();
 
         await handler(req, res);
