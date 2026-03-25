@@ -712,7 +712,7 @@ export default function Portfolio() {
                   border: "1px solid var(--border-soft)",
                   borderLeft: "4px solid var(--color-primary)",
                   borderRadius: "6px",
-                  backgroundColor: "#ffffff",
+                  backgroundColor: "var(--surface-card)",
                   color: "var(--text-primary)",
                 }}
               >
@@ -734,6 +734,8 @@ export default function Portfolio() {
                             padding: "5px",
                             width: "100%",
                             marginBottom: "5px",
+                            backgroundColor: "var(--surface-input)",
+                            color: "var(--text-primary)",
                           }}
                         />
                         <input
@@ -751,6 +753,7 @@ export default function Portfolio() {
                             borderRadius: "4px",
                             padding: "5px",
                             width: "100%",
+                            backgroundColor: "var(--surface-input)",
                           }}
                         />
                       </div>
@@ -767,6 +770,7 @@ export default function Portfolio() {
                           borderRadius: "4px",
                           padding: "5px",
                           width: "120px",
+                          backgroundColor: "var(--surface-input)",
                         }}
                       />
                     </div>
@@ -783,6 +787,7 @@ export default function Portfolio() {
                         padding: "10px",
                         width: "100%",
                         minHeight: "60px",
+                        backgroundColor: "var(--surface-input)",
                       }}
                     />
                     <h4 style={{ marginTop: 0, marginBottom: "10px" }}>Saavutukset:</h4>
@@ -802,7 +807,8 @@ export default function Portfolio() {
                           style={{
                             flex: 1,
                             marginBottom: "8px",
-                            color: "#555",
+                            color: "var(--text-primary)",
+                            backgroundColor: "var(--surface-input)",
                             border: "1px solid var(--border-soft)",
                             borderRadius: "4px",
                             padding: "5px",
@@ -867,7 +873,7 @@ export default function Portfolio() {
                     <h4 style={{ marginTop: 0, marginBottom: "10px" }}>Saavutukset:</h4>
                     <ul style={{ margin: 0, paddingLeft: "20px" }}>
                       {exp.achievements.map((achievement, idx) => (
-                        <li key={idx} style={{ marginBottom: "8px", color: "#555" }}>
+                        <li key={idx} style={{ marginBottom: "8px", color: "var(--text-muted)" }}>
                           {achievement}
                         </li>
                       ))}
@@ -913,7 +919,7 @@ export default function Portfolio() {
                   border: "1px solid var(--border-soft)",
                   borderLeft: "4px solid var(--color-success)",
                   borderRadius: "6px",
-                  backgroundColor: "#ffffff",
+                  backgroundColor: "var(--surface-card)",
                   color: "var(--text-primary)",
                 }}
               >
@@ -935,6 +941,8 @@ export default function Portfolio() {
                             padding: "5px",
                             width: "100%",
                             marginBottom: "5px",
+                            backgroundColor: "var(--surface-input)",
+                            color: "var(--text-primary)",
                           }}
                         />
                         <input
@@ -950,6 +958,7 @@ export default function Portfolio() {
                             borderRadius: "4px",
                             padding: "5px",
                             width: "100%",
+                            backgroundColor: "var(--surface-input)",
                           }}
                         />
                       </div>
@@ -967,6 +976,7 @@ export default function Portfolio() {
                           borderRadius: "4px",
                           padding: "5px",
                           width: "120px",
+                          backgroundColor: "var(--surface-input)",
                         }}
                       />
                     </div>
@@ -1282,7 +1292,7 @@ export default function Portfolio() {
         {/* Call to Action */}
         <section style={{ marginTop: "50px", paddingTop: "30px", borderTop: "2px solid var(--border-soft)", textAlign: "center", backgroundColor: "rgba(40, 61, 168, 0.08)", padding: "30px", borderRadius: "8px", color: "var(--text-primary)" }}>
           <h2 style={{ color: "var(--text-primary)" }}>Kiinnostunut Yhteistyöstä?</h2>
-          <p style={{ fontSize: "16px", color: "#555", marginBottom: "25px" }}>
+          <p style={{ fontSize: "16px", color: "var(--text-muted)", marginBottom: "25px" }}>
             Ota minuun yhteyttä uusista mahdollisuuksista tai kyselyistä!
           </p>
           <div style={{ display: "flex", gap: "15px", justifyContent: "center", flexWrap: "wrap" }}>
@@ -1324,7 +1334,7 @@ export default function Portfolio() {
               rel="noopener noreferrer"
               style={{
                 padding: "12px 30px",
-                backgroundColor: "var(--text-primary)",
+                backgroundColor: "#24292e",
                 color: "white",
                 textDecoration: "none",
                 borderRadius: "6px",
@@ -1354,11 +1364,13 @@ export default function Portfolio() {
                   zIndex: 1000
               }}>
                   <div style={{
-                      background: "white",
+                      background: "var(--surface-card)",
+                      color: "var(--text-primary)",
                       padding: "30px",
                       borderRadius: "10px",
                       maxWidth: "400px",
-                      width: "90%"
+                      width: "90%",
+                      border: "1px solid var(--border-soft)"
                   }}>
                       <h3>GitHubista löytyi taidot</h3>
 
@@ -1392,8 +1404,9 @@ export default function Portfolio() {
                           <button
                               onClick={() => setShowSkillModal(false)}
                               style={{
-                                  backgroundColor: "#ccc",
-                                  border: "none",
+                                  backgroundColor: "var(--surface-muted)",
+                                  color: "var(--text-primary)",
+                                  border: "1px solid var(--border-soft)",
                                   padding: "10px",
                                   borderRadius: "5px",
                                   cursor: "pointer"
