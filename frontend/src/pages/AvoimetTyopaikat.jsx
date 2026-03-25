@@ -8,6 +8,8 @@ import {
 } from "../services/api";
 import { useAppliedJobs } from "../hooks/db/useAppliedJobs";
 import "../styles/portfolio.css";
+import { usePortfolio } from "../hooks/db/usePortfolio";
+import { usePortfolioProjects } from "../hooks/db/usePortfolioProjects";
 
 // const normalize = (value) => `${value ?? ""}`.trim().toLowerCase();
 
@@ -16,32 +18,6 @@ const parseKeywords = (rawInput) =>
     .split(/[,;\n]/)
     .map((k) => k.trim())
     .filter(Boolean);
-
-/*
-const matchesCriteria = (job, criteria) => {
-  const titleMatch =
-    !criteria.jobTitle || normalize(job.title).includes(normalize(criteria.jobTitle));
-  const locationMatch =
-    !criteria.location || normalize(job.location).includes(normalize(criteria.location));
-
-  const searchText = [
-    job.title,
-    job.company,
-    job.description,
-    job.location,
-    ...(job.requiredSkills || []),
-  ]
-    .join(" ")
-    .toLowerCase();
-
-  const keywords = criteria.keywords || [];
-  const keywordMatch =
-    keywords.length === 0 ||
-    keywords.every((keyword) => searchText.includes(normalize(keyword)));
-
-  return titleMatch && locationMatch && keywordMatch;
-}; 
-*/
 
 const buildJobText = (job) => {
   const requiredSkills = Array.isArray(job.requiredSkills)
@@ -335,6 +311,8 @@ export default function AvoimetTyopaikat() {
   // --- DATA HOOK ---
   // Haetaan tallennetut työpaikat ja tallennusfunktio hookista
   const { jobs: appliedJobs = [], saveJob, saving, loading } = useAppliedJobs();
+  const { portfolio } = usePortfolio();
+  const { projects } = usePortfolioProjects();
   const appliedIds = useMemo(() => {
     // console.log("DEBUG: appliedJobs kanta-data:", appliedJobs);
     return new Set(appliedJobs.map(j => String(j.id || j._id))); // Huomioidaan myös mahdolliset _id -kentät
@@ -383,11 +361,79 @@ export default function AvoimetTyopaikat() {
     setDraftError("");
   };
 
-  const createCoverLetter = async () => {
-    if (!customizationJob) {
-      return;
+  // Rakentaa portfoliosta ja projekteista lisäkontekstin LLM:lle
+  const buildPortfolioContext = (portfolio, projects) => {
+    const parts = [];
+
+    if (portfolio) {
+      // Profiili + vahvuudet
+      if (portfolio.summary) parts.push(`Profiili: ${portfolio.summary}`);
+
+      if (portfolio.profileSummary?.whyMe?.length) {
+        parts.push(`Vahvuudet:\n${portfolio.profileSummary.whyMe.join("\n")}`);
+      }
+      if (portfolio.profileSummary?.lookingFor?.length) {
+        parts.push(`Etsin:\n${portfolio.profileSummary.lookingFor.join("\n")}`);
+      }
+
+      // Työkokemus + saavutukset
+      if (portfolio.experience?.length) {
+        const exp = portfolio.experience
+          .map(e => {
+            const header = `${e.title ?? ""} @ ${e.company ?? ""} (${e.period ?? ""})`;
+            const desc = e.description ? `\n  ${e.description}` : "";
+            const achievements = e.achievements?.length
+              ? `\n  Saavutukset: ${e.achievements.join(", ")}`
+              : "";
+            return header + desc + achievements;
+          })
+          .filter(Boolean)
+          .join("\n\n");
+        if (exp) parts.push(`Työkokemus:\n${exp}`);
+      }
+
+      // Koulutus + kurssit
+      if (portfolio.education?.length) {
+        const edu = portfolio.education
+          .map(e => {
+            const header = `${e.degree ?? ""} — ${e.institution ?? ""} (${e.year ?? e.period ?? ""})`;
+            const relevant = e.relevant?.length
+              ? `\n  Kurssit: ${e.relevant.join(", ")}`
+              : "";
+            return header + relevant;
+          })
+          .filter(Boolean)
+          .join("\n\n");
+        if (edu) parts.push(`Koulutus:\n${edu}`);
+      }
+
+      // Sertifikaatit
+      if (portfolio.certifications?.length) {
+        parts.push(`Sertifikaatit: ${portfolio.certifications.join(", ")}`);
+      }
     }
 
+    // Projektit
+    if (projects?.length) {
+      const proj = projects
+        .map(p => {
+          const header = `${p.title ?? ""}${p.category ? " [" + p.category + "]" : ""}`;
+          const desc = p.description ?? "";
+          const tech = p.technologies?.length ? `Teknologiat: ${p.technologies.join(", ")}` : "";
+          const impact = p.impact ? `Vaikutus: ${p.impact}` : "";
+          const status = p.status ? `Status: ${p.status}` : "";
+          return [header, desc, tech, impact, status].filter(Boolean).join(" | ");
+        })
+        .filter(Boolean)
+        .join("\n");
+      if (proj) parts.push(`Projektit:\n${proj}`);
+    }
+
+    return parts.length ? `\n\n--- PORTFOLIO ---\n${parts.join("\n\n")}` : "";
+  };
+
+  const createCoverLetter = async () => {
+    if (!customizationJob) return;
     if (!applicantText.trim()) {
       setDraftError("Lisää ensin oma osaamisprofiili saatekirjettä varten.");
       return;
@@ -397,15 +443,17 @@ export default function AvoimetTyopaikat() {
     setDraftLoading((prev) => ({ ...prev, coverLetter: true }));
 
     try {
+      const enrichedApplicantText = applicantText.trim()
+        + buildPortfolioContext(portfolio, projects);
+
       const response = await generateCoverLetterDraft({
         jobText: buildJobText(customizationJob),
-        applicantText: applicantText.trim(),
+        applicantText: enrichedApplicantText,
         language: "Finnish",
         matchData: {
           matchedKeywords: customizationJob.matchedSkills || customizationJob.requiredSkills || [],
         },
       });
-
       setCoverLetterDraft(response.coverLetter || "Saatekirjeluonnosta ei saatu muodostettua.");
     } catch (err) {
       setDraftError(`Saatekirjeen luonti epäonnistui: ${err.message}`);
@@ -415,10 +463,7 @@ export default function AvoimetTyopaikat() {
   };
 
   const createEditedCv = async () => {
-    if (!customizationJob) {
-      return;
-    }
-
+    if (!customizationJob) return;
     if (!cvText.trim()) {
       setDraftError("Lisää ensin CV-teksti, jotta räätälöinti voidaan tehdä.");
       return;
@@ -428,12 +473,14 @@ export default function AvoimetTyopaikat() {
     setDraftLoading((prev) => ({ ...prev, cv: true }));
 
     try {
+      const enrichedCvText = cvText.trim()
+        + buildPortfolioContext(portfolio, projects);
+
       const response = await generateEditedCvDraft({
         jobText: buildJobText(customizationJob),
-        cvText: cvText.trim(),
+        cvText: enrichedCvText,
         language: "Finnish",
       });
-
       setEditedCvDraft(response.editedCV || "CV-luonnosta ei saatu muodostettua.");
       setEditedCvStructured(normalizeStructuredCv(response.structuredCV));
     } catch (err) {
@@ -526,124 +573,6 @@ export default function AvoimetTyopaikat() {
     }
   };
 
-  /* Demo-data varalle
-  const getDemoJobs = () => [
-    {
-      id: 1,
-      title: "Frontend Developer",
-      company: "TechCorp Oy",
-      location: "Helsinki",
-      compatibility: 88,
-      recommended: true,
-      description: "Etsimme kokenutta Frontend Developer -osaajaa moderneihin React-pohjaisiin projekteihin. Työssä pääset kehittämään käyttäjäystävällisiä web-sovelluksia.",
-      requiredSkills: ["React", "JavaScript", "CSS", "HTML"],
-      matchedSkills: ["React", "JavaScript", "CSS", "HTML"],
-      missingSkills: [],
-      salary: "4000-5000€/kk",
-      type: "Kokoaikainen",
-      posted: "2 päivää sitten",
-      source: "Duunitori"
-    },
-    {
-      id: 2,
-      title: "Full Stack Developer",
-      company: "StartupXYZ",
-      location: "Tampere",
-      compatibility: 75,
-      recommended: false,
-      description: "Kasvava startup hakee Full Stack -kehittäjää tiimiimme. Teknologiat: Node.js, React, PostgreSQL. Mahdollisuus vaikuttaa tuotteen kehitykseen.",
-      requiredSkills: ["React", "Node.js", "PostgreSQL", "Docker"],
-      matchedSkills: ["React", "Node.js"],
-      missingSkills: ["PostgreSQL", "Docker"],
-      salary: "3500-4500€/kk",
-      type: "Kokoaikainen",
-      posted: "1 viikko sitten",
-      source: "LinkedIn"
-    },
-    {
-      id: 3,
-      title: "Backend Developer",
-      company: "DataSystems Ltd",
-      location: "Oulu",
-      compatibility: 68,
-      recommended: false,
-      description: "Backend-kehittäjä rakentamaan skaalautuvia REST API:ita. Teknologiapino: Node.js, Express, MongoDB. Kokemus mikropalveluista plussaa.",
-      requiredSkills: ["Node.js", "Express", "MongoDB", "REST APIs"],
-      matchedSkills: ["Node.js", "Express", "REST APIs"],
-      missingSkills: ["MongoDB"],
-      salary: "3800-4800€/kk",
-      type: "Kokoaikainen",
-      posted: "3 päivää sitten",
-      source: "Yrityksen sivu"
-    },
-    {
-      id: 4,
-      title: "Junior Developer",
-      company: "WebSolutions Inc",
-      location: "Jyväskylä",
-      compatibility: 82,
-      recommended: true,
-      description: "Junior-kehittäjä web-projekteihin. Opastus ja mentorointi tarjolla. Teknologiat: JavaScript, React, Node.js, Git.",
-      requiredSkills: ["JavaScript", "React", "Node.js", "Git"],
-      matchedSkills: ["JavaScript", "React", "Node.js", "Git"],
-      missingSkills: [],
-      salary: "2800-3500€/kk",
-      type: "Kokoaikainen",
-      posted: "5 päivää sitten",
-      source: "Duunitori"
-    },
-    {
-      id: 5,
-      title: "DevOps Engineer",
-      company: "CloudTech Solutions",
-      location: "Espoo",
-      compatibility: 71,
-      recommended: false,
-      source: "LinkedIn",
-      description: "DevOps-insinööri pilvipohjaisten järjestelmien ylläpitoon ja kehitykseen. AWS, Docker, Kubernetes -kokemus vaaditaan.",
-      requiredSkills: ["AWS", "Docker", "Kubernetes", "CI/CD"],
-      matchedSkills: ["Docker"],
-      missingSkills: ["AWS", "Kubernetes", "CI/CD"],
-      salary: "4500-5500€/kk",
-      type: "Kokoaikainen",
-      posted: "1 päivä sitten"
-    },
-    {
-      id: 6,
-      title: "Mobile App Developer",
-      company: "AppWorks Mobile",
-      location: "Turku",
-      compatibility: 79,
-      recommended: true,
-      description: "React Native -kehittäjä mobiilisovellusten kehitykseen. Kokemus native-moduuleista ja app store -julkaisuista plussaa.",
-      requiredSkills: ["React Native", "JavaScript", "iOS", "Android"],
-      matchedSkills: ["JavaScript"],
-      missingSkills: ["React Native", "iOS", "Android"],
-      salary: "3800-4700€/kk",
-      type: "Kokoaikainen",
-      posted: "4 päivää sitten",
-      source: "Yrityksen sivu"
-    }
-  ];
-  
-
-  // Ei ladata mitään automaattisesti - vain kun käyttäjä hakee
-  useEffect(() => {
-    // Tyhjä aluksi, käyttäjä klikkaa "Hae työpaikkoja"
-  }, []);
-
-  // Kuuntele localStorage muutoksia (kun hakemus poistetaan Työhaut-sivulta)
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const saved = localStorage.getItem('appliedJobs');
-      setAppliedJobs(saved ? JSON.parse(saved) : []);
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
-
-    */
-
   const applyForJob = async (job) => {
     if (loading || saving) return;
 
@@ -661,7 +590,7 @@ export default function AvoimetTyopaikat() {
   };
 
   // Funktio ympyräkaavion piirtämiseen
-  const renderPieChart = (compatibility) => {
+  const renderPieChart = (compatibility, recommended) => {
     const angle = Math.min((compatibility / 100) * 360, 359.999); // jesari fix clamp: 0-360, koska 360 deg tarkoittaa 0.
     const largeArc = angle > 180 ? 1 : 0;
 
@@ -670,7 +599,12 @@ export default function AvoimetTyopaikat() {
     const x2 = 75 + 60 * Math.cos((angle * Math.PI) / 180);
     const y2 = 75 + 60 * Math.sin((angle * Math.PI) / 180);
 
-    const color = compatibility >= 80 ? "var(--color-success)" : compatibility >= 70 ? "#FFC107" : "#FF6B6B";
+    let color = "#FF6B6B";
+    if (recommended) {
+      color = "var(--color-success)";
+    } else if (compatibility >= 60) {
+      color = "#FFC107";
+    }
 
     return (
       <svg width="150" height="150" viewBox="0 0 150 150" style={{ filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.3))" }}>
@@ -898,7 +832,7 @@ export default function AvoimetTyopaikat() {
 
                     <div style={{ display: "flex", gap: "20px", alignItems: "flex-start", marginBottom: "15px" }}>
                       <div style={{ flexShrink: 0 }}>
-                        {renderPieChart(job.compatibility)}
+                        {renderPieChart(job.compatibility, job.recommended)}
                       </div>
                       <div style={{ flex: 1 }}>
                         <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px", color: "var(--text-muted)" }}>
@@ -944,7 +878,6 @@ export default function AvoimetTyopaikat() {
                               key={skill}
                               style={{
                                 padding: "6px 12px",
-                                // Poistettu kiinteä height, jotta teksti ei leikkaudu
                                 backgroundColor: isMatched ? "rgba(76, 185, 68, 0.2)" : "rgba(239, 68, 68, 0.2)",
                                 color: isMatched ? "var(--color-success)" : "#ef4444",
                                 border: `1px solid ${isMatched ? "rgba(76, 185, 68, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
@@ -963,12 +896,12 @@ export default function AvoimetTyopaikat() {
                       </div>
                     </div>
 
-                    {/* PALAUTETUT AI-NAPIT */}
+                    {/* AI-NAPIT */}
                     <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
                       <button
                         onClick={() => {
-                          setCustomizationJob(job); // Oletan että tilamuuttujasi on tämä
-                          setSelectedDraftTarget("coverLetter"); // Oletan että tilamuuttujasi on tämä
+                          setCustomizationJob(job);
+                          setSelectedDraftTarget("coverLetter");
                         }}
                         style={{
                           flex: 1,
@@ -1058,7 +991,7 @@ export default function AvoimetTyopaikat() {
                   backgroundColor: "var(--surface-soft)",
                   border: "1px solid var(--border-soft-78)",
                   borderRadius: "16px",
-                  padding: "24px",
+                  padding: "24px"
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "center", marginBottom: "12px" }}>

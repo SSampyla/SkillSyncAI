@@ -274,23 +274,28 @@ export default function Portfolio() {
     <>
           <Navbar />
           {portfolioLoading && (
-              <div style={{ padding: "10px", color: "gray" }}>
+              <div style={{ padding: "10px", color: "var(--text-secondary)", fontSize: "14px" }}>
                   Ladataan profiilia...
               </div>
           )}
-          {syncStatus === "syncing" && (
+          {syncStatus === "syncing" && isEditing && (
               <div style={{ padding: "10px", color: "var(--text-secondary)", fontSize: "14px" }}>
-                  Tallennetaan taustalla...
+                  Synkronoidaan taitoja taustalla...
               </div>
           )}
-          {syncStatus === "saved" && (
+          {syncStatus === "pending" && isEditing && (
+              <div style={{ padding: "10px", color: "var(--text-secondary)", fontSize: "14px" }}>
+                  . . .
+              </div>
+          )}
+          {syncStatus === "saved" && isEditing && (
               <div style={{ padding: "10px", color: "var(--color-success)", fontSize: "14px" }}>
-                  Valmis
+                  Ok
               </div>
           )}
-          {syncStatus === "error" && (
+          {syncStatus === "error" && isEditing && (
               <div style={{ padding: "10px", color: "var(--color-error, #dc3545)", fontSize: "14px" }}>
-                  Taitojen tallennus epäonnistui
+                  Virhe synkronoinnissa
               </div>
           )}
 

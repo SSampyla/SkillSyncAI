@@ -1,29 +1,9 @@
 import express from "express";
-import { readDB, writeDB, INITIAL_STATE, createEmptyPortfolio } from "../services/dbService.js";
+import { readDB, writeDB, createEmptyPortfolio } from "../services/dbService.js";
 import { asyncHandler } from "../utils/apiCoreLLM.js";
-import { calculateMatch, getSkillMatchList } from "../utils/matchCandidateToJob.js";
-import { dbProfileToFrontendSkills,  } from "../utils/apiCoreDB.js";
+import { dbProfileToFrontendSkills, enrichJob } from "../utils/apiCoreDB.js";
 
 const router = express.Router();
-
-// --- APUFUNKTIOT ---
-
-/**
- * Rikastaa työpaikkadatat yhteensopivuusluvuilla.
- */
-const enrich = (job, profile) => {
-    if (!job) return null;
-    const compatibility = calculateMatch(job, profile) || 0;
-    const matches = getSkillMatchList(job, profile);
-
-    return {
-        ...job,
-        compatibility,
-        recommended: compatibility >= 75,
-        matchedSkills: matches.matchedSkills || [],
-        missingSkills: matches.missingSkills || []
-    };
-};
 
 // --- VALIDONTI ---
 // const isValidPortfolio = (p) => p && typeof p === 'object' && typeof p.name === 'string';
@@ -70,20 +50,19 @@ router.put("/candidate-profile", asyncHandler(async (req) => {
 // =======================================
 router.get("/applied-jobs", asyncHandler(async () => {
     const db = await readDB();
-    return db.appliedJobs.map(job => enrich(job, db.candidateProfile));
+    return db.appliedJobs.map(job => enrichJob(job, db.candidateProfile));
 }, "Työpaikkojen listaus"));
 
 router.get("/applied-jobs/:id", asyncHandler(async (req) => {
     const db = await readDB();
     const job = db.appliedJobs.find(j => j.id === req.params.id);
-    return enrich(job, db.candidateProfile); // Palauttaa null jos ei löydy
+    return enrichJob(job, db.candidateProfile); // palauttaa null jos ei löydy
 }, "Yksittäinen työpaikka"));
 
 router.put("/applied-jobs/:id", asyncHandler(async (req) => {
     if (!req.body) return { success: false };
     const db = await readDB();
-    
-    // Poistetaan lasketut kentät ennen tallennusta (Keep data pure)
+
     const { compatibility, recommended, matchedSkills, missingSkills, ...pureJob } = req.body;
     const jobData = { ...pureJob, id: req.params.id };
 
@@ -92,7 +71,7 @@ router.put("/applied-jobs/:id", asyncHandler(async (req) => {
     else db.appliedJobs.push(jobData);
 
     await writeDB(db);
-    return { success: true, job: enrich(jobData, db.candidateProfile) };
+    return { success: true, job: enrichJob(jobData, db.candidateProfile) };
 }, "Työpaikan tallennus"));
 
 router.delete("/applied-jobs/:id", asyncHandler(async (req) => {

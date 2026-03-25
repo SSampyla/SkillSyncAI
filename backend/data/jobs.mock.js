@@ -18,7 +18,6 @@ export const SOURCE_JOBS = {
         "Windows Server",
         "Linux",
         "RAG",
-        "Azure",
         "AI",
         "SQL",
         "Fabric",
@@ -45,7 +44,7 @@ export const SOURCE_JOBS = {
       level: "Senior",
       requiredSkills: [
         "Power BI",
-        "Datan visualization",
+        "Data Visualization",
         "Business Intelligence",
         "SQL",
         "Data Modeling",
@@ -135,7 +134,6 @@ export const SOURCE_JOBS = {
         "React",
         "TypeScript",
         "Blazor",
-        "Azure",
         "CI/CD",
         "SQL",
         "Docker",
@@ -209,7 +207,6 @@ export const SOURCE_JOBS = {
         ".NET",
         "C#",
         "CI/CD",
-        "Azure",
         "Git",
         "Data Modeling",
         "English"

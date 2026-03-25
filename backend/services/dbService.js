@@ -138,7 +138,6 @@ export const INITIAL_STATE = {
             "GitHub Actions",
             "CircleCI",
             "Docker Compose",
-            "Linux",
             "Bash",
             "Jest",
             "Mocha",
@@ -193,7 +192,7 @@ export const INITIAL_STATE = {
             "Cloud Services",
             "Version Control",
             "Business Intelligence",
-            "Datan visualization",
+            "Data Visualization",
             "RAG",
             "Zero Trust"
         ]

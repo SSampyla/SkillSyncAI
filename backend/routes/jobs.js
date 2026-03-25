@@ -6,7 +6,7 @@ import { extractJobSkills, extractCandidateSkills } from "../LLM/jobExtractSkill
 import { generateCoverLetter } from "../LLM/jobCoverLetter.js";
 import { searchJobsFromAllSources } from "../services/jobScraper.js";
 import { readDB } from "../services/dbService.js";
-import { calculateMatch, getSkillMatchList } from "../utils/matchCandidateToJob.js";
+import { enrichJob } from "../utils/apiCoreDB.js";
 
 /*
 # Job & Cover Letter API
@@ -45,51 +45,9 @@ Tämä reititin käsittelee työpaikkailmoitusten analysointia, työhakemusten (
 const router = express.Router();
 
 // =======================================
-//  MAP: scraper → match engine
-// =======================================
-const mapJobToMatchFormat = (job) => ({
-  hardSkillsRequired: job.requiredSkills ?? [],
-  hardSkillsOptional: [],
-  softSkillsRequired: [],
-  softSkillsOptional: []
-});
-
-// =======================================
 //  ENRICH: match + skill list
 // =======================================
-const enrichJob = (job, candidateProfile) => {
-  if (!job || !candidateProfile) return job;
 
-  const jobSkills = mapJobToMatchFormat(job);
-
-  // Tarkistetaan onko taitolista täytetty
-  const hasAnyRequirements = Object.values(jobSkills).some(skillList =>
-    Array.isArray(skillList) && skillList.length > 0
-  );
-
-  // Jos ilmoitus on täysin "geneerinen" (ei taitoja listattu), palautetaan 100%
-  if (!hasAnyRequirements) {
-    return {
-      ...job,
-      compatibility: 100,
-      recommended: true,
-      matchedSkills: [],
-      missingSkills: []
-    };
-  }
-
-  // Muussa tapauksessa lasketaan normaali match
-  const compatibility = calculateMatch(jobSkills, candidateProfile) ?? 0;
-  const { matchedSkills, missingSkills } = getSkillMatchList(jobSkills, candidateProfile);
-
-  return {
-    ...job,
-    compatibility,
-    recommended: compatibility >= 75,
-    matchedSkills,
-    missingSkills
-  };
-};
 
 router.post(
   "/summary",
@@ -266,8 +224,8 @@ router.get(
 
     // 🔹 2. Enrich
     const enrichedJobs = jobs
-      .map((job) => enrichJob(job, candidateProfile))
-      .sort((a, b) => (b.compatibility || 0) - (a.compatibility || 0));
+    .map((job) => enrichJob(job, candidateProfile))
+    .sort((a, b) => (b.compatibility || 0) - (a.compatibility || 0));
 
     return {
       jobs: enrichedJobs,

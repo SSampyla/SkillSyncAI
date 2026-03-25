@@ -3,13 +3,13 @@
  * Synonyymisanakirja
  * ------------------------------------------------------------------
  *
- * Normalisointialgoritmi tekee ensin nämä muunnokset tekstille:
- *   1. lowercase
- *   2. poistaa ääkköset (NFD normalize)
- *   3. # → sharp   (C# → csharp)
- *   4. + → p       (C++ → cpp)
- *   5. poistaa välilyönnit, viivat, pisteet, alaviivat [\s\-_.]
- *   HUOM: kauttaviiva / ja sulkumerkit () EIVÄT poistu automaattisesti
+ * Tekstille suoritetaan regex (matchCandidateToJob.js)
+ *   normalized = skillText
+ *     .toLowerCase()
+ *     .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+ *     .replace(/#/g, "sharp")
+ *     .replace(/\+/g, "p")
+ *     .replace(/[\s\-_.]/g, "");
  *
  * Tämän jälkeen haetaan kanoninen muoto tästä taulukosta.
  * Jos synoyymiä ei löydy, normalisoitu muoto ON kanoninen muoto.
@@ -31,14 +31,22 @@ export const SYNONYMS = {
   // ==================================================================
   // SPECIAL
   // ==================================================================
+  cicd: "cicd",
   "ci/cd": "cicd",
   "sass/scss": "scss",
+  continuousintegration: "cicd",
+  continuousdelivery: "cicd",
+  continuousdeployment: "cicd",
 
   // ==================================================================
   // FRONTEND CORE
   // ==================================================================
   react: "react",
   reactjs: "react",
+
+  blazor: "blazor",
+
+  mobileui: "mobileui",
 
   vue: "vue",
   vuejs: "vue",
@@ -73,6 +81,17 @@ export const SYNONYMS = {
 
   materialui: "materialui",
   mui: "materialui",
+
+  gatsbyjs: "gatsby",
+  bootstrapcss: "bootstrap",
+  twitterbootstrap: "bootstrap",
+  zustandjs: "zustand",
+  vitejs: "vite",
+  webpackjs: "webpack",
+  babeljs: "babel",
+  microsoftblazor: "blazor",
+  mobiledevelopment: "mobileui",
+  mobile: "mobileui",
 
   // ==================================================================
   // STATE / DATA FETCHING
@@ -147,6 +166,33 @@ export const SYNONYMS = {
   go: "go",
   golang: "go",
 
+  junit: "junit",
+
+  databases: "databases",
+  database: "databases",
+
+  windowsserver: "windowsserver",
+
+  powershell: "powershell",
+
+  djangoframework: "django",
+  flaskframework: "flask",
+  cplusplus: "cpp",
+  php8: "php",
+  php7: "php",
+  junit4: "junit",
+  junit5: "junit",
+  mariadb: "mysql",
+  tsql: "sql",
+  plsql: "sql",
+  structuredquerylanguage: "sql",
+  nonrelational: "nosql",
+  rediscache: "redis",
+  googlefirebase: "firebase",
+  winserver: "windowsserver",
+  powershellscript: "powershell",
+  apidevelopment: "apidesign",
+
   // ==================================================================
   // API / ARCHITECTURE
   // ==================================================================
@@ -200,21 +246,14 @@ export const SYNONYMS = {
   auth: "auth",
 
   // ==================================================================
-  // DEVOPS
-  // ==================================================================
-  docker: "docker",
-  dockercompose: "dockerdockercompose",
-
-  kubernetes: "kubernetes",
-  k8s: "kubernetes",
-
-  devops: "devops",
-
-  cicd: "cicd",
-
-  // ==================================================================
   // TOOLS
   // ==================================================================
+
+  ai: "ai",
+  artificialintelligence: "ai",
+  machinelearning: "machinelearning",
+  ml: "machinelearning",
+
   git: "git",
 
   github: "github",
@@ -255,6 +294,49 @@ export const SYNONYMS = {
   bash: "bash",
   shell: "bash",
 
+  docker: "docker",
+  dockercompose: "dockercompose",
+
+  azure: "azure",
+  microsoftazure: "azure",
+
+  powerbi: "powerbi",
+  microsoftpowerbi: "powerbi",
+
+  selenium: "selenium",
+
+  jbehave: "jbehave",
+
+  m365: "m365",
+  microsoft365: "m365",
+  office365: "m365",
+
+  entraid: "entraid",
+  azuread: "entraid",
+  azureactivedirectory: "entraid",
+
+  fabric: "fabric",
+  microsoftfabric: "fabric",
+
+  kubernetes: "kubernetes",
+  k8s: "kubernetes",
+
+  devops: "devops",
+
+  openapi: "swagger",
+  swaggerui: "swagger",
+  xd: "adobexd",
+  jirasoftware: "jira",
+  atlassianjira: "jira",
+  jenkinsci: "jenkins",
+  ghactions: "githubactions",
+  gitlabci: "gitlab",
+  dockercontainer: "docker",
+  microsoftplaywright: "playwright",
+  cypresse2e: "cypress",
+  jestjs: "jest",
+  mochajs: "mocha",
+
   // ==================================================================
   // TESTING
   // ==================================================================
@@ -284,6 +366,7 @@ export const SYNONYMS = {
   scrummaster: "scrum",
 
   kanban: "kanban",
+  kanbanboard: "kanban",
 
   // ==================================================================
   // SOFT SKILLS
@@ -327,6 +410,90 @@ export const SYNONYMS = {
   tiimityo: "teamcollaboration",
   tiimityoskentely: "teamcollaboration",
   yhteistyokyky: "teamcollaboration",
+  criticalthinking: "problemsolving",
+  continuouslearning: "selflearning",
+  teamleadership: "leadership",
+  coaching: "mentoring",
+  pm: "projectmanagement",
+  peerreview: "codereview",
+
+  // ==================================================================
+  // OTHER
+  // ==================================================================
+
+  // Kielet
+  finnish: "finnish",
+  suomi: "finnish",
+  suomenkieli: "finnish",
+  fi: "finnish",
+
+  english: "english",
+  englanti: "english",
+  en: "english",
+
+  swedish: "swedish",
+  ruotsi: "swedish",
+  svenska: "swedish",
+  sv: "swedish",
+
+  // Muut puuttuvat
+  softwareengineering: "softwaredevelopment",
+  testautomation: "testautomation",
+  automatedtesting: "testautomation",
+
+  codereview: "codereview",
+
+  softwaredevelopment: "softwaredevelopment",
+  swe: "softwaredevelopment",
+
+  finances: "finances",
+  finance: "finances",
+
+  gameprogramming: "gameprogramming",
+  gameplayprogramming: "gameprogramming",
+  graphicsprogramming: "graphicsprogramming",
+
+  systemdesign: "systemdesign",
+
+  performanceoptimization: "performance",
+
+  liveservice: "liveservice",
+  multiplayer: "multiplayer",
+  gamesprogramming: "gamesprogramming",
+
+  datamodeling: "datamodeling",
+  riskmanagement: "riskmanagement",
+  documentation: "documentation",
+  qualityassurance: "qualityassurance",
+  qa: "qualityassurance",
+
+  cloudservices: "cloudservices",
+  cloud: "cloudservices",
+
+  versioncontrol: "versioncontrol",
+
+  businessintelligence: "businessintelligence",
+  bi: "businessintelligence",
+
+  datavisualization: "datavisualization",
+
+  rag: "rag",
+  retrievalaugmentedgeneration: "rag",
+
+  zerotrust: "zerotrust",
+  gpuprogramming: "graphicsprogramming",
+  liveops: "liveservice",
+  gamedev: "gamesprogramming",
+  gamedevelopment: "gamesprogramming",
+  systemarchitecture: "systemdesign",
+  riskassessment: "riskmanagement",
+  techwriting: "documentation",
+  docs: "documentation",
+  sourcecontrol: "versioncontrol",
+  scm: "versioncontrol",
+  dataviz: "datavisualization",
+  ztna: "zerotrust",
+  zerotrustsecurity: "zerotrust",
 
 };
 

@@ -16,8 +16,10 @@ import { getCache, setCache, createCacheKey } from "../utils/apiCoreLLM.js";
 
 const runAiTests = process.env.RUN_AI_TESTS === "true" && !!process.env.AZURE_OPENAI_KEY;
 
-const assertCacheWorks = (firstDuration, secondDuration) => {
-  // sallitaan vaihtelua CI:ssä
+const assertCacheWorks = (firstDuration, secondDuration, label = "") => {
+  const prefix = label ? `[Cache ${label}]` : "[Cache]";
+  console.log(`${prefix} LLM: ${firstDuration}ms → cache: ${secondDuration}ms`);
+
   expect(secondDuration).toBeLessThan(
     Math.min(firstDuration / 5, 200)
   );
@@ -38,7 +40,7 @@ jest.setTimeout(30000);
     const duration2 = Date.now() - start2;
 
     expect(cached).toEqual(result);
-    assertCacheWorks(duration1, duration2);
+    assertCacheWorks(duration1, duration2, "analyzeGithubPortfolio");
 
     // --- Rakenne ---
     expect(result).toHaveProperty("githubSkills");
@@ -117,7 +119,7 @@ jest.setTimeout(30000);
 
     // --- cache assert ---
     expect(cached).toEqual(skills);
-    assertCacheWorks(duration1, duration2);
+    assertCacheWorks(duration1, duration2, "extractJobSkills");
   });
 
   test("test summarizeJob with caching", async () => {
@@ -150,7 +152,7 @@ jest.setTimeout(30000);
 
     // --- cache assert ---
     expect(cached).toEqual(summary);
-    assertCacheWorks(duration1, duration2);
+    assertCacheWorks(duration1, duration2, "summarizeJob");
   });
 
   (runAiTests ? describe : describe.skip)(
@@ -225,7 +227,7 @@ jest.setTimeout(30000);
           const duration2 = Date.now() - start2;
 
           expect(cached).toEqual(rawResult);
-          assertCacheWorks(duration1, duration2);
+          assertCacheWorks(duration1, duration2, "generateEditedCV");
 
           expect(typeof rawResult).toBe("object");
           expect(rawResult).toHaveProperty("editedCV");
@@ -288,9 +290,7 @@ jest.setTimeout(30000);
 
       // Varmistetaan että data on sama ja aika on murto-osa alkuperäisestä
       expect(result1).toEqual(result2);
-      assertCacheWorks(duration1, duration2);
-
-      console.log(`[Test] Interview cache hit: ${duration2}ms (original: ${duration1}ms)`);
+      assertCacheWorks(duration1, duration2, "generateInterviewReply");
     });
 
     test("AI can handle multiple chat turns", async () => {

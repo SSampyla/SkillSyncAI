@@ -14,28 +14,44 @@ jest.unstable_mockModule("../utils/apiCoreLLM.js", () => ({
 // dbProfileToFrontendSkills on determininen puhdas funktio —
 // käytetään oikeaa toteutusta eikä mockia, jotta voidaan testata
 // datan purku ja yhdistäminen realistisesti.
-jest.unstable_mockModule("../utils/apiCoreDB.js", () => ({
-  dbProfileToFrontendSkills: (candidateProfile, availableSkills) => {
-    const result = { frontend: [], backend: [], tools: [], other: [] };
-    if (!candidateProfile || !availableSkills) return result;
-    const map = Object.entries(availableSkills).reduce((acc, [cat, skills]) => {
-      if (!Array.isArray(skills)) return acc;
-      skills.forEach(s => { acc[s.toLowerCase()] = cat; });
-      return acc;
-    }, {});
-    const all = [
-      ...(candidateProfile.hardSkillsProficient ?? []),
-      ...(candidateProfile.hardSkillsBasics ?? []),
-      ...(candidateProfile.softSkillsProficient ?? []),
-      ...(candidateProfile.softSkillsBasics ?? []),
-    ];
-    all.forEach(skill => {
-      const cat = map[skill.toLowerCase()] ?? "other";
-      if (!result[cat].includes(skill)) result[cat].push(skill);
-    });
-    return result;
-  }
-}));
+jest.unstable_mockModule("../utils/apiCoreDB.js", () => {
+  const MOCK_COMPATIBILITY = 80;
+  const MOCK_MATCH = { matchedSkills: ["JS"], missingSkills: ["TS"] };
+
+  return {
+    dbProfileToFrontendSkills: (candidateProfile, availableSkills) => {
+      const result = { frontend: [], backend: [], tools: [], other: [] };
+      if (!candidateProfile || !availableSkills) return result;
+      const map = Object.entries(availableSkills).reduce((acc, [cat, skills]) => {
+        if (!Array.isArray(skills)) return acc;
+        skills.forEach(s => { acc[s.toLowerCase()] = cat; });
+        return acc;
+      }, {});
+      const all = [
+        ...(candidateProfile.hardSkillsProficient ?? []),
+        ...(candidateProfile.hardSkillsBasics ?? []),
+        ...(candidateProfile.softSkillsProficient ?? []),
+        ...(candidateProfile.softSkillsBasics ?? []),
+      ];
+      all.forEach(skill => {
+        const cat = map[skill.toLowerCase()] ?? "other";
+        if (!result[cat].includes(skill)) result[cat].push(skill);
+      });
+      return result;
+    },
+
+    enrichJob: (job) => {
+      if (!job) return null;
+      return {
+        ...job,
+        compatibility: MOCK_COMPATIBILITY,
+        recommended: MOCK_COMPATIBILITY >= 75,
+        matchedSkills: MOCK_MATCH.matchedSkills,
+        missingSkills: MOCK_MATCH.missingSkills,
+      };
+    }
+  };
+});
 
 const EMPTY_PORTFOLIO = {
   name: "", title: "", email: "", phone: "", location: "",
