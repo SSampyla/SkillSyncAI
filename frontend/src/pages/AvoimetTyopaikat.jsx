@@ -10,6 +10,7 @@ import { useAppliedJobs } from "../hooks/db/useAppliedJobs";
 import "../styles/portfolio.css";
 import { usePortfolio } from "../hooks/db/usePortfolio";
 import { usePortfolioProjects } from "../hooks/db/usePortfolioProjects";
+import { useNavigate } from "react-router-dom";
 
 // const normalize = (value) => `${value ?? ""}`.trim().toLowerCase();
 
@@ -359,7 +360,18 @@ export default function AvoimetTyopaikat() {
     setSelectedDraftTarget("coverLetter");
     setEditedCvStructured(null);
     setDraftError("");
-  };
+    };
+
+    const navigate = useNavigate();
+    const startInterview = (job) => {
+        const jobText = buildJobText(job);
+
+        navigate("/interview", {
+            state: {
+                jobText
+            }
+        });
+    };
 
   // Rakentaa portfoliosta ja projekteista lisäkontekstin LLM:lle
   const buildPortfolioContext = (portfolio, projects) => {
@@ -961,7 +973,26 @@ export default function AvoimetTyopaikat() {
                       }}
                     >
                       {isApplied ? "Hakemus lähetetty" : "Hae työpaikkaa"}
-                    </button>
+                        </button>
+                        <div>
+                            <button
+                                onClick={() => startInterview(job)}
+                                style={{
+                                    width: "100%",
+                                    padding: "12px 24px",
+                                    background: isApplied ? "var(--border-soft-82)" : "linear-gradient(135deg, var(--color-primary), var(--color-primary-strong))",
+                                    color: "#ffffff",
+                                    border: "none",
+                                    borderRadius: "10px",
+                                    fontSize: "14px",
+                                    fontWeight: "600",
+                                    cursor: isApplied ? "not-allowed" : "pointer"
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "rgba(168, 85, 247, 0.15)"}
+                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "rgba(168, 85, 247, 0.08)"}
+                            >
+                                Kokeile työhaaastattelua
+                            </button></div>
                   </div>
                 );
               })}

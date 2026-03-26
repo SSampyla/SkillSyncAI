@@ -6,6 +6,7 @@ import Portfolio from "./pages/Portfolio";
 import Jobs from "./pages/Työhaut";
 import AvoimetTyopaikat from "./pages/AvoimetTyopaikat";
 import ProjectGallery from "./components/ProjectGallery";
+import Haastattelu from "./pages/Haastattelu";
 
 
 function App() {
@@ -19,6 +20,8 @@ function App() {
                 <Route path="/projects" element={<ProjectGallery />} />
                 <Route path="/jobs" element={<Jobs />} />
                 <Route path="/avoimet-tyopaikat" element={<AvoimetTyopaikat />} />
+                <Route path="/interview" element={<Haastattelu />} />
+
 
             </Routes>
         </Router>

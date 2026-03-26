@@ -146,3 +146,34 @@
     right: 14px;
   }
 }
+
+.demo-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.demo-badge {
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.demo-exit-btn {
+    padding: 8px 14px;
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+    .demo-exit-btn:hover {
+        background: #ef4444;
+        color: white;
+    }

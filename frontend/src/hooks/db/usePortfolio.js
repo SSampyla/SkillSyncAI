@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { apiFetch } from "./useFetch";
 import { useMutation } from "./useMutation";
+import { isDemoMode } from "../../demo/useDemoMode";
+import { createDemoPortfolio } from "../../demo/demoData";
 
 /**
  * Hakee, päivittää ja nollaa portfolion.
@@ -17,47 +19,93 @@ import { useMutation } from "./useMutation";
  *   resetPortfolio: function,
  * }}
  */
+
+
 export function usePortfolio() {
-  const [portfolio, setPortfolio] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const { saving, error, setError, run } = useMutation();
 
-  useEffect(() => {
-    const controller = new AbortController();
+    const isDemo = isDemoMode();
 
-    apiFetch("/api/database/portfolio", { signal: controller.signal })
-      .then(setPortfolio)
-      .catch(err => {
-        if (err.name === "AbortError") return;
-        console.warn("[usePortfolio]", err);
-        setError(err.message);
-      })
-      .finally(() => setLoading(false));
+    const [portfolio, setPortfolio] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const { saving, error, setError, run } = useMutation();
 
-    return () => controller.abort();
-  }, []);
+    useEffect(() => {
+        const controller = new AbortController();
 
-  const updatePortfolio = useCallback(async (portfolioData) => {
-    await run(
-      () => apiFetch("/api/database/portfolio", {
-        method: "PUT",
-        body: JSON.stringify(portfolioData),
-      }),
-      "[usePortfolio] Tallennus epäonnistui"
-    );
-    setPortfolio(prev => ({ ...prev, ...portfolioData }));
-  }, [run]);
+        const load = async () => {
+            try {
+                if (isDemo) {
+                    setPortfolio(createDemoPortfolio());
+                    return;
+                }
 
-  const resetPortfolio = useCallback(async () => {
-    await run(
-      async () => {
-        await apiFetch("/api/database/portfolio", { method: "DELETE" });
-        const fresh = await apiFetch("/api/database/portfolio");
-        setPortfolio(fresh);
-      },
-      "[usePortfolio] Nollaus epäonnistui"
-    );
-  }, [run]);
+                const data = await apiFetch("/api/database/portfolio", {
+                    signal: controller.signal
+                });
 
-  return { portfolio, loading, saving, error, updatePortfolio, resetPortfolio };
+                setPortfolio(data);
+
+            } catch (err) {
+                if (err.name === "AbortError") return;
+                console.warn("[usePortfolio]", err);
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        load();
+
+        return () => controller.abort();
+
+    }, [isDemo, setError]);
+
+    // 🔧 LISÄTTY
+    const updatePortfolio = useCallback(async (updatedData) => {
+        return run(async () => {
+
+            if (isDemo) {
+                setPortfolio(prev => ({ ...prev, ...updatedData }));
+                return;
+            }
+
+            const result = await apiFetch("/api/database/portfolio", {
+                method: "PUT",
+                body: JSON.stringify(updatedData),
+            });
+
+            setPortfolio(result);
+            return result;
+
+        }, "[usePortfolio] Päivitys epäonnistui");
+    }, [run, isDemo]);
+
+    // 🔧 LISÄTTY
+    const resetPortfolio = useCallback(async () => {
+        return run(async () => {
+
+            if (isDemo) {
+                setPortfolio(createDemoPortfolio());
+                return;
+            }
+
+            const result = await apiFetch("/api/database/portfolio/reset", {
+                method: "POST",
+            });
+
+            setPortfolio(result);
+            return result;
+
+        }, "[usePortfolio] Reset epäonnistui");
+    }, [run, isDemo]);
+
+   
+    return {
+        portfolio,
+        loading,
+        saving,
+        error,
+        updatePortfolio,
+        resetPortfolio
+    };
 }

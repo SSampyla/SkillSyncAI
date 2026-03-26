@@ -4,6 +4,9 @@ import "../styles/home.css";
 import { useState } from "react";
 import { useAvailableSkills, usePortfolio, clearCandidateSkills  } from "../hooks/useDatabase";
 import { createEmptyPortfolio } from "../data/portfolioTemplate";
+import { isDemoMode } from "../demo/useDemoMode";
+import { useAppliedJobs } from "../hooks/db/useAppliedJobs";
+
 
 /*Lisätty kotisivulle profiilin luonti ja taitovalinnat.
 
@@ -21,6 +24,8 @@ function Home() {
 
     const { availableSkills } = useAvailableSkills();
     const { updatePortfolio } = usePortfolio();
+
+    const [errors, setErrors] = useState({});
 
     const [loading, setLoading] = useState(false);
     const [showForm, setShowForm] = useState(false);
@@ -91,10 +96,55 @@ function Home() {
 
     // Luo profiili ja tallenna se backendin database.json:iin. Tiedot haetaan lomakkeelta, ja jos kokemus tai koulutus on osittain täytetty, ne sisällytetään profiiliin. Taitovalinnat, sertifikaatit ja profiilin yhteenveto käsitellään myös lomakkeelta ja tallennetaan profiiliin. Lopuksi käyttäjä ohjataan portfolio-sivulle.
 
+    function validateForm() {
+        const newErrors = {};
+
+        if (!profile.name.trim()) {
+            newErrors.name = "Nimi on pakollinen";
+        }
+
+        if (!profile.email.trim()) {
+            newErrors.email = "Sähköposti on pakollinen";
+        } else if (!profile.email.includes("@")) {
+            newErrors.email = "Virheellinen sähköposti";
+        }
+
+        if (!profile.title.trim()) {
+            newErrors.title = "Titteli on pakollinen";
+        }
+
+        if (!profile.location.trim()) {
+            newErrors.location = "Sijainti on pakollinen";
+        }
+
+        const phone = profile.phone.trim();
+
+        if (!phone) {
+            newErrors.phone = "Puhelinnumero on pakollinen";
+        } else {
+            const phoneRegex = /^\+358\s?\d{2}\s?\d{3}\s?\d{4}$/;
+
+            // sallitaan myös väliviivat
+            const normalized = phone.replace(/-/g, " ");
+
+            if (!phoneRegex.test(normalized)) {
+                newErrors.phone = "Muoto: +358401234567";
+            }
+        }
+
+        setErrors(newErrors);
+
+        return Object.keys(newErrors).length === 0;
+    }
+
 
 
     async function createProfile(e) {
         e.preventDefault();
+
+        if (!validateForm()) return; 
+
+        if (loading) return;
 
         if (loading) return;
 
@@ -202,17 +252,34 @@ function Home() {
 
                         <div className="hero-buttons">
 
-                            <button
-                                type="button"
-                                className="btn btn-primary"
-                                onClick={openCreateForm}
-                            >
-                                Luo Portfolio
-                            </button>
+                            {!isDemoMode() && (
+                                <button
+                                    type="button"
+                                    className="btn btn-primary"
+                                    onClick={openCreateForm}
+                                >
+                                    Luo Portfolio
+                                </button>
+                            )}
 
                             <Link to="/avoimet-tyopaikat" className="btn btn-secondary">
                                 Selaa Työpaikkoja
                             </Link>
+
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                onClick={() => {
+                                    localStorage.setItem("demoMode", "true");
+                                    window.location.reload();
+                                }}
+                                style={{
+                                    background: "linear-gradient(135deg, #7c3aed, #a855f7)",
+                                    border: "none"
+                                }}
+                            >
+                                 Kokeile demoa
+                            </button>
 
                         </div>
 
@@ -253,6 +320,7 @@ function Home() {
                                         setProfile((prev) => ({ ...prev, name: e.target.value }))
                                     }
                                 />
+                                {errors.name && <p style={{ color: "red" }}>{errors.name}</p>}
 
                                 <input
                                     placeholder="Titteli (esim Full Stack Developer)"
@@ -269,6 +337,7 @@ function Home() {
                                         setProfile((prev) => ({ ...prev, email: e.target.value }))
                                     }
                                 />
+                                {errors.email && <p style={{ color: "red" }}>{errors.email}</p>}
 
                                 <input
                                     placeholder="Puhelin"
@@ -277,6 +346,7 @@ function Home() {
                                         setProfile((prev) => ({ ...prev, phone: e.target.value }))
                                     }
                                 />
+                                {errors.phone && <p style={{ color: "red" }}>{errors.phone}</p>}
 
                                 <input
                                     placeholder="Sijainti"
@@ -285,6 +355,7 @@ function Home() {
                                         setProfile((prev) => ({ ...prev, location: e.target.value }))
                                     }
                                 />
+                                {errors.location && <p style={{ color: "red" }}>{errors.location}</p>}
 
                                 <input
                                     placeholder="GitHub username"
