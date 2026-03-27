@@ -84,9 +84,8 @@ $chatHistory = @()
 ## 8.2 Ensimmäinen kysymys (AI aloittaa)
 $body1 = @{
     jobText = $jobText
-    phase = "intro"
+    applicantText = $applicantText
     language = "Finnish"
-    chatHistory = $chatHistory
 } | ConvertTo-Json -Depth 5
 
 $res1 = Invoke-RestMethod `
@@ -94,6 +93,8 @@ $res1 = Invoke-RestMethod `
     -Method POST `
     -Body $body1 `
     -ContentType "application/json; charset=utf-8"
+
+$interviewId = $res1.interviewId
 
 ## 8.3 Lisää AI kysymys chat historyyn
 $chatHistory += [PSCustomObject]@{
@@ -112,10 +113,11 @@ $chatHistory += [PSCustomObject]@{
 
 ## 8.5 Seuraava haastattelukysymys
 $body2 = @{
+    interviewId = $interviewId
+    userMessage = $userAnswer
     jobText = $jobText
-    phase = "technical"
+    applicantText = $applicantText
     language = "Finnish"
-    chatHistory = $chatHistory
 } | ConvertTo-Json -Depth 5
 
 $res2 = Invoke-RestMethod `

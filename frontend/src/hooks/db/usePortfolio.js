@@ -19,13 +19,10 @@ import { createDemoPortfolio } from "../../demo/demoData";
  *   resetPortfolio: function,
  * }}
  */
-
-
 export function usePortfolio() {
-
     const isDemo = isDemoMode();
 
-    const [portfolio, setPortfolio] = useState(null);
+    const [portfolio, setPortfolio] = useState({});
     const [loading, setLoading] = useState(true);
     const { saving, error, setError, run } = useMutation();
 
@@ -60,8 +57,7 @@ export function usePortfolio() {
 
     }, [isDemo, setError]);
 
-    // 🔧 LISÄTTY
-    const updatePortfolio = useCallback(async (updatedData) => {
+const updatePortfolio = useCallback(async (updatedData) => {
         return run(async () => {
 
             if (isDemo) {
@@ -69,18 +65,20 @@ export function usePortfolio() {
                 return;
             }
 
-            const result = await apiFetch("/api/database/portfolio", {
+            // Lähetetään päivitys
+            await apiFetch("/api/database/portfolio", {
                 method: "PUT",
                 body: JSON.stringify(updatedData),
             });
 
-            setPortfolio(result);
-            return result;
+            // Päivitetään tila lokaalisti
+            setPortfolio(prev => ({ ...prev, ...updatedData }));
+
+            return updatedData;
 
         }, "[usePortfolio] Päivitys epäonnistui");
     }, [run, isDemo]);
 
-    // 🔧 LISÄTTY
     const resetPortfolio = useCallback(async () => {
         return run(async () => {
 
@@ -89,17 +87,22 @@ export function usePortfolio() {
                 return;
             }
 
-            const result = await apiFetch("/api/database/portfolio/reset", {
-                method: "POST",
+            // kutsutaan oikeaa DELETE routea
+            await apiFetch("/api/database/portfolio", {
+                method: "DELETE",
             });
 
-            setPortfolio(result);
-            return result;
+            // backend palauttaa { success: true, message: ... }
+            // jotta hookin state vastaa fronttia, haetaan GET uudelleen
+            const refreshed = await apiFetch("/api/database/portfolio");
+            setPortfolio(refreshed);
+
+            return refreshed;
 
         }, "[usePortfolio] Reset epäonnistui");
     }, [run, isDemo]);
 
-   
+
     return {
         portfolio,
         loading,

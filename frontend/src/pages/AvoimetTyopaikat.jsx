@@ -368,7 +368,7 @@ export default function AvoimetTyopaikat() {
 
         navigate("/interview", {
             state: {
-                jobText
+                jobText: jobText
             }
         });
     };

@@ -256,7 +256,7 @@ jest.setTimeout(30000);
       const phase = "intro";
       const language = "Finnish";
 
-      const result = await generateInterviewReply(chatHistory, jobText, phase, language);
+      const result = await generateInterviewReply(chatHistory, jobText, applicantText, phase, language);
 
       // --- STRUCTURE ---
       expect(result).toHaveProperty("nextQuestion");
@@ -280,12 +280,12 @@ jest.setTimeout(30000);
 
       // 1. Ensimmäinen kutsu (hidas, menee LLM:lle)
       const start1 = Date.now();
-      const result1 = await generateInterviewReply(chatHistory, jobText, phase, language);
+      const result1 = await generateInterviewReply(chatHistory, jobText, applicantText, phase, language);
       const duration1 = Date.now() - start1;
 
       // 2. Toinen kutsu täysin samalla datalla (nopea, pitäisi tulla cachesta)
       const start2 = Date.now();
-      const result2 = await generateInterviewReply(chatHistory, jobText, phase, language);
+      const result2 = await generateInterviewReply(chatHistory, jobText, applicantText, phase, language);
       const duration2 = Date.now() - start2;
 
       // Varmistetaan että data on sama ja aika on murto-osa alkuperäisestä
@@ -307,7 +307,7 @@ jest.setTimeout(30000);
         content: "Olen rakentanut useita web-sovelluksia Reactilla viimeisten 3 vuoden aikana."
       });
 
-      const result = await generateInterviewReply(chatHistory, jobText, phase, language);
+      const result = await generateInterviewReply(chatHistory, jobText, applicantText, phase, language);
 
       expect(result).toHaveProperty("nextQuestion");
       expect(result.answerEvaluation.clarity).toBeGreaterThanOrEqual(0);
@@ -315,7 +315,7 @@ jest.setTimeout(30000);
 
     test("nextQuestion is null only in feedback phase", async () => {
       const phase = "feedback";
-      const result = await generateInterviewReply(chatHistory, jobText, phase, "Finnish");
+      const result = await generateInterviewReply(chatHistory, jobText, applicantText, phase, "Finnish");
 
       if (result.nextQuestion === null) {
         expect(phase).toBe("feedback");

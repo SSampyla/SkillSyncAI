@@ -2,9 +2,10 @@ import express from "express";
 import { asyncHandler } from "../utils/apiCoreLLM.js";
 import { createValidator, validateInterview } from "../utils/routeValidatorsLLM.js";
 import { generateInterviewReply } from "../LLM/interviewPractice.js";
+import { getCache, setCache } from "../utils/apiCoreLLM.js";
 
 /*
-# Interview Practice API
+# Interview Practice API /api/interview/practice
 
 Tämä reitti hoitaa haastattelusimulaation tilanhallinnan. Frontendin ei tarvitse säilöä chat-historiaa, vaan ainoastaan kantaa mukanaan `interviewId`-tunnistetta.
 
@@ -29,33 +30,33 @@ const router = express.Router();
 
 function deriveInterviewState(chatHistory) {
 
-    const assistantMessages = chatHistory.filter(m => m.role === "assistant");
+  const assistantMessages = chatHistory.filter(m => m.role === "assistant");
 
-    const questionCount = assistantMessages.length;
+  const questionCount = assistantMessages.length;
 
-    const lastAssistant = assistantMessages.at(-1);
+  const lastAssistant = assistantMessages.at(-1);
 
-    const lastPhase = lastAssistant?.phase || nextPhase(questionCount);
+  const lastPhase = lastAssistant?.phase || nextPhase(questionCount);
 
-    console.log(`[LLM Interview State] interview state derived: ${lastPhase}, question count: ${questionCount}` );
+  console.log(`[LLM Interview State] interview state derived: ${lastPhase}, question count: ${questionCount}`);
 
-    return {
-        questionCount,
-        lastPhase
-    };
+  return {
+    questionCount,
+    lastPhase
+  };
 }
 
 function nextPhase(questionCount) {
 
-    if (questionCount < 2) return "intro";
+  if (questionCount < 2) return "intro";
 
-    if (questionCount < 6) return "technical";
+  if (questionCount < 6) return "technical";
 
-    if (questionCount < 9) return "behavioral";
+  if (questionCount < 9) return "behavioral";
 
-    if (questionCount < 11) return "closing";
+  if (questionCount < 11) return "closing";
 
-    return "feedback";
+  return "feedback";
 }
 
 
@@ -66,23 +67,43 @@ router.post(
   asyncHandler(async (req) => {
     console.log("[LLM route: Interview practice called]");
 
-    const { jobText, userMessage, language, interviewId } = req.body;
+    const { jobText, applicantText, userMessage, language, interviewId } = req.body;
+
 
     let history = [];
     let currentId = interviewId;
 
-    if (currentId) {
-      const cachedHistory = getCache(currentId);
-      if (cachedHistory) {
-        history = cachedHistory;
-      } else {
-        currentId = null; // Luodaan uusi ID alempana
-      }
+    if (!jobText) {
+      throw new Error("jobText is required");
+    }
+
+    if (!interviewId && userMessage) {
+      throw new Error("Start interview before sending messages");
+    }
+
+    if (!currentId && userMessage) {
+      throw new Error("Start interview before sending messages");
+    }
+
+    if (!currentId) {
+      currentId = `int_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      setCache(currentId + "_meta", { applicantText, jobText }, 1000 * 60 * 60 * 4);
+    }
+
+    const meta = currentId ? getCache(currentId + "_meta") : null;
+
+    const cachedHistory = getCache(currentId);
+    if (cachedHistory) {
+      history = [...cachedHistory];
+    } else if (interviewId) {
+      // Jos käyttäjä lähetti ID:n, mutta sitä ei löydy välimuistista, 
+      // session on vanhentunut -> nollataan vasta tässä kohtaa.
+      currentId = null;
     }
 
     // Lisätään käyttäjän viesti historiaan
-    if (userMessage) {
-      history.push({ role: "user", content: userMessage });
+    if (userMessage && userMessage.trim()) {
+      history.push({ role: "user", content: userMessage.trim() });
     }
 
     // Johdetaan tila historiasta
@@ -90,10 +111,14 @@ router.post(
     const computedPhase = nextPhase(questionCount);
     const questionIndex = questionCount + 1;
 
+    const finalApplicantText = meta?.applicantText ?? applicantText;
+    const finalJobText = meta?.jobText ?? jobText;
+
     // Tämä kutsuu nyt funktiota, joka osaa sisäisesti käyttää cachea (testit kiittää)
     const result = await generateInterviewReply(
       history,
-      jobText,
+      finalJobText,
+      finalApplicantText,
       computedPhase,
       language
     );
@@ -101,15 +126,11 @@ router.post(
     const finalPhase = result.followUp ? lastPhase : computedPhase;
 
     // Päivitetään historia assistantin vastauksella ja tallennetaan
-    history.push({ 
-      role: "assistant", 
+    history.push({
+      role: "assistant",
       content: result.nextQuestion,
       phase: finalPhase
     });
-
-    if (!currentId) {
-      currentId = `int_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    }
 
     // Tallennetaan päivitetty historia 2h ajaksi
     setCache(currentId, history, 1000 * 60 * 60 * 2);

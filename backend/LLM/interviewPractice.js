@@ -4,11 +4,23 @@ import { getCache, setCache, createCacheKey } from "../utils/apiCoreLLM.js";
 export async function generateInterviewReply(
     chatHistory,
     jobText,
+    applicantText,
     phase = "technical",
     language = "Finnish"
 ) {
     // 1. Luo avain syötteiden perusteella
-    const cacheKey = createCacheKey("interview_reply", { chatHistory, jobText, phase, language });
+    const normalizedHistory = chatHistory.map(m => ({
+        role: m.role,
+        content: m.content
+    }));
+
+    const cacheKey = createCacheKey("interview_reply", {
+        chatHistory: normalizedHistory,
+        jobText,
+        applicantText,
+        phase,
+        language
+    });
 
     // 2. Palauta välimuistista jos löytyy
     const cached = getCache(cacheKey);
@@ -33,6 +45,8 @@ You must behave like a real interviewer:
 - Follow up on weak answers
 - Move the interview forward logically
 - Avoid chatting casually
+- Use both the job description AND applicant profile to tailor questions.
+- Challenge inconsistencies between them when relevant.
 
 The candidate is practicing for a real job interview.
 
@@ -141,9 +155,11 @@ IMPORTANT:
 
             {
                 role: "system",
-                content: `<job_description>
-${jobText}
-</job_description>`
+                content: `<job_description>${jobText}</job_description>`
+            },
+            {
+                role: "system",
+                content: `<applicant_profile>${applicantText}</applicant_profile>`
             },
 
             ...chatHistory
