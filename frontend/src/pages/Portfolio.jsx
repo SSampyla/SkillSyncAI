@@ -15,6 +15,10 @@ import {
     createEmptyExperience,
     createEmptyEducation
 } from "../data/portfolioTemplate";
+import GitHubSection from "../components/GitHubSection";
+import Toast from "../components/Toast";
+
+
 
 //hookit ja funktiot, jotka hakevat ja päivittävät portfolio-dataa backendistä, sekä synkronoivat taitoja. Tiedot tallennetaan paikalliseen tilaan, joka peilaa backendissä olevaa dataa. Käyttäjä voi muuttaa tietoja, ja muutokset lähetetään backendille debouncattuna, jotta ei tarvitse tallentaa joka ikistä näppäinpainallusta.
 
@@ -22,6 +26,16 @@ import {
 
 // Portfolio-sivu, jossa käyttäjä näkee ja muokkaa omaa profiiliaan. Tiedot haetaan backendistä ja tallennetaan sinne.
 export default function Portfolio() {
+
+    const showToast = (message, type = "info") => {
+        setToast({ message, type });
+
+        setTimeout(() => {
+            setToast(null);
+        }, 3000);
+    };
+
+    const [toast, setToast] = useState(null);
 
     const [activeSection, setActiveSection] = useState("profile");
     const [isEditing, setIsEditing] = useState(false);
@@ -146,7 +160,7 @@ export default function Portfolio() {
     const handleGithubAnalyze = async () => {
 
         if (!profile.github) {
-            alert("GitHub username puuttuu");
+            showToast("GitHub username puuttuu", "error");
             return;
         }
 
@@ -179,7 +193,7 @@ export default function Portfolio() {
 
         } catch (err) {
             console.error(err);
-            alert("GitHub analyysi epäonnistui");
+            showToast("GitHub-analyysi epäonnistui", "error");
         }
     };
 
@@ -194,7 +208,7 @@ export default function Portfolio() {
                     other: [...new Set([...prev.other, ...detectedSkills.other])]
                 }));
 
-        alert("Taidot lisätty profiiliin!");
+        showToast("Taidot lisätty profiiliin", "success");
 
                 setShowSkillModal(false);
     };
@@ -214,7 +228,7 @@ export default function Portfolio() {
     const handleFetchRepos = async () => {
 
         if (!profile.github) {
-            alert("GitHub username puuttuu");
+            showToast("GitHub username puuttuu", "error");
             return;
         }
 
@@ -234,10 +248,10 @@ export default function Portfolio() {
 
             setGithubProjects(projects);
 
-            alert("GitHub-projektit tuotu!");
+            showToast("Projektit haettu GitHubista", "success");
         } catch (err) {
             console.error(err);
-            alert("Repojen haku epäonnistui");
+            showToast("Repojen haku epäonnistui", "error");
         }
     };
 
@@ -270,8 +284,9 @@ export default function Portfolio() {
 
     const joinLines = (items) => (Array.isArray(items) ? items.join("\n") : "");
 
-  return (
-    <>
+    return (
+        <>
+  
           <Navbar />
           {portfolioLoading && (
               <div style={{ padding: "10px", color: "var(--text-secondary)", fontSize: "14px" }}>
@@ -304,207 +319,183 @@ export default function Portfolio() {
       <div className="portfolio-page">
       <div className="portfolio-container">
         {/* Header Section */}
-        <section style={{ marginBottom: "50px", backgroundColor: "var(--surface-glass)", padding: "30px", borderRadius: "16px", color: "var(--text-primary)", border: "1px solid var(--border-soft-72)" }}>
-          {isEditing ? (
-            <>
-              <input
-                type="text"
-                value={profile.name}
-                onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                style={{
-                  fontSize: "32px",
-                  fontWeight: "bold",
-                  backgroundColor: "transparent",
-                  border: "1px solid var(--color-primary)",
-                  borderRadius: "4px",
-                  color: "var(--text-primary)",
-                  padding: "5px",
-                  marginBottom: "10px",
-                  width: "100%",
-                }}
-              />
-              <input
-                type="text"
-                value={profile.title}
-                onChange={(e) => setProfile({ ...profile, title: e.target.value })}
-                style={{
-                  fontSize: "24px",
-                  backgroundColor: "transparent",
-                  border: "1px solid var(--color-primary)",
-                  borderRadius: "4px",
-                  color: "var(--color-primary)",
-                  padding: "5px",
-                  marginBottom: "20px",
-                  width: "100%",
-                }}
-              />
-              <textarea
-                value={profile.summary}
-                onChange={(e) => setProfile({ ...profile, summary: e.target.value })}
-                style={{
-                  fontSize: "16px",
-                  lineHeight: "1.6",
-                  maxWidth: "900px",
-                  backgroundColor: "transparent",
-                  border: "1px solid var(--border-soft)",
-                  borderRadius: "4px",
-                  color: "var(--text-secondary)",
-                  padding: "10px",
-                  marginBottom: "20px",
-                  width: "100%",
-                  minHeight: "100px",
-                }}
-              />
-              
-              {/* Contact Info */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", marginTop: "20px", fontSize: "14px", color: "var(--text-secondary)" }}>
-                <div>
-                  <strong>Email:</strong>{" "}
-                  <input
-                    type="email"
-                    value={profile.email}
-                    onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                    style={{
-                      backgroundColor: "transparent",
-                      border: "1px solid var(--border-soft)",
-                      borderRadius: "4px",
-                      color: "var(--text-primary)",
-                      padding: "2px 5px",
-                      width: "150px",
-                    }}
-                  />
-                </div>
-                <div>
-                  <strong>Puhelin:</strong>{" "}
-                  <input
-                    type="tel"
-                    value={profile.phone}
-                    onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                    style={{
-                      backgroundColor: "transparent",
-                      border: "1px solid var(--border-soft)",
-                      borderRadius: "4px",
-                      color: "var(--text-primary)",
-                      padding: "2px 5px",
-                      width: "150px",
-                    }}
-                  />
-                </div>
-                <div>
-                  <strong>Sijainti:</strong>{" "}
-                  <input
-                    type="text"
-                    value={profile.location}
-                    onChange={(e) => setProfile({ ...profile, location: e.target.value })}
-                    style={{
-                      backgroundColor: "transparent",
-                      border: "1px solid var(--border-soft)",
-                      borderRadius: "4px",
-                      color: "var(--text-primary)",
-                      padding: "2px 5px",
-                      width: "150px",
-                    }}
-                  />
-                </div>
-                <div>
-                                      <strong>LinkedIn:</strong>{" "}
-                                      <a
-                                          href={`https://linkedin.com/in/${profile.linkedin}`}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                      >
-                                          linkedin.com/in/{profile.linkedin}
-                                      </a>
-                </div>
-                <div style={{ gridColumn: "1 / -1" }}>
-                <strong>GitHub:</strong>{" "}
-                 <a
-                  href={`https://github.com/${profile.github}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                   >
-                   github.com/{profile.github}
-                  </a>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <h1 style={{ margin: "0 0 10px 0", fontSize: "32px", color: "var(--text-primary)" }}>{profile.name}</h1>
-              <h2 style={{ margin: "0 0 20px 0", fontSize: "24px", color: "var(--color-primary)" }}>{profile.title}</h2>
-              <p style={{ margin: "0 0 15px 0", fontSize: "16px", lineHeight: "1.6", maxWidth: "900px", color: "var(--text-secondary)" }}>{profile.summary}</p>
-              
-              {/* Contact Info */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", marginTop: "20px", fontSize: "14px", color: "var(--text-secondary)" }}>
-                <div>
-                  <strong>Email:</strong> {profile.email}
-                </div>
-                <div>
-                  <strong>Puhelin:</strong> {profile.phone}
-                </div>
-                <div>
-                  <strong>Sijainti:</strong> {profile.location}
-                </div>
-                <div>
-                                          <strong>LinkedIn:</strong>{" "}
-                                          <a
-                                              href={`https://linkedin.com/in/${profile.linkedin}`}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                          >
-                                              linkedin.com/in/{profile.linkedin}
-                                          </a>
-                </div>
-                                      <div style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: "10px" }}>
-                                          <strong>GitHub:</strong>
+                    <section
+                        style={{
+                            marginBottom: "50px",
+                            backgroundColor: "var(--surface-glass)",
+                            padding: "30px",
+                            borderRadius: "16px",
+                            color: "var(--text-primary)",
+                            border: "1px solid var(--border-soft-72)",
+                        }}
+                    >
+                        {isEditing ? (
+                            <>
+                                <input
+                                    type="text"
+                                    value={profile.name}
+                                    onChange={(e) =>
+                                        setProfile({ ...profile, name: e.target.value })
+                                    }
+                                    style={{
+                                        fontSize: "32px",
+                                        fontWeight: "bold",
+                                        backgroundColor: "transparent",
+                                        border: "1px solid var(--color-primary)",
+                                        borderRadius: "4px",
+                                        color: "var(--text-primary)",
+                                        padding: "5px",
+                                        marginBottom: "10px",
+                                        width: "100%",
+                                    }}
+                                />
 
-                                          <a
-                                              href={`https://github.com/${profile.github}`}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                          >
-                                              github.com/{profile.github}
-                                          </a>
+                                <input
+                                    type="text"
+                                    value={profile.title}
+                                    onChange={(e) =>
+                                        setProfile({ ...profile, title: e.target.value })
+                                    }
+                                    style={{
+                                        fontSize: "24px",
+                                        backgroundColor: "transparent",
+                                        border: "1px solid var(--color-primary)",
+                                        borderRadius: "4px",
+                                        color: "var(--color-primary)",
+                                        padding: "5px",
+                                        marginBottom: "20px",
+                                        width: "100%",
+                                    }}
+                                />
 
-                                      {profile.github && (
-                                          <div style={{ display: "flex", gap: "10px" }}>
-                                              <button
-                                                  onClick={handleGithubAnalyze}
-                                                  style={{
-                                                      padding: "4px 10px",
-                                                      fontSize: "12px",
-                                                      backgroundColor: "var(--color-primary)",
-                                                      color: "white",
-                                                      border: "none",
-                                                      borderRadius: "4px",
-                                                      cursor: "pointer"
-                                                  }}
-                                              >
-                                                  Analysoi GitHub
-                                              </button>
+                                <textarea
+                                    value={profile.summary}
+                                    onChange={(e) =>
+                                        setProfile({ ...profile, summary: e.target.value })
+                                    }
+                                    style={{
+                                        fontSize: "16px",
+                                        lineHeight: "1.6",
+                                        maxWidth: "900px",
+                                        backgroundColor: "transparent",
+                                        border: "1px solid var(--border-soft)",
+                                        borderRadius: "4px",
+                                        color: "var(--text-secondary)",
+                                        padding: "10px",
+                                        marginBottom: "20px",
+                                        width: "100%",
+                                        minHeight: "100px",
+                                    }}
+                                />
 
-                                                <button
-                                                  onClick={handleFetchRepos}
-                                                  style={{
-                                                      padding: "4px 10px",
-                                                      fontSize: "12px",
-                                                      backgroundColor: "#6cd757",
-                                                      color: "white",
-                                                      border: "none",
-                                                      borderRadius: "4px",
-                                                      cursor: "pointer"
-                                                  }}
-                                              >
-                                                  Tuo GitHub-projektit
-                                              </button>
-                                          </div>
-                                      )}
+                                {/* Contact Info */}
+                                <div
+                                    style={{
+                                        display: "grid",
+                                        gridTemplateColumns: "1fr 1fr",
+                                        gap: "15px",
+                                        marginTop: "20px",
+                                        fontSize: "14px",
+                                        color: "var(--text-secondary)",
+                                    }}
+                                >
+                                    <div>
+                                        <strong>Email:</strong>{" "}
+                                        <input
+                                            type="email"
+                                            value={profile.email}
+                                            onChange={(e) =>
+                                                setProfile({ ...profile, email: e.target.value })
+                                            }
+                                        />
+                                    </div>
 
-                                  </div>
-                              </div>
-                          </>
-                      )}
-                  </section>
+                                    <div>
+                                        <strong>Puhelin:</strong>{" "}
+                                        <input
+                                            type="tel"
+                                            value={profile.phone}
+                                            onChange={(e) =>
+                                                setProfile({ ...profile, phone: e.target.value })
+                                            }
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <strong>Sijainti:</strong>{" "}
+                                        <input
+                                            type="text"
+                                            value={profile.location}
+                                            onChange={(e) =>
+                                                setProfile({ ...profile, location: e.target.value })
+                                            }
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <strong>LinkedIn:</strong>{" "}
+                                        <a
+                                            href={`https://linkedin.com/in/${profile.linkedin}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            linkedin.com/in/{profile.linkedin}
+                                        </a>
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <h1 style={{ fontSize: "32px" }}>{profile.name}</h1>
+                                <h2 style={{ fontSize: "24px", color: "var(--color-primary)" }}>
+                                    {profile.title}
+                                </h2>
+                                <p style={{ maxWidth: "900px" }}>{profile.summary}</p>
+
+                                <div
+                                    style={{
+                                        display: "grid",
+                                        gridTemplateColumns: "1fr 1fr",
+                                        gap: "15px",
+                                        marginTop: "20px",
+                                    }}
+                                >
+                                    <div>
+                                        <strong>Email:</strong> {profile.email}
+                                    </div>
+
+                                    <div>
+                                        <strong>Puhelin:</strong> {profile.phone}
+                                    </div>
+
+                                    <div>
+                                        <strong>Sijainti:</strong> {profile.location}
+                                    </div>
+
+                                    <div>
+                                        <strong>LinkedIn:</strong>{" "}
+                                        <a
+                                            href={`https://linkedin.com/in/${profile.linkedin}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            linkedin.com/in/{profile.linkedin}
+                                        </a>
+                                    </div>
+
+                                    <div style={{ gridColumn: "1 / -1" }}>
+                                        <GitHubSection
+                                            username={profile.github}
+                                            onFetchRepos={handleFetchRepos}
+                                            onAnalyze={handleGithubAnalyze}
+                                        />
+                                    </div>
+                                </div>
+                            </>
+
+                        )}
+                    </section>
+
         
 
         {/* Edit Button */}
@@ -1350,74 +1341,61 @@ export default function Portfolio() {
       </div>
           </div>
 
-          {showSkillModal && detectedSkills && (
-              <div style={{
-                  position: "fixed",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: "100%",
-                  backgroundColor: "rgba(0,0,0,0.5)",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  zIndex: 1000
-              }}>
-                  <div style={{
-                      background: "var(--surface-card)",
-                      color: "var(--text-primary)",
-                      padding: "30px",
-                      borderRadius: "10px",
-                      maxWidth: "400px",
-                      width: "90%",
-                      border: "1px solid var(--border-soft)"
-                  }}>
-                      <h3>GitHubista löytyi taidot</h3>
+            {showSkillModal && detectedSkills && (
+                <div style={{
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                    backgroundColor: "rgba(0,0,0,0.5)",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    zIndex: 1000
+                }}>
+                    <div style={{
+                        background: "var(--surface-card)",
+                        color: "var(--text-primary)",
+                        padding: "30px",
+                        borderRadius: "10px",
+                        maxWidth: "400px",
+                        width: "90%",
+                        border: "1px solid var(--border-soft)"
+                    }}>
+                        <h3>GitHubista löytyi taidot</h3>
 
-                      <div style={{ marginBottom: "20px" }}>
-                          {[...detectedSkills.frontend,
-                          ...detectedSkills.backend,
-                          ...detectedSkills.tools,
-                          ...detectedSkills.other
-                          ].map((skill, i) => (
-                              <div key={i}>{skill}</div>
-                          ))}
-                      </div>
+                        <div style={{ marginBottom: "20px" }}>
+                            {[...detectedSkills.frontend,
+                            ...detectedSkills.backend,
+                            ...detectedSkills.tools,
+                            ...detectedSkills.other
+                            ].map((skill, i) => (
+                                <div key={i}>{skill}</div>
+                            ))}
+                        </div>
 
-                      <div style={{ display: "flex", gap: "10px" }}>
-                          <button
-                              onClick={handleConfirmSkills}
-                              style={{
-                                  backgroundColor: "var(--color-primary)",
-                                  color: "white",
-                                  border: "none",
-                                  padding: "10px",
-                                  borderRadius: "5px",
-                                  cursor: "pointer"
-                              }}
-                          >
-                              Lisää taidot
-                              
-                          </button>
+                        <div style={{ display: "flex", gap: "10px" }}>
+                            <button onClick={handleConfirmSkills}>
+                                Lisää taidot
+                            </button>
 
+                            <button onClick={() => setShowSkillModal(false)}>
+                                Peruuta
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
-                          <button
-                              onClick={() => setShowSkillModal(false)}
-                              style={{
-                                  backgroundColor: "var(--surface-muted)",
-                                  color: "var(--text-primary)",
-                                  border: "1px solid var(--border-soft)",
-                                  padding: "10px",
-                                  borderRadius: "5px",
-                                  cursor: "pointer"
-                              }}
-                          >
-                              Peruuta
-                          </button>
-                      </div>
-                  </div>
-              </div>
-          )}
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
+            )}
+        )
     </>
   );
 }
