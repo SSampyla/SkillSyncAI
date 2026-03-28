@@ -1,7 +1,7 @@
 import { createEmptyPortfolio } from "../data/portfolioTemplate";
 
 
-// demoData.js - Luo demoportfolio ja demo-projektit, joita k‰ytet‰‰n demo-tilassa. N‰in k‰ytt‰j‰t voivat kokeilla sovellusta ilman omaa dataa.
+// demoData.js - Luo demoportfolio ja demo-projektit, joita k‰ytet‰‰n demo-tilassa. N‰in k‰ytt‰j‰t voivat kokeilla sovellusta ilman omia tietojaan. 
 export function createDemoPortfolio() {
     const p = createEmptyPortfolio();
 

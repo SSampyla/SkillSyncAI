@@ -3,20 +3,56 @@
   "WorkspaceRootPath": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\Source\\Repos\\SkillSyncAI\\frontend\\src\\components\\GitHubSection.jsx||{8B382828-6202-11D1-8870-0000F87579D2}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:frontend\\src\\components\\GitHubSection.jsx||{8B382828-6202-11D1-8870-0000F87579D2}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\pages\\Home.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:frontend\\src\\pages\\Home.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\styles\\home.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:frontend\\src\\styles\\home.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\styles\\portfolio.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:frontend\\src\\styles\\portfolio.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\demo\\useDemoMode.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:frontend\\src\\demo\\useDemoMode.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\demo\\demoData.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:frontend\\src\\demo\\demoData.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\data\\promptTestData.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:backend\\data\\promptTestData.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\data\\projects.mock.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:backend\\data\\projects.mock.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\App.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:frontend\\src\\App.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\index.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:backend\\index.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\pages\\Portfolio.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:frontend\\src\\pages\\Portfolio.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\components\\Toast.jsx||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:frontend\\src\\components\\Toast.jsx||{8B382828-6202-11D1-8870-0000F87579D2}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\components\\ProjectGallery.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:frontend\\src\\components\\ProjectGallery.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\Source\\Repos\\SkillSyncAI\\frontend\\src\\components\\Toast.jsx||{8B382828-6202-11D1-8870-0000F87579D2}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:frontend\\src\\components\\Toast.jsx||{8B382828-6202-11D1-8870-0000F87579D2}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\pages\\Portfolio.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:frontend\\src\\pages\\Portfolio.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\components\\GitHubSection.jsx||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:frontend\\src\\components\\GitHubSection.jsx||{8B382828-6202-11D1-8870-0000F87579D2}"
     }
   ],
   "DocumentGroupContainers": [
@@ -26,7 +62,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 8,
           "Children": [
             {
               "$type": "Bookmark",
@@ -34,59 +70,173 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "ProjectGallery.jsx",
-              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\components\\ProjectGallery.jsx",
-              "RelativeDocumentMoniker": "frontend\\src\\components\\ProjectGallery.jsx",
-              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\components\\ProjectGallery.jsx",
-              "RelativeToolTip": "frontend\\src\\components\\ProjectGallery.jsx",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAA9AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-03-27T16:00:32.986Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "Toast.jsx",
-              "DocumentMoniker": "C:\\Users\\halot\\Source\\Repos\\SkillSyncAI\\frontend\\src\\components\\Toast.jsx",
-              "RelativeDocumentMoniker": "frontend\\src\\components\\Toast.jsx",
-              "ToolTip": "C:\\Users\\halot\\Source\\Repos\\SkillSyncAI\\frontend\\src\\components\\Toast.jsx",
-              "RelativeToolTip": "frontend\\src\\components\\Toast.jsx",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-03-27T15:27:04.76Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "GitHubSection.jsx",
-              "DocumentMoniker": "C:\\Users\\halot\\Source\\Repos\\SkillSyncAI\\frontend\\src\\components\\GitHubSection.jsx",
-              "RelativeDocumentMoniker": "frontend\\src\\components\\GitHubSection.jsx",
-              "ToolTip": "C:\\Users\\halot\\Source\\Repos\\SkillSyncAI\\frontend\\src\\components\\GitHubSection.jsx",
-              "RelativeToolTip": "frontend\\src\\components\\GitHubSection.jsx",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-03-27T15:25:12.825Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 3,
-              "Title": "Portfolio.jsx",
-              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\pages\\Portfolio.jsx",
-              "RelativeDocumentMoniker": "frontend\\src\\pages\\Portfolio.jsx",
-              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\pages\\Portfolio.jsx",
-              "RelativeToolTip": "frontend\\src\\pages\\Portfolio.jsx",
-              "ViewState": "AgIAAOgBAAAAAAAAAAASwPEBAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
-              "WhenOpened": "2026-03-27T15:10:36.17Z",
+              "Title": "useDemoMode.js",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\demo\\useDemoMode.js",
+              "RelativeDocumentMoniker": "frontend\\src\\demo\\useDemoMode.js",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\demo\\useDemoMode.js",
+              "RelativeToolTip": "frontend\\src\\demo\\useDemoMode.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-28T13:10:05.309Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "demoData.js",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\demo\\demoData.js",
+              "RelativeDocumentMoniker": "frontend\\src\\demo\\demoData.js",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\demo\\demoData.js",
+              "RelativeToolTip": "frontend\\src\\demo\\demoData.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABoAAAAvAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-28T13:05:59.851Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "promptTestData.js",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\data\\promptTestData.js",
+              "RelativeDocumentMoniker": "backend\\data\\promptTestData.js",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\data\\promptTestData.js",
+              "RelativeToolTip": "backend\\data\\promptTestData.js",
+              "ViewState": "AgIAABYAAAAAAAAAAAAvwAwAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-28T13:05:43.316Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "projects.mock.js",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\data\\projects.mock.js",
+              "RelativeDocumentMoniker": "backend\\data\\projects.mock.js",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\data\\projects.mock.js",
+              "RelativeToolTip": "backend\\data\\projects.mock.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-28T13:05:41.677Z",
               "EditorCaption": ""
             },
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "index.js",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\index.js",
+              "RelativeDocumentMoniker": "backend\\index.js",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\backend\\index.js",
+              "RelativeToolTip": "backend\\index.js",
+              "ViewState": "AgIAABQAAAAAAAAAAAAvwBwAAAAWAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-28T10:41:43.618Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "App.jsx",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\App.jsx",
+              "RelativeDocumentMoniker": "frontend\\src\\App.jsx",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\App.jsx",
+              "RelativeToolTip": "frontend\\src\\App.jsx",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAB4AAAATAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2026-03-28T10:40:40.069Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Home.jsx",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\pages\\Home.jsx",
+              "RelativeDocumentMoniker": "frontend\\src\\pages\\Home.jsx",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\pages\\Home.jsx",
+              "RelativeToolTip": "frontend\\src\\pages\\Home.jsx",
+              "ViewState": "AgIAAEYAAAAAAAAAAIA5wEoAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2026-03-28T09:58:59.565Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "home.css",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\styles\\home.css",
+              "RelativeDocumentMoniker": "frontend\\src\\styles\\home.css",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\styles\\home.css",
+              "RelativeToolTip": "frontend\\src\\styles\\home.css",
+              "ViewState": "AgIAAP0BAAAAkOcA7Y4RwAoCAAAhAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
+              "WhenOpened": "2026-03-28T09:57:56.599Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "portfolio.css",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\styles\\portfolio.css",
+              "RelativeDocumentMoniker": "frontend\\src\\styles\\portfolio.css",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\styles\\portfolio.css",
+              "RelativeToolTip": "frontend\\src\\styles\\portfolio.css",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACMAAAASAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
+              "WhenOpened": "2026-03-28T09:32:53.216Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "ProjectGallery.jsx",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\components\\ProjectGallery.jsx",
+              "RelativeDocumentMoniker": "frontend\\src\\components\\ProjectGallery.jsx",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\components\\ProjectGallery.jsx",
+              "RelativeToolTip": "frontend\\src\\components\\ProjectGallery.jsx",
+              "ViewState": "AgIAACECAAAAAAAAAAAcwEECAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2026-03-27T16:00:32.986Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "Toast.jsx",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\components\\Toast.jsx",
+              "RelativeDocumentMoniker": "frontend\\src\\components\\Toast.jsx",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\components\\Toast.jsx",
+              "RelativeToolTip": "frontend\\src\\components\\Toast.jsx",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAB8AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2026-03-27T15:27:04.76Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "GitHubSection.jsx",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\components\\GitHubSection.jsx",
+              "RelativeDocumentMoniker": "frontend\\src\\components\\GitHubSection.jsx",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\components\\GitHubSection.jsx",
+              "RelativeToolTip": "frontend\\src\\components\\GitHubSection.jsx",
+              "ViewState": "AgIAAC4AAAAAAAAAAAAMwGgAAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2026-03-27T15:25:12.825Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "Portfolio.jsx",
+              "DocumentMoniker": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\pages\\Portfolio.jsx",
+              "RelativeDocumentMoniker": "frontend\\src\\pages\\Portfolio.jsx",
+              "ToolTip": "C:\\Users\\halot\\source\\repos\\SkillSyncAI\\frontend\\src\\pages\\Portfolio.jsx",
+              "RelativeToolTip": "frontend\\src\\pages\\Portfolio.jsx",
+              "ViewState": "AgIAAB8FAAAAAAAAAAAwwEIFAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2026-03-27T15:10:36.17Z",
+              "EditorCaption": ""
             }
           ]
         }

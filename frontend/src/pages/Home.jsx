@@ -5,7 +5,6 @@ import { useState } from "react";
 import { useAvailableSkills, usePortfolio, clearCandidateSkills  } from "../hooks/useDatabase";
 import { createEmptyPortfolio } from "../data/portfolioTemplate";
 import { isDemoMode } from "../demo/useDemoMode";
-import { useAppliedJobs } from "../hooks/db/useAppliedJobs";
 
 
 /*Lisätty kotisivulle profiilin luonti ja taitovalinnat.
@@ -64,6 +63,8 @@ function Home() {
 
     const hasAnyValue = (values) => values.some((value) => value.trim() !== "");
 
+ 
+
     // Avaa profiilin luontilomake
 
 
@@ -71,70 +72,102 @@ function Home() {
         setShowForm(true);
     }
 
-    // Nollaa lomakkeen tilat ja valinnat, jotta käyttäjälle näytetään tyhjä lomake joka kerta, kun hän avaa profiilin luontilomakkeen. Tämä funktio voidaan kutsua aina, kun lomake avataan, varmistaen että vanhat tiedot eivät jää näkyviin.
-    function resetForm() {
-        const emptyProfile = createEmptyPortfolio();
-        setProfile(emptyProfile);
-        setSelectedSkills(emptyProfile.skills);
-        setExperienceDraft({
-            title: "",
-            company: "",
-            period: "",
-            description: "",
-            achievements: ""
-        });
-        setEducationDraft({
-            degree: "",
-            institution: "",
-            year: "",
-            relevant: ""
-        });
-        setCertificationsText("");
-        setWhyMeText("");
-        setLookingForText("");
-    }
+  
 
     // Luo profiili ja tallenna se backendin database.json:iin. Tiedot haetaan lomakkeelta, ja jos kokemus tai koulutus on osittain täytetty, ne sisällytetään profiiliin. Taitovalinnat, sertifikaatit ja profiilin yhteenveto käsitellään myös lomakkeelta ja tallennetaan profiiliin. Lopuksi käyttäjä ohjataan portfolio-sivulle.
 
     function validateForm() {
         const newErrors = {};
 
+        // NAME
         if (!profile.name.trim()) {
             newErrors.name = "Nimi on pakollinen";
+        } else {
+            const nameError = validateName(profile.name);
+            if (nameError) {
+                newErrors.name = nameError;
+            }
         }
 
+        // EMAIL
         if (!profile.email.trim()) {
             newErrors.email = "Sähköposti on pakollinen";
         } else if (!profile.email.includes("@")) {
             newErrors.email = "Virheellinen sähköposti";
         }
 
+        // TITLE
         if (!profile.title.trim()) {
             newErrors.title = "Titteli on pakollinen";
         }
 
+        // LOCATION
         if (!profile.location.trim()) {
             newErrors.location = "Sijainti on pakollinen";
         }
 
-        const phone = profile.phone.trim();
-
-        if (!phone) {
+        // PHONE
+        if (!profile.phone.trim()) {
             newErrors.phone = "Puhelinnumero on pakollinen";
         } else {
-            const phoneRegex = /^\+358\s?\d{2}\s?\d{3}\s?\d{4}$/;
+            const phoneResult = validatePhone(profile.phone);
 
-            // sallitaan myös väliviivat
-            const normalized = phone.replace(/-/g, " ");
-
-            if (!phoneRegex.test(normalized)) {
-                newErrors.phone = "Muoto: +358401234567";
+            if (!phoneResult.valid) {
+                newErrors.phone = phoneResult.message;
             }
         }
 
         setErrors(newErrors);
-
         return Object.keys(newErrors).length === 0;
+    }
+    function validateName(name) {
+        const trimmed = name.trim();
+
+        if (/\d/.test(trimmed)) {
+            return "Nimi ei voi sisältää numeroita";
+        }
+
+        if (!/^[a-zA-ZåäöÅÄÖ\s-]+$/.test(trimmed)) {
+            return "Nimi sisältää virheellisiä merkkejä";
+        }
+
+        const parts = trimmed.split(/\s+/);
+
+        if (parts.length < 2) {
+            return "Anna etu- ja sukunimi";
+        }
+
+        // varmistetaan että molemmat vähintään 2 kirjainta
+        if (parts.some(p => p.length < 2)) {
+            return "Nimen osien tulee olla vähintään 2 merkkiä";
+        }
+
+        return null;
+    }
+
+    function validatePhone(phone) {
+        const cleaned = phone.replace(/[^\d+]/g, "");
+
+        let normalized = cleaned;
+
+        if (cleaned.startsWith("0")) {
+            normalized = "+358" + cleaned.substring(1);
+        }
+
+        if (cleaned.startsWith("358")) {
+            normalized = "+" + cleaned;
+        }
+
+        const phoneRegex = /^\+358\d{9}$/;
+
+        if (!phoneRegex.test(normalized)) {
+            return {
+                valid: false,
+                message: "Anna numero muodossa 0401234567 tai +358401234567"
+            };
+        }
+
+        return { valid: true, value: normalized };
     }
 
 
@@ -142,15 +175,30 @@ function Home() {
     async function createProfile(e) {
         e.preventDefault();
 
-        if (!validateForm()) return; 
+        const isValid = validateForm();
 
-        if (loading) return;
+        if (!isValid) {
+            setTimeout(() => {
+                const firstError = document.querySelector(".input-error");
+
+                if (firstError) {
+                    firstError.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center"
+                    });
+                    firstError.focus();
+                }
+            }, 0);
+
+            return;
+        }
 
         if (loading) return;
 
         setLoading(true);
 
         try {
+            const phoneResult = validatePhone(profile.phone);
 
             const includeExperience = hasAnyValue([
                 experienceDraft.title,
@@ -169,6 +217,7 @@ function Home() {
 
             const fullProfile = {
                 ...profile,
+                phone: phoneResult.value, // 🔥 normalisoitu numero
                 skills: selectedSkills,
                 experience: includeExperience
                     ? [{
@@ -196,6 +245,7 @@ function Home() {
 
             await updatePortfolio(fullProfile);
             await clearCandidateSkills();
+
             setShowForm(false);
             navigate("/portfolio", { state: { pendingSkills: selectedSkills } });
 
@@ -226,15 +276,15 @@ function Home() {
             <Navbar />
             <hr className="divider" />
 
-            <div className="home-container">
+            <div className="home-container page">
 
                 {/* Hero Section */}
                 <section className="hero-section">
                     <div className="hero-content">
 
                         <div className="hero-badge">
-                            <span className="badge-icon">AI</span>
-                            <span>Tekoäly-pohjainen osaamisen arviointi</span>
+                            <span className="badge-icon"></span>
+                            <span>Tekoälypohjainen osaamisen arviointi</span>
                         </div>
 
                         <h1 className="hero-title">
@@ -271,7 +321,7 @@ function Home() {
                                 className="btn btn-secondary"
                                 onClick={() => {
                                     localStorage.setItem("demoMode", "true");
-                                    window.location.reload();
+                                    navigate("/portfolio");
                                 }}
                                 style={{
                                     background: "linear-gradient(135deg, #7c3aed, #a855f7)",
@@ -314,48 +364,64 @@ function Home() {
                             >
 
                                 <input
+                                    className={errors.name ? "input-error" : ""}
                                     placeholder="Nimi"
                                     value={profile.name}
-                                    onChange={(e) =>
-                                        setProfile((prev) => ({ ...prev, name: e.target.value }))
-                                    }
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setProfile(prev => ({ ...prev, name: value }));
+                                        setErrors(prev => ({ ...prev, name: undefined }));
+                                    }}
                                 />
-                                {errors.name && <p style={{ color: "red" }}>{errors.name}</p>}
+                                {errors.name && <span className="error-text">{errors.name}</span>}
 
                                 <input
+                                    className={errors.title ? "input-error" : ""}
                                     placeholder="Titteli (esim Full Stack Developer)"
                                     value={profile.title}
-                                    onChange={(e) =>
-                                        setProfile((prev) => ({ ...prev, title: e.target.value }))
-                                    }
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setProfile(prev => ({ ...prev, title: value }));
+                                        setErrors(prev => ({ ...prev, title: undefined }));
+                                    }}
                                 />
+                                {errors.title && <span className="error-text">{errors.title}</span>}
 
                                 <input
+                                    className={errors.email ? "input-error" : ""}
                                     placeholder="Email"
                                     value={profile.email}
-                                    onChange={(e) =>
-                                        setProfile((prev) => ({ ...prev, email: e.target.value }))
-                                    }
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setProfile(prev => ({ ...prev, email: value }));
+                                        setErrors(prev => ({ ...prev, email: undefined }));
+                                    }}
                                 />
-                                {errors.email && <p style={{ color: "red" }}>{errors.email}</p>}
+                                {errors.email && <span className="error-text">{errors.email}</span>}
 
                                 <input
+                                    className={errors.phone ? "input-error" : ""}
                                     placeholder="Puhelin"
                                     value={profile.phone}
-                                    onChange={(e) =>
-                                        setProfile((prev) => ({ ...prev, phone: e.target.value }))
-                                    }
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setProfile(prev => ({ ...prev, phone: value }));
+                                        setErrors(prev => ({ ...prev, phone: undefined }));
+                                    }}
                                 />
-                                {errors.phone && <p style={{ color: "red" }}>{errors.phone}</p>}
+                                {errors.phone && <span className="error-text">{errors.phone}</span>}
 
                                 <input
+                                    className={errors.location ? "input-error" : ""}
                                     placeholder="Sijainti"
                                     value={profile.location}
-                                    onChange={(e) =>
-                                        setProfile((prev) => ({ ...prev, location: e.target.value }))
-                                    }
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setProfile(prev => ({ ...prev, location: value }));
+                                        setErrors(prev => ({ ...prev, location: undefined }));
+                                    }}
                                 />
-                                {errors.location && <p style={{ color: "red" }}>{errors.location}</p>}
+                                {errors.location && <span className="error-text">{errors.location}</span>}
 
                                 <input
                                     placeholder="GitHub username"
@@ -428,7 +494,7 @@ function Home() {
 
                                 ))}
 
-                                <h3>Kokemus (ensimmainen)</h3>
+                                <h3>Lisää työkokemus</h3>
                                 <input
                                     placeholder="Rooli / projekti"
                                     value={experienceDraft.title}
@@ -465,7 +531,7 @@ function Home() {
                                     }
                                 />
 
-                                <h3>Koulutus (ensimmainen)</h3>
+                                <h3>Lisää yksi tutkinto</h3>
                                 <input
                                     placeholder="Tutkinto"
                                     value={educationDraft.degree}
@@ -514,7 +580,11 @@ function Home() {
                                     onChange={(e) => setLookingForText(e.target.value)}
                                 />
 
-                                <button type="submit" className="btn btn-primary" disabled={loading}>
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary"
+                                    disabled={loading}
+                                >
                                     {loading ? "Luodaan..." : "Luo Portfolio"}
                                 </button>
 
@@ -531,12 +601,34 @@ function Home() {
                     <h2 className="section-title">Miten SkillSync AI toimii?</h2>
 
                     <div className="features-grid">
-                        {/* jätin tämän koskematta */}
+
+                        <div className="feature-card">
+                            <div className="feature-icon">🤖</div>
+                            <h3>Analysoi osaamisesi</h3>
+                            <p>
+                                Tekoäly tunnistaa vahvuutesi Github-profiilisi, työhistoriasi, koulutuksesi sekä sertifikaattiesi perusteella.
+                            </p>
+                        </div>
+
+                        <div className="feature-card">
+                            <div className="feature-icon">🎯</div>
+                            <h3>It's a match!</h3>
+                            <p>
+                                Näe kuinka hyvin osaamisesi vastaa avoimia työpaikkoja ja löydä sinulle sopivin duuni!
+                            </p>
+                        </div>
+
+                        <div className="feature-card">
+                            <div className="feature-icon">📈</div>
+                            <h3>Ole kehityksen aallonharjalla</h3>
+                            <p>
+                                Saat suosituksia mitä taitoja kehittää, jotta parannat työllistymismahdollisuuksiasi.
+                            </p>
+                        </div>
                     </div>
-
                 </section>
+                </div>
 
-            </div>
         </>
     );
 }
