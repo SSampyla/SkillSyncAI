@@ -17,7 +17,15 @@ import {
 } from "../data/portfolioTemplate";
 import GitHubSection from "../components/GitHubSection";
 import Toast from "../components/Toast";
+import { isDemoMode } from "../demo/useDemoMode";
+import { demoProjects } from "../demo/demoData";
+import { usePortfolioProjects } from "../hooks/useDatabase";
 
+import { useNavigate } from "react-router-dom";
+
+import { deletePortfolio, clearCandidateSkills } from "../hooks/useDatabase";
+
+import RequireProfile from "../components/RequireProfile";
 
 
 //hookit ja funktiot, jotka hakevat ja päivittävät portfolio-dataa backendistä, sekä synkronoivat taitoja. Tiedot tallennetaan paikalliseen tilaan, joka peilaa backendissä olevaa dataa. Käyttäjä voi muuttaa tietoja, ja muutokset lähetetään backendille debouncattuna, jotta ei tarvitse tallentaa joka ikistä näppäinpainallusta.
@@ -36,6 +44,8 @@ export default function Portfolio() {
     };
 
     const [toast, setToast] = useState(null);
+    
+    const navigate = useNavigate();
 
     const [activeSection, setActiveSection] = useState("profile");
     const [isEditing, setIsEditing] = useState(false);
@@ -43,7 +53,9 @@ export default function Portfolio() {
     const isLoadingFromDB = useRef(false);
     const isProfileFromDB = useRef(false); 
 
-    const { availableSkills } = useAvailableSkills();
+    const skillsData = useAvailableSkills();
+    const availableSkills = skillsData?.availableSkills;
+ 
 
     const location = useLocation();
 
@@ -51,7 +63,7 @@ export default function Portfolio() {
         selectedSkills,
         setSelectedSkills,
         refetch: refetchSkills
-    } = useCandidateSkills(availableSkills, isLoadingFromDB);
+    } = useCandidateSkills(availableSkills || {}, isLoadingFromDB);
 
     // Portfolio data ja päivitysfunktio backendistä
 
@@ -61,9 +73,17 @@ export default function Portfolio() {
         loading: portfolioLoading
     } = usePortfolio();
 
+    const hasProfile =
+        portfolio &&
+        portfolio.name &&
+        portfolio.email;
+
     // Paikallinen tila, joka peilaa backendistä haettua portfolioa
 
+    const { createProject } = usePortfolioProjects();
+
     const [profile, setProfile] = useState(createEmptyPortfolio());
+
 
     useEffect(() => {
         if (portfolio) {
@@ -78,10 +98,12 @@ export default function Portfolio() {
     const DEBOUNCE_MS = 250;
 
     useEffect(() => {
-        if (isProfileFromDB.current) {      
+        if (isProfileFromDB.current) {
             isProfileFromDB.current = false;
             return;
         }
+
+        if (!profile) return;
 
         const timeout = setTimeout(() => {
             updatePortfolio(profile).catch(() => {
@@ -93,12 +115,11 @@ export default function Portfolio() {
     }, [profile]);
 
     useEffect(() => {
-        const pendingSkills = location.state?.pendingSkills;
-        if (!pendingSkills) return;
+        if (!location.state?.pendingSkills) return;
 
-        setSelectedSkills(pendingSkills); 
+        setSelectedSkills(location.state.pendingSkills);
         window.history.replaceState({}, "");
-    }, []);
+    }, [location.state]);
 
     // Synkronointitila, joka kertoo onko taitojen synkronointi käynnissä, onnistui vai epäonnistui. Tämä tila voidaan näyttää UI:ssa käyttäjälle.
 
@@ -117,42 +138,40 @@ export default function Portfolio() {
     // Funktio, joka mapataan GitHubista löydetyt teknologiat sovelluksen taitoluokkiin. Jos teknologia ei löydy, se laitetaan "other"-kategoriaan.
     
 
-            const mapGithubTechToSkills = (techList) => {
+    const mapGithubTechToSkills = (techList) => {
 
-                const mapped = {
-                    frontend: [],
-                    backend: [],
-                    tools: [],
-                    other: []
-                };
+        const mapped = {
+            frontend: [],
+            backend: [],
+            tools: [],
+            other: []
+        };
 
-                techList.forEach((tech) => {
+        techList.forEach((tech) => {
 
-                    const normalized = tech.toLowerCase();
+            const normalized = tech.toLowerCase();
+            let foundCategory = null;
 
-                    let foundCategory = null;
+            for (const [category, skills] of Object.entries(availableSkills || {})) {
+                if (!Array.isArray(skills)) continue;
 
-                    for (const [category, skills] of Object.entries(availableSkills)) {
-                        if (!Array.isArray(skills)) continue;
-                        const match = skills.find(
-                            skill => skill.toLowerCase() === normalized
-                        );
+                const match = skills.find(
+                    skill => skill.toLowerCase() === normalized
+                );
 
-                        if (match) {
-                            mapped[category].push(match);
-                            foundCategory = category;
-                            break;
-                        }
+                if (match) {
+                    mapped[category].push(match);
+                    foundCategory = category;
+                    break;
+                }
+            }
 
-                    }
+            if (!foundCategory) {
+                mapped.other.push(tech);
+            }
+        });
 
-                    if (!foundCategory) {
-                        mapped.other.push(tech);
-                    }
-
-                });
-
-                return mapped;
+        return mapped;
     };
 
     // GitHub-analyysifunktio, joka hakee käyttäjän repositoriot ja niissä käytetyt kielet, ja mapataan ne taitoihin. Tässä tuli jokin häikkä että ei hae teknologioita
@@ -223,10 +242,11 @@ export default function Portfolio() {
             ...profile,
             [key]: updated
         });
-    };
+    };   
+
+   
 
     const handleFetchRepos = async () => {
-
         if (!profile.github) {
             showToast("GitHub username puuttuu", "error");
             return;
@@ -239,16 +259,34 @@ export default function Portfolio() {
 
             const repos = await res.json();
 
+            if (!Array.isArray(repos)) {
+                throw new Error("GitHub API-virhe");
+            }
+
             const projects = repos.slice(0, 6).map(repo => ({
-                name: repo.name,
-                description: repo.description,
-                url: repo.html_url,
-                stars: repo.stargazers_count
+                title: repo.name,
+                description: repo.description || "Ei kuvausta",
+                longDescription: repo.description || "",
+                technologies: repo.language ? [repo.language] : [],
+                images: [],
+                video: "",
+                liveDemo: repo.homepage || "",
+                github: repo.html_url,
+                status: "Completed",
+                impact: `⭐ ${repo.stargazers_count} stars`
             }));
 
-            setGithubProjects(projects);
+            const uniqueProjects = projects.filter(
+                (p, index, self) =>
+                    index === self.findIndex(x => x.title === p.title)
+            );
 
-            showToast("Projektit haettu GitHubista", "success");
+            for (const p of uniqueProjects) {
+                await createProject(p); 
+            }
+
+            showToast("Projektit lisätty portfolioon", "success");
+
         } catch (err) {
             console.error(err);
             showToast("Repojen haku epäonnistui", "error");
@@ -272,7 +310,21 @@ export default function Portfolio() {
  
 
 
+    if (!availableSkills) {
+        return <div>Ladataan taitoja...</div>;
+    }
 
+    if (!hasProfile && !isDemoMode()) {
+        return (
+            <div style={{ padding: "40px" }}>
+                <h2>Ei profiilia</h2>
+                <p>Luo profiili ensin etusivulla.</p>
+                <button onClick={() => navigate("/")}>
+                    Siirry etusivulle
+                </button>
+            </div>
+        );
+    }
 
     
     
@@ -283,6 +335,43 @@ export default function Portfolio() {
       .filter(Boolean);
 
     const joinLines = (items) => (Array.isArray(items) ? items.join("\n") : "");
+
+    const handleResetProfile = async () => {
+        if (isDemoMode()) return;
+
+        const confirmReset = window.confirm(
+            "Haluatko varmasti poistaa profiilisi?"
+        );
+
+        if (!confirmReset) return;
+
+        try {
+            //  poisto backendista
+            await deletePortfolio();
+
+            await clearCandidateSkills();
+
+            // frontend reset
+            setProfile(createEmptyPortfolio());
+
+            setSelectedSkills({
+                frontend: [],
+                backend: [],
+                tools: [],
+                other: []
+            });
+
+            showToast("Profiili poistettu", "success");
+
+            setTimeout(() => {
+                navigate("/");
+            }, 800);
+
+        } catch (err) {
+            console.error(err);
+            showToast("Poisto epäonnistui", "error");
+        }
+    };
 
     return (
         <>
@@ -498,24 +587,45 @@ export default function Portfolio() {
 
         
 
-        {/* Edit Button */}
-        <div style={{ textAlign: "right", marginBottom: "20px" }}>
-          <button
-            onClick={() => setIsEditing(!isEditing)}
-            style={{
-              padding: "10px 20px",
-              backgroundColor: isEditing ? "#dc3545" : "#28a745",
-              color: "white",
-              border: "none",
-              borderRadius: "6px",
-              cursor: "pointer",
-              fontSize: "16px",
-              fontWeight: "bold",
-            }}
-          >
-            {isEditing ? "Lopeta Muokkaus" : "Muokkaa Portfoliota"}
-          </button>
-        </div>
+                    <div style={{ textAlign: "right", marginBottom: "20px" }}>
+
+                        <button
+                            onClick={() => setIsEditing(!isEditing)}
+                            style={{
+                                padding: "10px 20px",
+                                backgroundColor: isEditing ? "#dc3545" : "#28a745",
+                                color: "white",
+                                border: "none",
+                                borderRadius: "6px",
+                                cursor: "pointer",
+                                fontSize: "16px",
+                                fontWeight: "bold",
+                            }}
+                        >
+                            {isEditing ? "Lopeta Muokkaus" : "Muokkaa Portfoliota"}
+                        </button>
+
+                        {/* RESET NAPPI */}
+                        {!isDemoMode() && (
+                            <button
+                                onClick={handleResetProfile}
+                                style={{
+                                    padding: "10px 20px",
+                                    backgroundColor: "#dc3545",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "6px",
+                                    cursor: "pointer",
+                                    fontSize: "16px",
+                                    fontWeight: "bold",
+                                    marginLeft: "10px"
+                                }}
+                            >
+                                Poista profiili
+                            </button>
+                        )}
+
+                    </div>
 
         {/* Navigation Tabs */}
         <div style={{ display: "flex", gap: "10px", marginBottom: "30px", flexWrap: "wrap" }}>
@@ -674,21 +784,25 @@ export default function Portfolio() {
           </section>
                       )}
 
-                        {activeSection === "githubProjects" && githubProjects.length > 0 && (
-                          <section style={{ marginTop: "30px" }}>
+                    {activeSection === "githubProjects" && (
+                        <section style={{ marginTop: "30px" }}>
                             <h3>GitHub-projektit</h3>
 
-                              {githubProjects.map((project, i) => (
-                                  <div key={i} style={{ marginBottom: "15px" }}>
-                                      <strong>{project.name}</strong>
-                                      <p>{project.description}</p>
-                                      <a href={project.url} target="_blank">
-                                          Avaa GitHubissa
-                                      </a>
-                                  </div>
-                              ))}
-                          </section>
-                      )}
+                            {githubProjects.length === 0 ? (
+                                <p>Ei projekteja vielä. Hae GitHubista.</p>
+                            ) : (
+                                githubProjects.map((project, i) => (
+                                    <div key={i} style={{ marginBottom: "15px" }}>
+                                        <strong>{project.name}</strong>
+                                        <p>{project.description}</p>
+                                        <a href={project.url} target="_blank">
+                                            Avaa GitHubissa
+                                        </a>
+                                    </div>
+                                ))
+                            )}
+                        </section>
+                    )}
 
         {/* Experience Section */}
         {activeSection === "experience" && (

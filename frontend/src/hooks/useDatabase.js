@@ -26,3 +26,4 @@ export {
 export { usePortfolio } from "./db/usePortfolio";
 export { useAppliedJobs } from "./db/useAppliedJobs";
 export { usePortfolioProjects } from "./db/usePortfolioProjects";
+export { deletePortfolio } from "./db/usePortfolio";

@@ -22,7 +22,14 @@ Tiedot siirtyvät portofolio-sivulle, jossa ne ovat vielä muokattavissa
 function Home() {
 
     const { availableSkills } = useAvailableSkills();
-    const { updatePortfolio } = usePortfolio();
+    const { portfolio, updatePortfolio } = usePortfolio();
+    const hasProfile =
+        portfolio &&
+        portfolio.name &&
+        portfolio.email;
+
+
+
 
     const [errors, setErrors] = useState({});
 
@@ -302,34 +309,46 @@ function Home() {
 
                         <div className="hero-buttons">
 
-                            {!isDemoMode() && (
-                                <button
-                                    type="button"
-                                    className="btn btn-primary"
-                                    onClick={openCreateForm}
-                                >
-                                    Luo Portfolio
-                                </button>
+                            {isDemoMode() ? (
+                                <Link to="/avoimet-tyopaikat" className="btn btn-secondary">
+                                    Selaa Työpaikkoja
+                                </Link>
+                            ) : (
+                                <>
+                                    <button
+                                        type="button"
+                                        className="btn btn-primary"
+                                        onClick={() => {
+                                            if (hasProfile) {
+                                                navigate("/portfolio");
+                                            } else {
+                                                openCreateForm();
+                                            }
+                                        }}
+                                    >
+                                        {hasProfile ? "Siirry Portfolioon" : "Luo Portfolio"}
+                                    </button>
+
+                                    <Link to="/avoimet-tyopaikat" className="btn btn-secondary">
+                                        Selaa Työpaikkoja
+                                    </Link>
+
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary"
+                                        onClick={() => {
+                                            localStorage.setItem("demoMode", "true");
+                                            navigate("/portfolio");
+                                        }}
+                                        style={{
+                                            background: "linear-gradient(135deg, #7c3aed, #a855f7)",
+                                            border: "none"
+                                        }}
+                                    >
+                                        Kokeile demoa
+                                    </button>
+                                </>
                             )}
-
-                            <Link to="/avoimet-tyopaikat" className="btn btn-secondary">
-                                Selaa Työpaikkoja
-                            </Link>
-
-                            <button
-                                type="button"
-                                className="btn btn-secondary"
-                                onClick={() => {
-                                    localStorage.setItem("demoMode", "true");
-                                    navigate("/portfolio");
-                                }}
-                                style={{
-                                    background: "linear-gradient(135deg, #7c3aed, #a855f7)",
-                                    border: "none"
-                                }}
-                            >
-                                 Kokeile demoa
-                            </button>
 
                         </div>
 

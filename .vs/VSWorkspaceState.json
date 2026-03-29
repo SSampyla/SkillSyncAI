@@ -1,16 +1,15 @@
 {
   "ExpandedNodes": [
     "",
-    "\\backend",
-    "\\backend\\data",
-    "\\backend\\routes",
     "\\frontend",
     "\\frontend\\src",
+    "\\frontend\\src\\assets",
+    "\\frontend\\src\\components",
     "\\frontend\\src\\data",
     "\\frontend\\src\\demo",
+    "\\frontend\\src\\hooks",
     "\\frontend\\src\\pages",
     "\\frontend\\src\\styles"
   ],
-  "SelectedNode": "\\frontend\\src\\demo\\useDemoMode.js",
   "PreviewInSolutionExplorer": false
 }

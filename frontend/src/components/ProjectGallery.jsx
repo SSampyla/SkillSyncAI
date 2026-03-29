@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, } from "react";
 import Navbar from "./Navbar";
 import "../styles/gallery.css";
 import { usePortfolioProjects } from "../hooks/useDatabase";
+import RequireProfile from "../components/RequireProfile";
 
 const PLACEHOLDER_IMAGE =
   "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&h=600&fit=crop";
@@ -10,7 +11,19 @@ const parseTechnologies = (value) =>
   value
     .split(",")
     .map((tech) => tech.trim())
-    .filter(Boolean);
+        .filter(Boolean);
+
+const normalizeTechnologies = (tech) => {
+    if (!tech) return [];
+
+    if (Array.isArray(tech)) return tech;
+
+    if (typeof tech === "string") {
+        return tech.split(",").map(t => t.trim()).filter(Boolean);
+    }
+
+    return [];
+};
 
 const createEmptyProject = () => ({
   title: "Uusi projekti",
@@ -26,134 +39,151 @@ const createEmptyProject = () => ({
   impact: "Kuvaa projektin vaikutus yhdellä tai kahdella lauseella.",
 });
 
+
+
 export default function ProjectGallery() {
-  const { projects, loading, saving, error, createProject, updateProject, deleteProject } = usePortfolioProjects();
+    const {
+        projects,
+        loading,
+        saving,
+        error,
+        createProject,
+        updateProject,
+        deleteProject
+    } = usePortfolioProjects();
 
-  const [selectedProjectId, setSelectedProjectId] = useState(null);
-  const [filterTag, setFilterTag] = useState("all");
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [editedProject, setEditedProject] = useState(null);
-  const [newImageUrl, setNewImageUrl] = useState("");
+    // TAGIT
+    const allTags = [
+        "all",
+        ...new Set(projects.flatMap(p => normalizeTechnologies(p.technologies)))
+    ];
 
-  const selectedProject = useMemo(
-    () => projects.find((project) => project.id === selectedProjectId) || null,
-    [projects, selectedProjectId]
-  );
+    const [selectedProjectId, setSelectedProjectId] = useState(null);
+    const [filterTag, setFilterTag] = useState("all");
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [editedProject, setEditedProject] = useState(null);
+    const [newImageUrl, setNewImageUrl] = useState("");
 
-  const closeModal = () => {
-    setSelectedProjectId(null);
-    setIsEditMode(false);
-    setEditedProject(null);
-    setNewImageUrl("");
-  };
+    const selectedProject = useMemo(
+        () => projects.find((project) => project.id === selectedProjectId) || null,
+        [projects, selectedProjectId]
+    );
 
-  const openProject = (project) => {
-    setSelectedProjectId(project.id);
-    setIsEditMode(false);
-    setEditedProject(null);
-    setNewImageUrl("");
-  };
-
-  const startEdit = (project) => {
-    setEditedProject({
-      ...project,
-      technologies: [...project.technologies],
-      images: [...project.images],
-      video: project.video || "",
-      liveDemo: project.liveDemo || "",
-      github: project.github || "",
-    });
-    setNewImageUrl("");
-    setIsEditMode(true);
-  };
-
-  const saveEdit = async () => {
-    const normalizedProject = {
-      ...editedProject,
-      technologies:
-        typeof editedProject.technologies === "string"
-          ? parseTechnologies(editedProject.technologies)
-          : editedProject.technologies,
-      images:
-        editedProject.images.length > 0
-          ? editedProject.images.filter(Boolean)
-          : [PLACEHOLDER_IMAGE],
+    const closeModal = () => {
+        setSelectedProjectId(null);
+        setIsEditMode(false);
+        setEditedProject(null);
+        setNewImageUrl("");
     };
 
-    try {
-      await updateProject(normalizedProject.id, normalizedProject);
-      setIsEditMode(false);
-      setEditedProject(null);
-      setNewImageUrl("");
-    } catch {
-      alert("Tallennus epäonnistui");
-    }
-  };
+    const openProject = (project) => {
+        setSelectedProjectId(project.id);
+        setIsEditMode(false);
+        setEditedProject(null);
+        setNewImageUrl("");
+    };
 
-  const cancelEdit = () => {
-    setIsEditMode(false);
-    setEditedProject(null);
-    setNewImageUrl("");
-  };
+    const startEdit = (project) => {
+        setEditedProject({
+            ...project,
+            technologies: normalizeTechnologies(project.technologies),
+            images: [...project.images],
+            video: project.video || "",
+            liveDemo: project.liveDemo || "",
+            github: project.github || "",
+        });
+        setNewImageUrl("");
+        setIsEditMode(true);
+    };
 
-  const addNewProject = async () => {
-    try {
-      const newProject = await createProject(createEmptyProject());
-      setFilterTag("all");
-      openProject(newProject);
-      startEdit(newProject);
-    } catch {
-      alert("Projektin luonti epäonnistui");
-    }
-  };
+    const saveEdit = async () => {
+        const normalizedProject = {
+            ...editedProject,
+            technologies:
+                typeof editedProject.technologies === "string"
+                    ? parseTechnologies(editedProject.technologies)
+                    : editedProject.technologies,
+            images:
+                editedProject.images.length > 0
+                    ? editedProject.images.filter(Boolean)
+                    : [PLACEHOLDER_IMAGE],
+        };
 
-  const handleDeleteProject = async (projectId) => {
-    const projectToDelete = projects.find((project) => project.id === projectId);
-    if (!projectToDelete) return;
+        try {
+            await updateProject(normalizedProject.id, normalizedProject);
+            setIsEditMode(false);
+            setEditedProject(null);
+            setNewImageUrl("");
+        } catch {
+            alert("Tallennus epäonnistui");
+        }
+    };
 
-    const shouldDelete = window.confirm(
-      `Poistetaanko projekti "${projectToDelete.title}" pysyvästi?`
-    );
-    if (!shouldDelete) return;
+    const cancelEdit = () => {
+        setIsEditMode(false);
+        setEditedProject(null);
+        setNewImageUrl("");
+    };
 
-    try {
-      await deleteProject(projectId);
-      closeModal();
-    } catch {
-      alert("Poisto epäonnistui");
-    }
-  };
+    const addNewProject = async () => {
+        try {
+            const newProject = await createProject(createEmptyProject());
+            setFilterTag("all");
+            openProject(newProject);
+            startEdit(newProject);
+        } catch {
+            alert("Projektin luonti epäonnistui");
+        }
+    };
 
-  const addImageToEditedProject = () => {
-    const trimmedUrl = newImageUrl.trim();
-    if (!trimmedUrl || !editedProject) return;
+    const handleDeleteProject = async (projectId) => {
+        const projectToDelete = projects.find((p) => p.id === projectId);
+        if (!projectToDelete) return;
 
-    setEditedProject((prev) => ({
-      ...prev,
-      images: [...prev.images, trimmedUrl],
-    }));
-    setNewImageUrl("");
-  };
+        const shouldDelete = window.confirm(
+            `Poistetaanko projekti "${projectToDelete.title}" pysyvästi?`
+        );
+        if (!shouldDelete) return;
 
-  const removeImageFromEditedProject = (imageIndex) => {
-    if (!editedProject) return;
+        try {
+            await deleteProject(projectId);
+            closeModal();
+        } catch {
+            alert("Poisto epäonnistui");
+        }
+    };
 
-    const nextImages = editedProject.images.filter((_, idx) => idx !== imageIndex);
-    setEditedProject((prev) => ({
-      ...prev,
-      images: nextImages.length > 0 ? nextImages : [PLACEHOLDER_IMAGE],
-    }));
-  };
+    const addImageToEditedProject = () => {
+        const trimmedUrl = newImageUrl.trim();
+        if (!trimmedUrl || !editedProject) return;
 
-  const allTags = ["all", ...new Set(projects.flatMap((p) => p.technologies))];
+        setEditedProject((prev) => ({
+            ...prev,
+            images: [...prev.images, trimmedUrl],
+        }));
+        setNewImageUrl("");
+    };
 
-  const filteredProjects =
-    filterTag === "all"
-      ? projects
-      : projects.filter((p) => p.technologies.includes(filterTag));
+    const removeImageFromEditedProject = (imageIndex) => {
+        if (!editedProject) return;
 
-  return (
-    <div className="gallery-wrapper">
+        const nextImages = editedProject.images.filter((_, idx) => idx !== imageIndex);
+        setEditedProject((prev) => ({
+            ...prev,
+            images: nextImages.length > 0 ? nextImages : [PLACEHOLDER_IMAGE],
+        }));
+    };
+
+    const filteredProjects =
+        filterTag === "all"
+            ? projects
+            : projects.filter((p) =>
+                normalizeTechnologies(p.technologies).includes(filterTag)
+            );
+
+    return (
+        <RequireProfile>
+            <div className="gallery-wrapper">
       <Navbar />
       <hr className="divider" />
       <div className="gallery-container">
@@ -213,12 +243,16 @@ export default function ProjectGallery() {
                 <h3 className="project-title">{project.title}</h3>
                 <p className="project-description">{project.description}</p>
                 <div className="project-tech">
-                  {project.technologies.slice(0, 3).map((tech) => (
+                          {normalizeTechnologies(project.technologies)
+                              .slice(0, 3)
+                              .map((tech) => (
                     <span key={tech} className="tech-tag">{tech}</span>
                   ))}
-                  {project.technologies.length > 3 && (
-                    <span className="tech-tag more">+{project.technologies.length - 3}</span>
-                  )}
+                          {normalizeTechnologies(project.technologies).length > 3 && (
+                              <span className="tech-tag more">
+                                  +{normalizeTechnologies(project.technologies).length - 3}
+                              </span>
+                          )}
                 </div>
               </div>
             </div>
@@ -476,7 +510,7 @@ export default function ProjectGallery() {
                     />
                   ) : (
                     <div className="tech-list">
-                      {selectedProject.technologies.map((tech) => (
+                   {normalizeTechnologies(selectedProject.technologies).map((tech) => (
                         <span key={tech} className="tech-badge">{tech}</span>
                       ))}
                     </div>
@@ -572,6 +606,7 @@ export default function ProjectGallery() {
           </div>
         )}
       </div>
-    </div>
+            </div>
+        </RequireProfile>
   );
 }

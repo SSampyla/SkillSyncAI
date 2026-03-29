@@ -2,14 +2,22 @@ import Navbar from "../components/Navbar";
 import { useState, useEffect } from "react";
 import "../styles/portfolio.css";
 import { useAppliedJobs } from "../hooks/db/useAppliedJobs";
+import { usePortfolio } from "../hooks/useDatabase";
 
 export default function Jobs() {
   const [selectedJob, setSelectedJob] = useState(0);
   const { jobs, loading, deleteJob } = useAppliedJobs();
   const currentJobs = Array.isArray(jobs) ? jobs : [];
-  const currentJob = currentJobs[selectedJob] || currentJobs[0];
+    const currentJob = currentJobs[selectedJob] || currentJobs[0];
 
+    const { portfolio } = usePortfolio();
 
+    const hasProfile =
+        portfolio &&
+        portfolio.name &&
+        portfolio.email;
+
+  
   if (loading) {
     return (
       <>
@@ -25,7 +33,32 @@ export default function Jobs() {
         </div>
       </>
     );
-  }
+    }
+    if (!hasProfile) {
+        return (
+            <>
+                <Navbar />
+                <hr className="divider" />
+
+                <div className="empty-overlay">
+                    <div className="empty-modal">
+                        <h2>Ei profiilia</h2>
+                        <p>Luo profiili käyttääksesi tätä näkymää</p>
+
+                        <button
+                            className="btn btn-primary"
+                            onClick={() => {
+                                window.location.href = "/";
+                            }}
+                        >
+                            Luo profiili
+                        </button>
+                    </div>
+                </div>
+            </>
+        );
+    }
+
 
   if (currentJobs.length === 0) {
     return (

@@ -2,38 +2,29 @@ import { useState, useEffect, useCallback } from "react";
 import { apiFetch } from "./useFetch";
 import { useMutation } from "./useMutation";
 import { isDemoMode } from "../../demo/useDemoMode";
-import { demoProjects } from "../../demo/demoData";
-
+import { MOCK_PROJECTS } from "../../demo/mockProjects";
 /**
- * Hakee, luo, päivittää ja poistaa portfolio-projekteja.
- *
- * @returns {{
- *   projects: object[],
- *   loading: boolean,
- *   saving: boolean,
- *   error: string|null,
- *   createProject: function,
- *   updateProject: function,
- *   deleteProject: function,
- * }}
+ * Portfolio project hook
+ * - Demo: käyttää local statea
+ * - Prod: käyttää backend APIa
  */
-
-
 export function usePortfolioProjects() {
-
-    const isDemo = isDemoMode(); // ✅
+    const isDemo = isDemoMode();
 
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
+
     const { saving, error, setError, run } = useMutation();
 
+    // 🔹 FETCH
     useEffect(() => {
         const controller = new AbortController();
 
         const load = async () => {
             try {
                 if (isDemo) {
-                    setProjects(demoProjects);
+                    setProjects(MOCK_PROJECTS);
+                    setLoading(false);
                     return;
                 }
 
@@ -63,46 +54,87 @@ export function usePortfolioProjects() {
 
     }, [isDemo, setError]);
 
+    // 🔹 CREATE
     const createProject = useCallback(async (projectData) => {
 
-        if (isDemo) return; // ✅
+        // ✅ DEMO MODE
+        if (isDemo) {
+            const newProject = {
+                ...projectData,
+                id: Date.now()
+            };
 
+            setProjects(prev => [newProject, ...prev]);
+            return newProject;
+        }
+
+        // ✅ PROD MODE
         return run(async () => {
             const result = await apiFetch("/api/database/portfolio-projects", {
                 method: "POST",
                 body: JSON.stringify(projectData),
             });
+
             setProjects(prev => [result.project, ...prev]);
             return result.project;
         });
 
     }, [run, isDemo]);
 
+    // 🔹 UPDATE
     const updateProject = useCallback(async (id, projectData) => {
 
-        if (isDemo) return;
+        // ✅ DEMO MODE
+        if (isDemo) {
+            setProjects(prev =>
+                prev.map(p => p.id === id ? { ...p, ...projectData } : p)
+            );
+            return;
+        }
 
+        // ✅ PROD MODE
         return run(async () => {
             const result = await apiFetch(`/api/database/portfolio-projects/${id}`, {
                 method: "PUT",
                 body: JSON.stringify(projectData),
             });
-            setProjects(prev => prev.map(p => p.id === id ? result.project : p));
+
+            setProjects(prev =>
+                prev.map(p => p.id === id ? result.project : p)
+            );
+
             return result.project;
         });
 
     }, [run, isDemo]);
 
+    // 🔹 DELETE
     const deleteProject = useCallback(async (id) => {
 
-        if (isDemo) return;
+        // ✅ DEMO MODE
+        if (isDemo) {
+            setProjects(prev => prev.filter(p => p.id !== id));
+            return;
+        }
 
+        // ✅ PROD MODE
         return run(async () => {
-            await apiFetch(`/api/database/portfolio-projects/${id}`, { method: "DELETE" });
+            await apiFetch(`/api/database/portfolio-projects/${id}`, {
+                method: "DELETE"
+            });
+
             setProjects(prev => prev.filter(p => p.id !== id));
         });
 
     }, [run, isDemo]);
 
-    return { projects, loading, saving, error, createProject, updateProject, deleteProject };
+    return {
+        projects,
+        loading,
+        saving,
+        error,
+        createProject,
+        updateProject,
+        deleteProject
+    };
 }

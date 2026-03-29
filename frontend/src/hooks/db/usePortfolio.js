@@ -102,6 +102,8 @@ const updatePortfolio = useCallback(async (updatedData) => {
         }, "[usePortfolio] Reset epäonnistui");
     }, [run, isDemo]);
 
+    
+
 
     return {
         portfolio,
@@ -111,4 +113,16 @@ const updatePortfolio = useCallback(async (updatedData) => {
         updatePortfolio,
         resetPortfolio
     };
+}
+
+export async function deletePortfolio() {
+    const res = await fetch("/api/database/portfolio", {
+        method: "DELETE",
+    });
+
+    if (!res.ok) {
+        throw new Error("Profiilin poisto epäonnistui");
+    }
+
+    return res.json();
 }
