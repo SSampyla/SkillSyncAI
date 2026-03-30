@@ -75,23 +75,4 @@ export const MOCK_PROJECTS = [
     status: "Completed",
     impact: "Käyttäjät raportoivat 40% paremman käytettävyyden skoorin.",
   },
-  {
-    id: 5,
-    title: "Weather Analytics App",
-    category: "Frontend",
-    description:
-      "Reaaliaikainen säädata-sovellus, joka näyttää kauniisti visualisoituja säätietoja.",
-    longDescription:
-      "Käyttää avoimen sää-API:n tietoja näyttääkseen reaaliaikaisen sääinformaatioon. Sovellus pyyytää käyttäjältä sijaintia ja näyttää seitsemän päivän ennusteet kauniissa visualisoinnissa.",
-    technologies: ["React", "OpenWeather API", "Chart.js", "CSS3"],
-    images: [
-      "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&h=600&fit=crop",
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=800&h=600&fit=crop",
-    ],
-    video: "",
-    liveDemo: "https://weather-app.example.com",
-    github: "https://github.com/yourname/weather-app",
-    status: "Completed",
-    impact: "Näyttää sään intuitiivisella tavalla, joka tekee datan ymmärtämisestä helppoa.",
-  },
 ];

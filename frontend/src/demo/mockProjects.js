@@ -75,23 +75,4 @@ export const MOCK_PROJECTS = [
         status: "Completed",
         impact: "K\u00e4ytt\u00e4j\u00e4t raportoivat 40% paremman k\u00e4ytett\u00e4vyyden skoorin.",
     },
-    {
-        id: 5,
-        title: "Weather Analytics App",
-        category: "Frontend",
-        description:
-            "Reaaliaikainen s\u00e4\u00e4data-sovellus, joka n\u00e4ytt\u00e4\u00e4 kauniisti visualisoituja s\u00e4\u00e4tietoja.",
-        longDescription:
-            "K\u00e4ytt\u00e4\u00e4 avoimen s\u00e4\u00e4-API:n tietoja n\u00e4ytt\u00e4\u00e4kseen reaaliaikaisen s\u00e4\u00e4informaation. Sovellus pyyt\u00e4\u00e4 k\u00e4ytt\u00e4j\u00e4lt\u00e4 sijaintia ja n\u00e4ytt\u00e4\u00e4 seitsem\u00e4n p\u00e4iv\u00e4n ennusteet kauniissa visualisoinnissa.",
-        technologies: ["React", "OpenWeather API", "Chart.js", "CSS3"],
-        images: [
-            "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&h=600&fit=crop",
-            "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=800&h=600&fit=crop",
-        ],
-        video: "",
-        liveDemo: "https://weather-app.example.com",
-        github: "https://github.com/yourname/weather-app",
-        status: "Completed",
-        impact: "N\u00e4ytt\u00e4\u00e4 s\u00e4\u00e4n intuitiivisella tavalla, joka tekee datan ymm\u00e4rt\u00e4misest\u00e4 helppoa.",
-    },
 ];
