@@ -28,11 +28,18 @@ export function usePortfolioProjects() {
                     return;
                 }
 
+                
+                if (!isDemo && projects.length === 0) {
+                    setProjects([]);
+                }
+
                 const data = await apiFetch("/api/database/portfolio-projects", {
                     signal: controller.signal
                 });
 
-                if (Array.isArray(data)) {
+                if (!data || (Array.isArray(data) && data.length === 0)) {
+                    setProjects([]);
+                } else if (Array.isArray(data)) {
                     setProjects(data);
                 } else if (Array.isArray(data.projects)) {
                     setProjects(data.projects);
@@ -127,6 +134,22 @@ export function usePortfolioProjects() {
         });
 
     }, [run, isDemo]);
+
+    useEffect(() => {
+        if (!isDemo && !loading && projects.length > 0) {
+            // tarkistaa onko käyttäjä poistettu
+            apiFetch("/api/database/portfolio")
+                .then(profile => {
+                    if (!profile || !profile.name) {
+                        setProjects([]); //  RESET
+                    }
+                })
+                .catch(() => {
+                    setProjects([]); //  fallback reset
+                });
+
+        }
+    }, [projects, isDemo, loading]);
 
     return {
         projects,

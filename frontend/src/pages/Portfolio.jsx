@@ -18,14 +18,14 @@ import {
 import GitHubSection from "../components/GitHubSection";
 import Toast from "../components/Toast";
 import { isDemoMode } from "../demo/useDemoMode";
-import { demoProjects } from "../demo/demoData";
 import { usePortfolioProjects } from "../hooks/useDatabase";
 
 import { useNavigate } from "react-router-dom";
 
 import { deletePortfolio, clearCandidateSkills } from "../hooks/useDatabase";
 
-import RequireProfile from "../components/RequireProfile";
+
+import { disableDemoMode } from "../demo/useDemoMode";
 
 
 //hookit ja funktiot, jotka hakevat ja päivittävät portfolio-dataa backendistä, sekä synkronoivat taitoja. Tiedot tallennetaan paikalliseen tilaan, joka peilaa backendissä olevaa dataa. Käyttäjä voi muuttaa tietoja, ja muutokset lähetetään backendille debouncattuna, jotta ei tarvitse tallentaa joka ikistä näppäinpainallusta.
@@ -80,9 +80,11 @@ export default function Portfolio() {
 
     // Paikallinen tila, joka peilaa backendistä haettua portfolioa
 
-    const { createProject } = usePortfolioProjects();
+    const { projects, createProject } = usePortfolioProjects();
 
     const [profile, setProfile] = useState(createEmptyPortfolio());
+    
+
 
 
     useEffect(() => {
@@ -232,7 +234,7 @@ export default function Portfolio() {
                 setShowSkillModal(false);
     };
 
-    const [githubProjects, setGithubProjects] = useState([]);
+    const [githubProjects] = useState([]);
 
     const updateArrayItem = (key, index, field, value) => {
         const updated = [...(profile[key] || [])];
@@ -263,7 +265,7 @@ export default function Portfolio() {
                 throw new Error("GitHub API-virhe");
             }
 
-            const projects = repos.slice(0, 6).map(repo => ({
+            const githubProjects = repos.slice(0, 6).map(repo => ({
                 title: repo.name,
                 description: repo.description || "Ei kuvausta",
                 longDescription: repo.description || "",
@@ -276,13 +278,19 @@ export default function Portfolio() {
                 impact: `⭐ ${repo.stargazers_count} stars`
             }));
 
-            const uniqueProjects = projects.filter(
+            const uniqueProjects = githubProjects.filter(
                 (p, index, self) =>
                     index === self.findIndex(x => x.title === p.title)
             );
 
             for (const p of uniqueProjects) {
-                await createProject(p); 
+                const exists = (projects || []).some(
+                    existing => existing.title === p.title
+                );
+
+                if (!exists) {
+                    await createProject(p);
+                }
             }
 
             showToast("Projektit lisätty portfolioon", "success");
@@ -313,19 +321,6 @@ export default function Portfolio() {
     if (!availableSkills) {
         return <div>Ladataan taitoja...</div>;
     }
-
-    if (!hasProfile && !isDemoMode()) {
-        return (
-            <div style={{ padding: "40px" }}>
-                <h2>Ei profiilia</h2>
-                <p>Luo profiili ensin etusivulla.</p>
-                <button onClick={() => navigate("/")}>
-                    Siirry etusivulle
-                </button>
-            </div>
-        );
-    }
-
     
     
     const parseLines = (value) =>
@@ -334,7 +329,7 @@ export default function Portfolio() {
       .map((line) => line.trim())
       .filter(Boolean);
 
-    const joinLines = (items) => (Array.isArray(items) ? items.join("\n") : "");
+    const joinLines = (items) => (Array.isArray(items) ? items.join("\n") : "");    
 
     const handleResetProfile = async () => {
         if (isDemoMode()) return;
@@ -346,12 +341,14 @@ export default function Portfolio() {
         if (!confirmReset) return;
 
         try {
-            //  poisto backendista
+            // backend tyhjennys
             await deletePortfolio();
-
             await clearCandidateSkills();
 
-            // frontend reset
+            
+            disableDemoMode(); // <-- tämä estää mock datan palaamisen
+
+            // frontend reset (ei pakollinen reloadin takia, mutta ok pitää)
             setProfile(createEmptyPortfolio());
 
             setSelectedSkills({
@@ -363,15 +360,39 @@ export default function Portfolio() {
 
             showToast("Profiili poistettu", "success");
 
-            setTimeout(() => {
-                navigate("/");
-            }, 800);
+            // redirect
+            window.location.href = "/";
 
         } catch (err) {
             console.error(err);
             showToast("Poisto epäonnistui", "error");
         }
     };
+
+    if (!hasProfile) {
+        return (
+            <>
+                <Navbar />
+                <hr className="divider" />
+
+                <div className="empty-overlay">
+                    <div className="empty-modal">
+                        <h2>Ei profiilia</h2>
+                        <p>Luo profiili käyttääksesi tätä näkymää</p>
+
+                        <button
+                            className="btn btn-primary"
+                            onClick={() => {
+                                window.location.href = "/";
+                            }}
+                        >
+                            Luo profiili
+                        </button>
+                    </div>
+                </div>
+            </>
+        );
+    }
 
     return (
         <>
@@ -561,16 +582,18 @@ export default function Portfolio() {
                                         <strong>Sijainti:</strong> {profile.location}
                                     </div>
 
-                                    <div>
-                                        <strong>LinkedIn:</strong>{" "}
-                                        <a
-                                            href={`https://linkedin.com/in/${profile.linkedin}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                        >
-                                            linkedin.com/in/{profile.linkedin}
-                                        </a>
-                                    </div>
+                                        {profile?.linkedin?.trim() && (
+                                            <div>
+                                                <strong>LinkedIn:</strong>{" "}
+                                                <a
+                                                    href={`https://linkedin.com/in/${profile.linkedin}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    linkedin.com/in/{profile.linkedin}
+                                                </a>
+                                            </div>
+                                        )}
 
                                     <div style={{ gridColumn: "1 / -1" }}>
                                         <GitHubSection
@@ -788,18 +811,21 @@ export default function Portfolio() {
                         <section style={{ marginTop: "30px" }}>
                             <h3>GitHub-projektit</h3>
 
-                            {githubProjects.length === 0 ? (
+                            {projects.filter(p => p.github).length === 0 ? (
                                 <p>Ei projekteja vielä. Hae GitHubista.</p>
                             ) : (
-                                githubProjects.map((project, i) => (
-                                    <div key={i} style={{ marginBottom: "15px" }}>
-                                        <strong>{project.name}</strong>
-                                        <p>{project.description}</p>
-                                        <a href={project.url} target="_blank">
-                                            Avaa GitHubissa
-                                        </a>
-                                    </div>
-                                ))
+                                projects
+                                    .filter(p => p.github)
+                                    .map(project => (
+                                        <div key={project.id} style={{ marginBottom: "15px" }}>
+                                            <strong>{project.title}</strong>
+                                            <p>{project.description}</p>
+
+                                            <a href={project.github} target="_blank">
+                                                Avaa GitHubissa
+                                            </a>
+                                        </div>
+                                    ))
                             )}
                         </section>
                     )}
@@ -1501,6 +1527,8 @@ export default function Portfolio() {
                     </div>
                 </div>
             )}
+
+
 
             {toast && (
                 <Toast

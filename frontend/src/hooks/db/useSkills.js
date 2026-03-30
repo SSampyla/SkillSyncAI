@@ -35,15 +35,17 @@ export function useSynchronizeCandidateSkills(skills, onStatusChange, isLoadingF
     const isSyncing = useRef(false);
     const abortController = useRef(null);
     const skillsRef = useRef(skills);
+    const hasInitialized = useRef(false);
 
-    const isDemo = isDemoMode(); // ✅ LISÄTTY
+    const isDemo = isDemoMode();
 
-    
+
+
     useEffect(() => {
         skillsRef.current = skills;
     }, [skills]);
 
-    
+
     const runSync = useCallback(async (currentSkills) => {
 
         if (isDemo || !skills) return;
@@ -68,6 +70,14 @@ export function useSynchronizeCandidateSkills(skills, onStatusChange, isLoadingF
                 signal,
             });
 
+            const hasLLMSkills = Object.values(llmData.skills || {})
+                .some(arr => Array.isArray(arr) && arr.length > 0);
+
+            if (!hasLLMSkills) {
+                console.warn("LLM returned empty skills → skip overwrite");
+                return;
+            }
+
             await apiFetch("/api/database/candidate-profile", {
                 method: "PUT",
                 body: JSON.stringify(llmData.skills),
@@ -84,12 +94,17 @@ export function useSynchronizeCandidateSkills(skills, onStatusChange, isLoadingF
             if (!signal.aborted) isSyncing.current = false;
         }
 
-    }, [onStatusChange, isDemo]); // ✅ LISÄTTY isDemo
+    }, [onStatusChange, isDemo]); 
 
     // -------- DEBOUNCE EFFECT --------
     useEffect(() => {
 
-        if (isDemo) return; // ✅ LISÄTTY TÄHÄN
+        if (isDemo) return;
+
+        if (!hasInitialized.current) {
+            hasInitialized.current = true;
+            return;
+        }
 
         if (isLoadingFromDB?.current) {
             isLoadingFromDB.current = false;
@@ -98,10 +113,10 @@ export function useSynchronizeCandidateSkills(skills, onStatusChange, isLoadingF
 
         if (!skills) return;
 
-        onStatusChange?.("pending");
-
         const hasSkills = Object.values(skills).some(arr => arr.length > 0);
         if (!hasSkills) return;
+
+        onStatusChange?.("pending");
 
         clearTimeout(debounceTimer.current);
         debounceTimer.current = setTimeout(
@@ -115,59 +130,61 @@ export function useSynchronizeCandidateSkills(skills, onStatusChange, isLoadingF
         };
 
     }, [skills, runSync, isDemo]);
-}
+    }
 
-// ---------------------------------------------------------------------------
-// useAvailableSkills
-// ---------------------------------------------------------------------------
-/**
- * Hakee taitovalikoiman tietokannasta. Haetaan kerran mountissa, ei muutu ajon aikana.
- *
- * @returns {{ availableSkills: object, loading: boolean, error: string|null }}
- */
-export function useAvailableSkills() {
+    // ---------------------------------------------------------------------------
+    // useAvailableSkills
+    // ---------------------------------------------------------------------------
+    /**
+     * Hakee taitovalikoiman tietokannasta. Haetaan kerran mountissa, ei muutu ajon aikana.
+     *
+     * @returns {{ availableSkills: object, loading: boolean, error: string|null }}
+     */
+    export function useAvailableSkills() {
 
-    const isDemo = isDemoMode();
+        const isDemo = isDemoMode();
 
-    const [availableSkills, setAvailableSkills] = useState({
-        frontend: [], backend: [], tools: [], other: []
-    });
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+        const [availableSkills, setAvailableSkills] = useState({
+            frontend: [], backend: [], tools: [], other: []
+        });
+        const [loading, setLoading] = useState(true);
+        const [error, setError] = useState(null);
 
-    useEffect(() => {
-        const controller = new AbortController();
+        useEffect(() => {
+            const controller = new AbortController();
 
-        const load = async () => {
-            try {
-                if (isDemo) {
-                    setAvailableSkills(demoSkills);
-                } else {
-                    const data = await apiFetch("/api/database/available-skills", {
-                        signal: controller.signal
-                    });
+            const load = async () => {
+                try {
+                    if (isDemo) {
+                        setAvailableSkills(demoSkills);
+                    } else {
+                        const data = await apiFetch("/api/database/available-skills", {
+                            signal: controller.signal
+                        });
 
-                    const keys = ["frontend", "backend", "tools", "other"];
-                    if (data && keys.every(k => Array.isArray(data[k]))) {
-                        setAvailableSkills(data);
+                        const keys = ["frontend", "backend", "tools", "other"];
+                        if (data && keys.every(k => Array.isArray(data[k]))) {
+                            setAvailableSkills(data);
+                        }
                     }
+                } catch (err) {
+                    if (err.name === "AbortError") return;
+                    setError(err.message);
+                } finally {
+                    setLoading(false); // ✅ aina tänne
                 }
-            } catch (err) {
-                if (err.name === "AbortError") return;
-                setError(err.message);
-            } finally {
-                setLoading(false); // ✅ aina tänne
-            }
-        };
+            };
 
-        load();
+            load();
 
-        return () => controller.abort();
+            return () => controller.abort();
 
-    }, [isDemo]);
+        }, [isDemo]);
 
-    return { availableSkills, loading, error };
-}
+        return { availableSkills, loading, error };
+    }
+    
+
 
 // ---------------------------------------------------------------------------
 // useCandidateSkills
@@ -187,56 +204,70 @@ export function useAvailableSkills() {
  *   refetch: function,
  * }}
  */
-    export function useCandidateSkills(availableSkills, isLoadingFromDB) {
+export function useCandidateSkills(availableSkills, isLoadingFromDB) {
 
-        const isDemo = isDemoMode();
+    const isDemo = isDemoMode();
 
-        const [selectedSkills, setSelectedSkills] = useState({
-            frontend: [], backend: [], tools: [], other: []
-        });
-        const [loading, setLoading] = useState(false);
-        const [error, setError] = useState(null);
+    const [selectedSkills, setSelectedSkills] = useState({
+        frontend: [], backend: [], tools: [], other: []
+    });
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-        const fetchSkills = useCallback((signal, isManualRefetch = false) => {
+    const fetchSkills = useCallback((signal, isManualRefetch = false) => {
 
-            if (isDemo) {
-                setSelectedSkills(demoSkills);
-                setLoading(false);
-                return;
-            }
+        if (isDemo) {
+            setSelectedSkills(demoSkills);
+            setLoading(false);
+            return;
+        }
 
-            if (availableSkills.frontend.length === 0) {
-                setLoading(false);
-                return;
-            }
+        if (availableSkills.frontend.length === 0) {
+            setLoading(false);
+            return;
+        }
 
-            setLoading(true);
-            setError(null);
+        setLoading(true);
+        setError(null);
 
-            apiFetch("/api/database/candidate-profile", { signal })
-                .then(dbProfile => {
-                    const hasData = Object.values(dbProfile).some(v => Array.isArray(v) && v.length > 0);
-                    if (hasData) {
-                        if (!isManualRefetch && isLoadingFromDB) isLoadingFromDB.current = true;
-                        setSelectedSkills(dbProfileToFrontendSkills(dbProfile, availableSkills));
-                    }
-                })
-                .catch(err => {
-                    if (err.name === "AbortError") return;
-                    setError(err.message);
-                })
-                .finally(() => setLoading(false));
+        apiFetch("/api/database/candidate-profile", { signal })
+            .then(dbProfile => {
 
-        }, [availableSkills, isLoadingFromDB, isDemo]);
+                const incoming = dbProfileToFrontendSkills(dbProfile, availableSkills);
 
-        useEffect(() => {
-            const controller = new AbortController();
-            fetchSkills(controller.signal);
-            return () => controller.abort();
-        }, [fetchSkills]);
+                const hasIncomingSkills = Object.values(incoming)
+                    .some(arr => Array.isArray(arr) && arr.length > 0);
 
-        return { selectedSkills, setSelectedSkills, loading, error, refetch: fetchSkills };
-    }
+                if (!hasIncomingSkills) return;
+
+                if (!isManualRefetch && isLoadingFromDB) {
+                    isLoadingFromDB.current = true;
+                }
+
+                setSelectedSkills(prev => ({
+                    frontend: [...new Set([...(prev.frontend || []), ...(incoming.frontend || [])])],
+                    backend: [...new Set([...(prev.backend || []), ...(incoming.backend || [])])],
+                    tools: [...new Set([...(prev.tools || []), ...(incoming.tools || [])])],
+                    other: [...new Set([...(prev.other || []), ...(incoming.other || [])])]
+                }));
+            })
+            .catch(err => {
+                if (err.name === "AbortError") return;
+                setError(err.message);
+            })
+            .finally(() => setLoading(false));
+
+    }, [availableSkills, isLoadingFromDB, isDemo]);
+
+   
+    useEffect(() => {
+        const controller = new AbortController();
+        fetchSkills(controller.signal);
+        return () => controller.abort();
+    }, [fetchSkills]);
+
+    return { selectedSkills, setSelectedSkills, loading, error, refetch: fetchSkills };
+}
 
 
 // ---------------------------------------------------------------------------

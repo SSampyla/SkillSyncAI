@@ -7,8 +7,6 @@ import Jobs from "./pages/Työhaut";
 import AvoimetTyopaikat from "./pages/AvoimetTyopaikat";
 import ProjectGallery from "./components/ProjectGallery";
 import Haastattelu from "./pages/Haastattelu";
-import RequireProfile from "./components/RequireProfile";
-
 
 
 function App() {
@@ -22,7 +20,7 @@ function App() {
                 <Route path="/jobs" element={<Jobs />} />
                 <Route path="/avoimet-tyopaikat" element={<AvoimetTyopaikat />} />
                 <Route path="/interview" element={<Haastattelu />} />
-                <Route path="/projects" element={<RequireProfile> <ProjectGallery /> </RequireProfile>} />
+                <Route path="/projects" element={<ProjectGallery />} />
                     
                         
                           

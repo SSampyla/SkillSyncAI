@@ -33,7 +33,7 @@ export default function GitHubSection({
         borderTop: "1px solid var(--border-soft)"
       }}
     >
-      <strong>GitHub 🐙</strong>
+      <strong>GitHub</strong>
 
       <div style={{ marginTop: "6px" }}>
         {username ? (

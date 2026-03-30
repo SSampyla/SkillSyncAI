@@ -1,7 +1,6 @@
 import { createEmptyPortfolio } from "../data/portfolioTemplate";
 
-
-// demoData.js - Luo demoportfolio ja demo-projektit, joita käytetään demo-tilassa. Näin käyttäjät voivat kokeilla sovellusta ilman omia tietojaan. 
+// demoData.js - Demoportfolio demo-tilaa varten
 export function createDemoPortfolio() {
     const p = createEmptyPortfolio();
 
@@ -15,17 +14,17 @@ export function createDemoPortfolio() {
         linkedin: "demo-dev",
         github: "octocat",
 
-        summary: "Motivoitunut fullstack-kehittäjä, joka rakastaa moderneja web-teknologioita.",
+        summary: "Motivoitunut fullstack-kehitt\u00e4j\u00e4, joka rakastaa moderneja web-teknologioita.",
 
         profileSummary: {
             whyMe: [
                 "Nopea oppimaan uusia teknologioita",
-                "Hyvä tiimityöskentelijä",
+                "Hyv\u00e4 tiimity\u00f6skentelij\u00e4",
                 "Rakentanut useita projekteja Reactilla"
             ],
             lookingFor: [
                 "Frontend / Fullstack rooleja",
-                "Mahdollisuus kehittyä senioriksi"
+                "Mahdollisuus kehitty\u00e4 senioriksi"
             ]
         },
 
@@ -36,7 +35,7 @@ export function createDemoPortfolio() {
                 period: "2023 - 2025",
                 description: "Rakensin moderneja React-sovelluksia",
                 achievements: [
-                    "Paransin suorituskykyä 40%",
+                    "Paransin suorituskyky\u00e4 40%",
                     "Rakensin design systemin"
                 ]
             }
@@ -44,7 +43,7 @@ export function createDemoPortfolio() {
 
         education: [
             {
-                degree: "Tietojenkäsittely",
+                degree: "Tietojenk\u00e4sittely",
                 institution: "Metropolia",
                 year: "2024",
                 relevant: ["React", "Node.js", "UX Design"]
@@ -59,7 +58,7 @@ export const demoProjects = [
     {
         id: 1,
         title: "AI Job Matcher",
-        description: "AI joka yhdistää CV:n työpaikkoihin",
+        description: "AI joka yhdist\u00e4\u00e4 CV:n ty\u00f6paikkoihin",
         technologies: ["React", "Node.js", "OpenAI"],
         impact: "Paransi hakuprosessia 60%",
         status: "Completed"

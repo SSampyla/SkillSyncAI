@@ -2,7 +2,7 @@ import { useMemo, useState, } from "react";
 import Navbar from "./Navbar";
 import "../styles/gallery.css";
 import { usePortfolioProjects } from "../hooks/useDatabase";
-import RequireProfile from "../components/RequireProfile";
+import { usePortfolio } from "../hooks/useDatabase";
 
 const PLACEHOLDER_IMAGE =
   "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&h=600&fit=crop";
@@ -12,6 +12,8 @@ const parseTechnologies = (value) =>
     .split(",")
     .map((tech) => tech.trim())
         .filter(Boolean);
+
+
 
 const normalizeTechnologies = (tech) => {
     if (!tech) return [];
@@ -41,7 +43,12 @@ const createEmptyProject = () => ({
 
 
 
+
+
 export default function ProjectGallery() {
+
+    const { portfolio, loading: profileLoading } = usePortfolio();
+
     const {
         projects,
         loading,
@@ -52,10 +59,13 @@ export default function ProjectGallery() {
         deleteProject
     } = usePortfolioProjects();
 
+    const safeProjects = projects || [];
+  
+
     // TAGIT
     const allTags = [
         "all",
-        ...new Set(projects.flatMap(p => normalizeTechnologies(p.technologies)))
+        ...new Set(safeProjects.flatMap(p => normalizeTechnologies(p.technologies)))
     ];
 
     const [selectedProjectId, setSelectedProjectId] = useState(null);
@@ -68,6 +78,13 @@ export default function ProjectGallery() {
         () => projects.find((project) => project.id === selectedProjectId) || null,
         [projects, selectedProjectId]
     );
+
+    const hasProfile =
+        portfolio?.name?.trim() &&
+        portfolio?.email?.trim();
+
+    if (profileLoading) return null;
+
 
     const closeModal = () => {
         setSelectedProjectId(null);
@@ -173,16 +190,50 @@ export default function ProjectGallery() {
             images: nextImages.length > 0 ? nextImages : [PLACEHOLDER_IMAGE],
         }));
     };
+ 
+    const uniqueProjects = Array.from(
+        new Map(
+            safeProjects.map(p => [
+                (p.title || "").trim().toLowerCase(),
+                p
+            ])
+        ).values()
+    );
 
     const filteredProjects =
         filterTag === "all"
-            ? projects
-            : projects.filter((p) =>
+            ? uniqueProjects
+            : uniqueProjects.filter((p) =>
                 normalizeTechnologies(p.technologies).includes(filterTag)
             );
 
+    if (!hasProfile) {
+        return (
+            <>
+                <Navbar />
+                <hr className="divider" />
+
+                <div className="empty-overlay">
+                    <div className="empty-modal">
+                        <h2>Ei profiilia</h2>
+                        <p>Luo profiili käyttääksesi tätä näkymää</p>
+
+                        <button
+                            className="btn btn-primary"
+                            onClick={() => {
+                                window.location.href = "/";
+                            }}
+                        >
+                            Luo profiili
+                        </button>
+                    </div>
+                </div>
+            </>
+        );
+    }
+    
+
     return (
-        <RequireProfile>
             <div className="gallery-wrapper">
       <Navbar />
       <hr className="divider" />
@@ -215,7 +266,15 @@ export default function ProjectGallery() {
               </button>
             ))}
           </div>
-        </div>
+                    </div>
+
+                    {!loading && safeProjects.length === 0 && (
+                        <div style={{ padding: "40px", textAlign: "center" }}>
+                            <h2>Ei projekteja</h2>
+                            <p>Luo ensimmäinen projekti.</p>
+                        </div>
+                    )}
+
 
         {/* Projects Grid */}
         <div className="projects-grid">
@@ -607,6 +666,6 @@ export default function ProjectGallery() {
         )}
       </div>
             </div>
-        </RequireProfile>
+       
   );
 }

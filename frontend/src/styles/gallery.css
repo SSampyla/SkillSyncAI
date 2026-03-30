@@ -644,3 +644,13 @@
     font-size: 0.75rem;
   }
 }
+.empty-overlay {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: calc(100vh - 100px); /* s‰‰d‰ tarvittaessa */
+}
+
+.empty-modal {
+    text-align: center;
+}
