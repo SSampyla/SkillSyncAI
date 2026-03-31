@@ -38,7 +38,7 @@ export const INITIAL_STATE = {
         softSkillsBasics: []
     },
     portfolio: createEmptyPortfolio(),
-    portfolioProjects: [...MOCK_PROJECTS], // MOCK PROJEKTIT JOTKA INITIALISOIDAAN DB:hen
+    portfolioProjects: [], // MOCK PROJEKTIT JOTKA INITIALISOIDAAN DB:hen
     availableSkills: { // Frontend näyttää nämä taitolistoina, joista käyttäjä voi valita omat taitonsa.
         frontend: [
             "React.js",

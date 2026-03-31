@@ -96,40 +96,48 @@ export function useSynchronizeCandidateSkills(skills, onStatusChange, isLoadingF
 
     }, [onStatusChange, isDemo]); 
 
-    // -------- DEBOUNCE EFFECT --------
-    useEffect(() => {
+// -------- DEBOUNCE EFFECT --------
+useEffect(() => {
 
-        if (isDemo) return;
+    if (isDemo) return;
 
-        if (!hasInitialized.current) {
-            hasInitialized.current = true;
-            return;
-        }
-
+    if (!hasInitialized.current) {
+        hasInitialized.current = true;
+        // nollataan isLoadingFromDB myös initialisoinnin yhteydessä
         if (isLoadingFromDB?.current) {
             isLoadingFromDB.current = false;
-            return;
         }
+        return;
+    }
 
-        if (!skills) return;
+    if (isLoadingFromDB?.current) {
+        isLoadingFromDB.current = false;
+        return;
+    }
 
-        const hasSkills = Object.values(skills).some(arr => arr.length > 0);
-        if (!hasSkills) return;
+    if (!skills) return;
 
+    const hasSkills = Object.values(skills).some(arr => arr.length > 0);
+    // ✅ kutsutaan "pending" ENNEN early returnia
+    if (!hasSkills) {
         onStatusChange?.("pending");
+        return;
+    }
 
+    onStatusChange?.("pending");
+
+    clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(
+        () => runSync(skillsRef.current),
+        DEBOUNCE_MS
+    );
+
+    return () => {
         clearTimeout(debounceTimer.current);
-        debounceTimer.current = setTimeout(
-            () => runSync(skillsRef.current),
-            DEBOUNCE_MS
-        );
+        abortController.current?.abort();
+    };
 
-        return () => {
-            clearTimeout(debounceTimer.current);
-            abortController.current?.abort();
-        };
-
-    }, [skills, runSync, isDemo]);
+}, [skills, runSync, isDemo]);
     }
 
     // ---------------------------------------------------------------------------

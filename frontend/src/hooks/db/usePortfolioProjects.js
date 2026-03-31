@@ -135,6 +135,34 @@ export function usePortfolioProjects() {
 
     }, [run, isDemo]);
 
+    /*
+
+    * POISTETTU: toissijainen useEffect joka kutsui GET /api/database/portfolio
+    * tarkistaakseen onko käyttäjä olemassa projektilatauksen jälkeen.
+    *
+    * Syyt poistoon:
+    *
+    * 1. Päällekkäinen - Portfolio.jsx tekee saman tarkistuksen omassa logiikassaan n rivi 70-80,
+    *    const hasProfile = portfolio && portfolio.name && portfolio.email;
+    *    Jos portfolio on tyhjä tai poistettu, Portfolio.jsx renderöi "Ei profiilia"
+    *    -näkymän eikä projektilistaa näytetä lainkaan.
+    *
+    * 2. Väärä vastuunjako — usePortfolioProjects-hookin ei pidä tietää portfolion
+    *    olemassaolosta. Hookki vastaa projekteista, ei käyttäjän tilasta.
+    *    Single Responsibility -periaate.
+    *
+    * 3. Bugit — Efekti triggeröityi jokaisen projects-tilan muutoksen yhteydessä
+    *    (create/update/delete), tehden ylimääräisen API-kutsun aina. Catch-haara
+    *    tyhjentyi projektilistaan myös pelkän verkkovirheen takia, vaikka käyttäjä
+    *    olisi edelleen olemassa.
+    *
+    * 4. Rikkoi testejä — Efekti "söi" mock-vastauksia väärässä järjestyksessä,
+    *    koska testit eivät mockanneet /api/database/portfolio -kutsua.
+    *
+    * Käyttäjän poisto hoidetaan Portfolio.jsx:ssä handleResetProfile-funktiossa,
+    * joka kutsuu deletePortfolio() + clearCandidateSkills() ja ohjaa pois sivulta.
+
+
     useEffect(() => {
         if (!isDemo && !loading && projects.length > 0) {
             // tarkistaa onko käyttäjä poistettu
@@ -150,6 +178,7 @@ export function usePortfolioProjects() {
 
         }
     }, [projects, isDemo, loading]);
+    */
 
     return {
         projects,
