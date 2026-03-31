@@ -31,22 +31,26 @@ export default function Interview() {
     }, [messages]);
 
     useEffect(() => {
-        // Aloita vain jos ei ole vielä aloitettu ja tarvittavat tiedot löytyvät
-        if (jobTextFromState && !loading && !hasStarted.current) {
+        if (jobTextFromState && !hasStarted.current) {
             hasStarted.current = true;
             startInterview("Finnish");
         }
+        // Cleanup vain unmountissa – poistetaan startInterview/resetInterview depsistä
+    }, [jobTextFromState]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => {
         return () => {
-            if (hasStarted.current) resetInterview();
+            resetInterview();
+            hasStarted.current = false; // ← resetoi myös ref
         };
-    }, [jobTextFromState, startInterview, resetInterview]);
+    }, []);
 
     const handleSend = async () => {
         // Lisätty tarkistus: jos interviewId puuttuu, ei voida lähettää
         if (!input.trim() || loading || !interviewId) return;
 
         const textToSend = input;
-        setInput(""); 
+        setInput("");
 
         try {
             await sendMessage(textToSend);
