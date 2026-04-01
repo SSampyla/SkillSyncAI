@@ -1,5 +1,22 @@
 export const MOCK_PROJECTS = [
     {
+        id: 999,
+        title: "Demo-projekti (kaikki toiminnot)",
+        category: "Full Stack",
+        description: "Tämä projekti demonstroi kaikki gallerian toiminnot.",
+        longDescription: "Projektissa on esimerkki kuva, video (YouTube-linkki), live demo, GitHub-linkki, teknologiat, sekä kuvaus ja vaikutus. Käytä tätä esimerkkinä esityksessäsi.",
+        technologies: ["React", "Node.js", "MongoDB", "Express", "Vite", "YouTube API"],
+        images: [
+            "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&h=600&fit=crop",
+            "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&h=600&fit=crop"
+        ],
+        video: "https://www.youtube.com/watch?v=2PuFyjAs7JA",
+        liveDemo: "https://demo-project.example.com",
+        github: "https://github.com/testi",
+        status: "Demo",
+        impact: "Kaikki gallerian ominaisuudet yhdessä projektissa.",
+    },
+    {
         id: 1,
         title: "Job Matching Platform",
         category: "Full Stack",

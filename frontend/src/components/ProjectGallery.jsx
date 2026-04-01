@@ -73,6 +73,8 @@ export default function ProjectGallery() {
     const [isEditMode, setIsEditMode] = useState(false);
     const [editedProject, setEditedProject] = useState(null);
     const [newImageUrl, setNewImageUrl] = useState("");
+    const [savingProject, setSavingProject] = useState(false);
+    const [deletingProject, setDeletingProject] = useState(false);
 
     const selectedProject = useMemo(
         () => projects.find((project) => project.id === selectedProjectId) || null,
@@ -113,27 +115,38 @@ export default function ProjectGallery() {
         setIsEditMode(true);
     };
 
-    const saveEdit = async () => {
-        const normalizedProject = {
-            ...editedProject,
-            technologies:
-                typeof editedProject.technologies === "string"
-                    ? parseTechnologies(editedProject.technologies)
-                    : editedProject.technologies,
-            images:
-                editedProject.images.length > 0
-                    ? editedProject.images.filter(Boolean)
-                    : [PLACEHOLDER_IMAGE],
-        };
 
-        try {
-            await updateProject(normalizedProject.id, normalizedProject);
-            setIsEditMode(false);
-            setEditedProject(null);
-            setNewImageUrl("");
-        } catch {
-            alert("Tallennus epäonnistui");
+
+    const saveEdit = async () => {
+      const normalizedProject = {
+        ...editedProject,
+        technologies: Array.isArray(editedProject.technologies)
+          ? editedProject.technologies.filter(Boolean)
+          : parseTechnologies(editedProject.technologies),
+        images:
+          editedProject.images.length > 0
+            ? editedProject.images.filter(Boolean)
+            : [PLACEHOLDER_IMAGE],
+      };
+
+      setSavingProject(true);
+      try {
+        if (!normalizedProject.id) {
+          // Uusi projekti, luodaan vasta nyt
+          const newProject = await createProject(normalizedProject);
+          // Jos hook ei päivitä automaattisesti, lisätään manuaalisesti:
+          // setProjects(prev => [newProject, ...prev]);
+        } else {
+          await updateProject(normalizedProject.id, normalizedProject);
         }
+        setIsEditMode(false);
+        setEditedProject(null);
+        setNewImageUrl("");
+      } catch {
+        alert("Tallennus epäonnistui");
+      } finally {
+        setSavingProject(false);
+      }
     };
 
     const cancelEdit = () => {
@@ -142,32 +155,34 @@ export default function ProjectGallery() {
         setNewImageUrl("");
     };
 
-    const addNewProject = async () => {
-        try {
-            const newProject = await createProject(createEmptyProject());
-            setFilterTag("all");
-            openProject(newProject);
-            startEdit(newProject);
-        } catch {
-            alert("Projektin luonti epäonnistui");
-        }
+
+    // Uusi projekti: avaa vain muokkauslomake, ei lisää vielä galleriaan
+    const addNewProject = () => {
+      setEditedProject(createEmptyProject());
+      setIsEditMode(true);
+      setSelectedProjectId(null);
+      setNewImageUrl("");
     };
 
+
     const handleDeleteProject = async (projectId) => {
-        const projectToDelete = projects.find((p) => p.id === projectId);
-        if (!projectToDelete) return;
+      const projectToDelete = projects.find((p) => p.id === projectId);
+      if (!projectToDelete) return;
 
-        const shouldDelete = window.confirm(
-            `Poistetaanko projekti "${projectToDelete.title}" pysyvästi?`
-        );
-        if (!shouldDelete) return;
+      const shouldDelete = window.confirm(
+        `Poistetaanko projekti "${projectToDelete.title}" pysyvästi?`
+      );
+      if (!shouldDelete) return;
 
-        try {
-            await deleteProject(projectId);
-            closeModal();
-        } catch {
-            alert("Poisto epäonnistui");
-        }
+      setDeletingProject(true);
+      try {
+        await deleteProject(projectId);
+        closeModal();
+      } catch {
+        alert("Poisto epäonnistui");
+      } finally {
+        setDeletingProject(false);
+      }
     };
 
     const addImageToEditedProject = () => {
@@ -204,13 +219,14 @@ export default function ProjectGallery() {
         filterTag === "all"
             ? uniqueProjects
             : uniqueProjects.filter((p) =>
-                normalizeTechnologies(p.technologies).includes(filterTag)
+                normalizeTechnologies(p.technologies).some(
+                    (t) => t.toLowerCase() === filterTag.toLowerCase()
+                )
             );
 
     if (!hasProfile) {
         return (
             <>
-                <Navbar />
                 <hr className="divider" />
 
                 <div className="empty-overlay">
@@ -224,7 +240,7 @@ export default function ProjectGallery() {
                                 window.location.href = "/";
                             }}
                         >
-                            Luo profiili
+                          Luo profiili
                         </button>
                     </div>
                 </div>
@@ -234,10 +250,10 @@ export default function ProjectGallery() {
     
 
     return (
-            <div className="gallery-wrapper">
-      <Navbar />
-      <hr className="divider" />
-      <div className="gallery-container">
+      <div className="gallery-wrapper">
+        <Navbar />
+        <hr className="divider" />
+        <div className="gallery-container">
         <div className="gallery-header">
           <div className="gallery-header-text">
             <h1 className="gallery-title">Projektit</h1>
@@ -318,13 +334,14 @@ export default function ProjectGallery() {
           ))}
         </div>
 
-        {/* Modal for Project Details */}
-        {selectedProject && (
+        {/* Modal for Project Details OR New Project Edit */}
+        {(selectedProject || (isEditMode && editedProject)) && (
           <div className="modal-overlay" onClick={closeModal}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <button className="close-btn" onClick={closeModal}>X</button>
 
-              {!isEditMode && (
+              {/* Näytä muokkausnapit vain jos katsotaan olemassaolevaa projektia */}
+              {!isEditMode && selectedProject && (
                 <div className="modal-top-actions">
                   <button
                     className="edit-btn"
@@ -352,9 +369,9 @@ export default function ProjectGallery() {
               )}
 
               <div className="modal-gallery">
-                {(isEditMode ? editedProject.images : selectedProject.images).map((img, idx) => (
+                {(isEditMode ? editedProject.images : selectedProject?.images || []).map((img, idx) => (
                   <div key={idx} className="modal-image-wrapper" style={{ position: "relative" }}>
-                    <img src={img} alt={`${isEditMode ? editedProject.title : selectedProject.title} ${idx + 1}`} />
+                    <img src={img} alt={`${isEditMode ? editedProject.title : selectedProject?.title} ${idx + 1}`} />
                     {isEditMode && (
                       <button
                         onClick={() => removeImageFromEditedProject(idx)}
@@ -509,7 +526,7 @@ export default function ProjectGallery() {
                       type="text"
                       value={editedProject?.video || ""}
                       onChange={(e) => setEditedProject({ ...editedProject, video: e.target.value })}
-                      placeholder="YouTube embed URL (https://www.youtube.com/embed/...)"
+                      placeholder="YouTube-linkki (https://www.youtube.com/watch?v=...)"
                       style={{
                         width: "100%", padding: "10px", backgroundColor: "var(--surface-glass)",
                         border: "1px solid rgba(40, 61, 168, 0.24)", borderRadius: "8px",
@@ -517,9 +534,19 @@ export default function ProjectGallery() {
                       }}
                     />
                   ) : selectedProject?.video ? (
-                    <div className="video-container">
-                      <iframe src={selectedProject.video} title={`${selectedProject.title} demo`} allowFullScreen />
-                    </div>
+                    <a
+                      href={selectedProject.video}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: "inline-flex", alignItems: "center", gap: "8px",
+                        padding: "10px 20px", backgroundColor: "#ff0000",
+                        color: "#fff", borderRadius: "8px", textDecoration: "none",
+                        fontWeight: "600", fontSize: "15px",
+                      }}
+                    >
+                      ▶ Katso video YouTubessa
+                    </a>
                   ) : (
                     <p style={{ color: "var(--text-muted)" }}>Ei videota lisätty</p>
                   )}
@@ -556,20 +583,55 @@ export default function ProjectGallery() {
                 <div className="tech-section">
                   <h3>Käytetyt Teknologiat</h3>
                   {isEditMode ? (
-                    <input
-                      type="text"
-                      value={editedProject.technologies.join(", ")}
-                      onChange={(e) => setEditedProject({ ...editedProject, technologies: parseTechnologies(e.target.value) })}
-                      placeholder="Esim. React, Node.js, MongoDB"
-                      style={{
-                        width: "100%", padding: "10px", backgroundColor: "var(--surface-glass)",
-                        border: "1px solid rgba(40, 61, 168, 0.24)", borderRadius: "8px",
-                        color: "var(--text-primary)", fontSize: "14px",
-                      }}
-                    />
+                    <div>
+                      <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
+                        <input
+                          type="text"
+                          value={editedProject.newTech || ""}
+                          onChange={e => setEditedProject({ ...editedProject, newTech: e.target.value })}
+                          placeholder="Lisää teknologia"
+                          style={{ flex: 1, padding: "10px", backgroundColor: "var(--surface-glass)", border: "1px solid rgba(40, 61, 168, 0.24)", borderRadius: "8px", color: "var(--text-primary)", fontSize: "14px" }}
+                          onKeyDown={e => {
+                            if (e.key === "Enter" && editedProject.newTech?.trim()) {
+                              const tech = editedProject.newTech.trim();
+                              const alreadyExists = editedProject.technologies.some(
+                                t => t.toLowerCase() === tech.toLowerCase()
+                              );
+                              if (!alreadyExists) {
+                                setEditedProject(prev => ({ ...prev, technologies: [...prev.technologies, tech], newTech: "" }));
+                              } else {
+                                setEditedProject(prev => ({ ...prev, newTech: "" }));
+                              }
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={() => {
+                            const tech = editedProject.newTech?.trim();
+                            const alreadyExists = tech && editedProject.technologies.some(
+                              t => t.toLowerCase() === tech.toLowerCase()
+                            );
+                            if (tech && !alreadyExists) {
+                              setEditedProject(prev => ({ ...prev, technologies: [...prev.technologies, tech], newTech: "" }));
+                            } else {
+                              setEditedProject(prev => ({ ...prev, newTech: "" }));
+                            }
+                          }}
+                          style={{ padding: "10px 20px", backgroundColor: "rgba(76, 185, 68, 0.2)", color: "var(--color-success)", border: "1px solid rgba(76, 185, 68, 0.3)", borderRadius: "8px", cursor: "pointer", fontWeight: "600", fontSize: "14px" }}
+                        >+ Lisää</button>
+                      </div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                        {editedProject.technologies.map((tech, idx) => (
+                          <span key={tech} className="tech-badge" style={{ background: "#e0e7ff", color: "#1e293b", padding: "6px 12px", borderRadius: "16px", display: "flex", alignItems: "center", gap: "6px" }}>
+                            {tech}
+                            <button onClick={() => setEditedProject(prev => ({ ...prev, technologies: prev.technologies.filter((t, i) => i !== idx) }))} style={{ background: "none", border: "none", color: "#ef4444", fontWeight: "bold", cursor: "pointer", fontSize: "14px" }}>×</button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   ) : (
                     <div className="tech-list">
-                   {normalizeTechnologies(selectedProject.technologies).map((tech) => (
+                      {normalizeTechnologies(selectedProject.technologies).map((tech) => (
                         <span key={tech} className="tech-badge">{tech}</span>
                       ))}
                     </div>
